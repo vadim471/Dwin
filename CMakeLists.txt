@@ -45,6 +45,7 @@ add_executable(dwin_exmpl src/main.cpp
         include/bridge/constant.hpp
         src/constant.cpp
         include/bridge/DwinCommands.hpp
+        include/bridge/PrimeCommands.hpp
 )
 
 target_link_libraries(dwin_exmpl

@@ -33,10 +33,10 @@ namespace bridge {
         addRoute(GET_DISPENSER_STATUS, "GET", "/api/v3/devices/ID/status");
         addRoute(GET_PRODUCTS, "GET", "/api/v3/products");
         addRoute(GET_TASKS, "GET", "/api/v3/tasks/ID");
+
         //POST
         addRoute(CREATE_ORDER, "POST", "/api/v3/devices/ID/order");
         addRoute(SET_COMMAND, "POST", "/api/v3/devices/ID/command");
-
 
         //NOT YET IMPLEMENTED
         addRoute("set_io_parameters", "POST", "");
@@ -52,12 +52,30 @@ namespace bridge {
         std::vector<Message> messages;
         if (input.data.empty()) return messages;
 
-        Message msg;
-        msg.source = source;
-        msg.type = "http_response";
-        msg.payload = input.data;
-        messages.push_back(msg);
+        try {
+            auto it = std::find(input.data.begin(), input.data.end(), '\0');
+            std::string url;
+            Bytes json_body;
 
+            if (it != input.data.end()) {
+                url.assign(input.data.begin(), it);
+
+                json_body.assign(it + 1, input.data.end());
+            } else {
+                // Все в JSON body.
+                json_body.assign(input.data.begin(), input.data.end());
+            }
+
+            Message msg;
+            msg.source = source;
+            msg.url = url;
+            msg.type = HTTP_RESPONSE;
+            msg.payload = json_body;
+            messages.push_back(msg);
+
+        } catch (std::exception& e) {
+            std::cerr << "[Parser] Error: " << e.what() << std::endl;
+        }
         return messages;
     }
 
@@ -78,12 +96,6 @@ namespace bridge {
         if (!message.resource_id.empty()) {
             url = utility::replaceIdInUrl(url, "ID", message.resource_id);
         }
-
-        // 1. Обработка GET_EVENTS костыль.
-        // if (message.type == GET_EVENTS && !message.payload.empty()) {
-        //     std::string last_id_str(message.payload.begin(), message.payload.end());
-        //     url = "/api/v3/events?last_id=" + last_id_str;
-        // }
 
         // Добавление тела в POST методы.
         if (!message.payload.empty() && route.method != "GET") {

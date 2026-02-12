@@ -144,7 +144,7 @@ namespace bridge {
         }
 
         if (bytes_transferred > 0 && receive_handler) {
-                std::cerr << "[UART RX] Received " << bytes_transferred << " bytes." << std::endl;
+                // std::cerr << "[UART RX] Received " << bytes_transferred << " bytes." << std::endl;
             RawData raw_data;
             raw_data.data.assign(read_buffer.data.begin(), read_buffer.data.begin() + bytes_transferred);
 

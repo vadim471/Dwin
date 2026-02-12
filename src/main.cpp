@@ -41,7 +41,7 @@ int main() {
         auto dwin_logic = std::make_shared<DwinLogic>(cfg);
         core.registerLogic(UART_LAYER, dwin_logic);
 
-        auto http_logic = std::make_shared<HttpLogic>(cfg);
+        auto http_logic = std::make_shared<HttpLogic>(cfg, ios);
         core.registerLogic(HTTP_LAYER, http_logic);
 
         std::thread ioThread([&ios](){
@@ -51,15 +51,11 @@ int main() {
         });
 
         std::thread coreThread([&core](){ core.run(); });
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         bool keepRunning = true;
         Message pageMsg;
-        http_logic->startPolling(core);
-        //http_logic->getProducts(core);
-
+        http_logic->startLoop(core);
 
         while (keepRunning) {
             char choice;
@@ -82,7 +78,6 @@ int main() {
                     break;
                 }
                 case '2': {
-                    http_logic->getDispenserStatus(core);
                     break;
                 }
                 case '3': {

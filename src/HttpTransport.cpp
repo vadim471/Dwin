@@ -29,11 +29,16 @@ namespace bridge {
 
     void HttpTransport::start() {
         m_running = true;
-        std::cout << "[HTTP Transport] Started" << std::endl;
+        m_worker = std::thread(&HttpTransport::workerThread, this);
+        std::cout << "[HTTP Transport] Worker Started" << std::endl;
     }
 
     void HttpTransport::stop() {
         m_running = false;
+        m_cv.notify_all();
+        if (m_worker.joinable()) {
+            m_worker.join();
+        }
     }
 
     void HttpTransport::setReceiveHandler(ReceiveHandler handler) {
@@ -61,9 +66,28 @@ namespace bridge {
         std::string uri = parts[1];
         std::string body = (parts.size() > 2) ? parts[2] : "";
 
-        std::thread([this, method, uri, body]() {
-            this->performRequest(method, uri, body);
-        }).detach();
+        {
+            std::lock_guard<std::mutex> lock(m_queue_mutex);
+            m_queue.push({method, uri, body});
+        }
+        m_cv.notify_one();
+    }
+
+    void HttpTransport::workerThread() {
+        while (m_running) {
+            HttpRequestTask task;
+            {
+                std::unique_lock<std::mutex> lock(m_queue_mutex);
+                m_cv.wait(lock, [this] { return !m_queue.empty() || !m_running; });
+
+                if (!m_running && m_queue.empty()) break;
+
+                task = m_queue.front();
+                m_queue.pop();
+            }
+
+            performRequest(task.method, task.uri, task.body);
+        }
     }
 
     void HttpTransport::performRequest(const std::string& method, const std::string& uri, const std::string& body) {
@@ -87,12 +111,21 @@ namespace bridge {
                 if (response_data.status_code == 401 || response_data.status_code == 403) {
                     m_session_cookie.clear();
                 }
-                return;
+
             }
 
             if (m_receive_handler) {
                 RawData raw_data;
-                raw_data.data.assign(response_data.body.begin(), response_data.body.end());
+
+                // URL запроса.
+                raw_data.data.insert(raw_data.data.end(), response_data.url.begin(), response_data.url.end());
+
+                raw_data.data.push_back('\0');
+
+                // Тело JSON.
+                raw_data.data.insert(raw_data.data.end(), response_data.body.begin(), response_data.body.end());
+
+                // Склеил URL + JSON Body.
                 m_receive_handler(raw_data, HTTP_LAYER);
             }
 
@@ -161,12 +194,7 @@ namespace bridge {
 
             responseStream.str(""); responseStream.clear();
             Poco::StreamCopier::copyStream(is, responseStream);
-
-
-            //setCookie(response);
         }
-        return { response.getStatus(), responseStream.str(), response.getReason() };
+        return { request.getURI(), response.getStatus(), responseStream.str(), response.getReason() };
     }
-
-
 }

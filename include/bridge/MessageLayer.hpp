@@ -4,18 +4,21 @@
 
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
+#include <map>
 
 #include "types.hpp"
-#include <boost/asio.hpp>
 #include <memory>
 
 #include "ILogicHandler.hpp"
 #include "IMessageParser.hpp"
 #include "ITransport.hpp"
 
+
 //MessageLayer.hpp
 namespace bridge {
+
     class MessageLayer {
     public:
         MessageLayer();
@@ -36,11 +39,9 @@ namespace bridge {
 
         void sendTo(const std::string& targetName, const Message& msg);
 
+        void sendToLogicLayer(const std::string &target_logic_name, const Message &message);
+
     private:
-
-        // Принимает сырые данные, парсит (создает Message и кладет в общую очередь).
-        //void onRawData(const RawData& raw_data, const std::string& channel_name);
-
         // Принимает Message, формирует исходящий поток
         void processMessage(const Message& message);
 

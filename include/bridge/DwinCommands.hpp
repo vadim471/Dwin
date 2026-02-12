@@ -59,8 +59,11 @@ namespace bridge {
             // Если длина 6 байт, это займет 3 VP адреса.
             for (size_t i = 0; i < maxLen; ++i) {
                 if (i < text.length()) {
+                    payload.push_back(0x00);
                     payload.push_back(static_cast<uint8_t>(text[i]));
+
                 } else {
+                    payload.push_back(0x00);
                     payload.push_back(0x00);
                 }
             }
@@ -68,22 +71,22 @@ namespace bridge {
             msg.payload = payload;
             core.sendTo(UART_LAYER, msg);
         }
+
+
+        static void sendInt16ToDwin(MessageLayer &core, uint16_t vp, int value) {
+            Message msg;
+            msg.type = DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
+
+            std::vector<uint8_t> payload;
+            // Адрес VP (2 байта)
+            payload.push_back((vp >> 8) & 0xFF);
+            payload.push_back(vp & 0xFF);
+
+            payload.push_back((value >> 8) & 0xFF);
+            payload.push_back(value & 0xFF);
+
+            msg.payload = payload;
+            core.sendTo(UART_LAYER, msg);
+        }
     };
-
-    static void sendInt16ToDwin(MessageLayer &core, uint16_t vp, int value) {
-        Message msg;
-        msg.type = DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
-
-        std::vector<uint8_t> payload;
-        // Адрес VP (2 байта)
-        payload.push_back((vp >> 8) & 0xFF);
-        payload.push_back(vp & 0xFF);
-
-        payload.push_back((value >> 8) & 0xFF);
-        payload.push_back(value & 0xFF);
-
-        msg.payload = payload;
-        core.sendTo(UART_LAYER, msg);
-    }
-
 }

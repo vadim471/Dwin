@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include "bridge/HttpLogic.hpp"
+
 //MessageLayer.cpp
 namespace bridge {
     MessageLayer::MessageLayer() : m_running(false) {
@@ -50,12 +52,14 @@ namespace bridge {
         std::cout << "Running Core" << std::endl;
 
         while (m_running) {
+
+
             Message message;
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 m_cond.wait(lock, [this] { return !m_running || !m_queue.empty(); });
 
-                if (!m_running && m_queue.empty()) { break; }
+                if (!m_running && m_queue.empty()) break;
 
                 message = m_queue.front();
                 m_queue.pop();
@@ -90,5 +94,15 @@ namespace bridge {
 
     void MessageLayer::registerLogic(const std::string &logic_name, ILogicHandlerPtr handler) {
         m_logic_handlers[logic_name] = handler;
+    }
+
+    void MessageLayer::sendToLogicLayer(const std::string &target_logic_name, const Message &message) {
+        auto it = m_logic_handlers.find(target_logic_name);
+
+        if (it != m_logic_handlers.end()) {
+            it->second->handle(message, *this);
+        } else {
+            std::cerr << "[Core] Target Logic not found: " << target_logic_name << std::endl;
+        }
     }
 }

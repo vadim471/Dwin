@@ -17,20 +17,27 @@ namespace bridge {
 
         // ILogicHandler
         void handle(const Message& message, MessageLayer& core) override;
-
-        Message sendAndReceive(const Message& request, MessageLayer& core);
     private:
-        std::mutex m_mutex;
 
         void handleDwinEvent(const Message& message, MessageLayer& core);
 
-        void handleFuelVolume(const Message &message, MessageLayer& core);
+        // Обработки нажатия на кнопку объёма заказа.
+        static void handleFuelVolume(const Message &message, MessageLayer& core);
 
-        void handleAcceptOrder(MessageLayer& core);
+        // Пагинация. Отправляю запрос для повторого опроса состояний ТРК и отображения следующей "страницы".
+        static void handlePaginationButton(const Message &message, MessageLayer& core);
 
-        // Очередь ожидающих запросов.
-        // Мы храним std::promise, чтобы передать значение (Message) из одного потока в другой.
-        std::queue<std::promise<Message>> m_pendingRequests;
+        // Выбор ТРК. Запрос для обработки нажатия на иконку с ТРК.
+        static void handleChosenTrk(const Message &message, MessageLayer& core);
+
+        // Обработка нажатия на кнопку "Назад" или "Отмена".
+        static void handleBasicTouchButton(const Message &message, MessageLayer& core);
+
+        // Обработка нажатия на кнопку "Далее".
+        static void handleNextButton(const Message &message, MessageLayer& core);
+
+        // Обработка нажатия на ПинПад.
+        static void handlePinpadButton(const Message &message, MessageLayer& core);
 
         Settings m_settings;
     };
