@@ -42,11 +42,11 @@ namespace bridge {
         std::queue<HttpRequestTask> m_queue;
         std::mutex m_queue_mutex;
 
-        // Mutex для каждого запроса
+        // Mutex для каждого запроса.
         std::mutex m_session_mutex;
         std::string m_session_cookie;
 
-        // Сессия, чтобы не плодить на прайме
+        // Сессия, чтобы не плодить на прайме.
         Poco::Net::HTTPClientSession m_session;
         Poco::Net::HTTPDigestCredentials m_credentials;
     };

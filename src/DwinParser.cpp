@@ -149,20 +149,20 @@ namespace bridge {
         }
 
         // --- СЦЕНАРИЙ 3: ЗАПИСЬ В VP ---
-        // else if (msg.type == "write_vp") {
-        //     if (msg.payload.size() < 2) return raw;
-        //
-        //     size_t dataLen = msg.payload.size() - 2;
-        //
-        //     data.push_back(0x5A);
-        //     data.push_back(0xA5);
-        //     // Длина: 1(Cmd) + 2(VP) + N(Data)
-        //     data.push_back(static_cast<uint8_t>(1 + 2 + dataLen));
-        //     data.push_back(0x82); // Cmd: Write VP
-        //
-        //     // Весь payload (VP + Data) копируем как есть
-        //     data.insert(data.end(), msg.payload.begin(), msg.payload.end());
-        // }
+        else if (msg.type == DWIN_MESSAGE_TYPE_WRITE_VP) {
+            if (msg.payload.size() < 2) return raw;
+
+            size_t dataLen = msg.payload.size() - 2;
+
+            data.push_back(0x5A);
+            data.push_back(0xA5);
+            // Длина: 1(Cmd) + 2(VP) + N(Data)
+            data.push_back(static_cast<uint8_t>(1 + 2 + dataLen));
+            data.push_back(0x82); // Cmd: Write VP
+
+            // Весь payload (VP + Data) копируем как есть
+            data.insert(data.end(), msg.payload.begin(), msg.payload.end());
+        }
 
         return raw;
     }

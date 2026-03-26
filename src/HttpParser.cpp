@@ -33,6 +33,7 @@ namespace bridge {
         addRoute(GET_DISPENSER_STATUS, "GET", "/api/v3/devices/ID/status");
         addRoute(GET_PRODUCTS, "GET", "/api/v3/products");
         addRoute(GET_TASKS, "GET", "/api/v3/tasks/ID");
+        addRoute(GET_TANKERS, "GET", "/api/v3/tankers");
 
         //POST
         addRoute(CREATE_ORDER, "POST", "/api/v3/devices/ID/order");
@@ -53,27 +54,31 @@ namespace bridge {
         if (input.data.empty()) return messages;
 
         try {
-            auto it = std::find(input.data.begin(), input.data.end(), '\0');
-            std::string url;
-            Bytes json_body;
-
-            if (it != input.data.end()) {
-                url.assign(input.data.begin(), it);
-
-                json_body.assign(it + 1, input.data.end());
-            } else {
-                // Все в JSON body.
-                json_body.assign(input.data.begin(), input.data.end());
-            }
-
             Message msg;
             msg.source = source;
-            msg.url = url;
             msg.type = HTTP_RESPONSE;
-            msg.payload = json_body;
+
+            // Разделитель между http.code/http.url/http.body
+            auto it1 = std::find(input.data.begin(), input.data.end(), '\0');
+
+            if (it1 != input.data.end()) {
+                std::string status_str(input.data.begin(), it1);
+                msg.status_code = std::stoi(status_str);
+
+                auto it2 = std::find(it1 + 1, input.data.end(), '\0');
+
+                if (it2 != input.data.end()) {
+                    msg.url.assign(it1 + 1, it2);
+                    msg.payload.assign(it2 + 1, input.data.end());
+                } else {
+
+                    msg.url.assign(it1 + 1, input.data.end());
+                }
+            }
+
             messages.push_back(msg);
 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             std::cerr << "[Parser] Error: " << e.what() << std::endl;
         }
         return messages;

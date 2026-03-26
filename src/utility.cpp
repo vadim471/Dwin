@@ -9,6 +9,7 @@
 #include <ios>
 #include <string>
 #include "bridge/types.hpp"
+#include <algorithm>
 
 namespace bridge {
     std::string utility::bytesToHex(const std::vector<uint8_t> &bytes) {
@@ -86,6 +87,25 @@ namespace bridge {
         return false;
     }
 
+    double utility::parseDoubleFromJson(const std::string& value_str, int exponent) {
+        try {
+            if (value_str.empty()) {
+                return 0.0;
+            }
+
+            double base_value = std::stod(value_str);
+
+            return base_value * std::pow(10.0, -exponent);
+
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[Utility] Invalid argument converting to double: " << value_str << std::endl;
+            return 0.0;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[Utility] Out of range converting to double: " << value_str << std::endl;
+            return 0.0;
+        }
+    }
+
     int utility::getIconForStatus(const std::string &status, const Settings &s) {
         if (status == DISPENSER_IDLE) {
             return s.dwin.icon_dispenser_idle;
@@ -115,7 +135,47 @@ namespace bridge {
         return url.substr(startPos, endPos - startPos);
     }
 
+    int utility::ceilStringToInt(std::string value_str) {
+        if (value_str.empty()) return 0;
 
+        std::replace(value_str.begin(), value_str.end(), ',', '.');
+
+        try {
+            double value = std::stod(value_str);
+
+            return static_cast<int>(std::ceil(value));
+
+        } catch (const std::invalid_argument& e) {
+            return 0;
+        } catch (const std::out_of_range& e) {
+            return 0;
+        }
+    }
+
+    std::tuple<int, int> utility::formatFloatStringToInt(std::string value_str) {
+        int value = 0;
+        int exponent = 0;
+
+        size_t dot_position = value_str.find(",");
+        if (dot_position != std::string::npos) {
+            exponent = value_str.length() - dot_position - 1;
+
+            std::string string_value = value_str;
+            string_value.erase(dot_position, 1);
+            try {
+                value = std::stol(string_value);
+            } catch (std::exception &e) {
+                value = 0;
+            }
+        } else {
+            try {
+                value = std::stol(value_str);
+            } catch (std::exception &e) {
+                value = 0;
+            }
+        }
+        return std::make_tuple(value, exponent);;
+    }
 
     Dispenser* utility::getDispenserById(std::vector<Dispenser>& dispensers, const std::string& id) {
         auto it = std::find_if(dispensers.begin(), dispensers.end(),
@@ -131,7 +191,7 @@ namespace bridge {
 
     std::string utility::getFormattedStringFromJson(std::string valueStr, int exponent) {
 
-        if (valueStr.empty()) return "0,00";
+        if (valueStr.empty() || valueStr == "0") return "0,00";
         if (exponent <= 0) return valueStr;
 
         if (valueStr.length() <= static_cast<size_t>(exponent)) {
@@ -158,6 +218,9 @@ namespace bridge {
                 break;
             }
         }
+        if (result.empty()) {
+            return s;
+        }
         return result;
     }
 
@@ -180,7 +243,13 @@ namespace bridge {
         return s.dwin.icon_fuel_type_dt;
     }
 
-    const Product* utility::getProductById(const std::vector<Product>& products, const std::string& id) {
+    int utility::getIconForGasStation(int amount, const Settings &s) {
+        if (amount == 1) return s.dwin.page_choose_trk_config_uno_trk;
+        if (amount == 2) return s.dwin.page_choose_trk_config_double_trk;
+        return s.dwin.page_choose_trk;
+    }
+
+    Product* utility::getProductById(std::vector<Product>& products, const std::string& id) {
         auto it = std::find_if(products.begin(), products.end(),
             [&id](const Product& d) {
                 return d.id == id;
@@ -188,6 +257,29 @@ namespace bridge {
 
         if (it != products.end()) {
             return &(*it);
+        }
+        return nullptr;
+    }
+
+    LevelGauge* utility::getLevelGaugeById(std::vector<LevelGauge>& gauges, const std::string& id) {
+        auto it = std::find_if(gauges.begin(), gauges.end(),
+            [&id](const LevelGauge& d) {
+                return d.id == id;
+            });
+
+        if (it != gauges.end()) {
+            return &(*it);
+        }
+        return nullptr;
+    }
+
+    const Tanker* utility::getTankerByLevelGaugeId(const std::vector<Tanker>& tankers, const std::string& gauge_id) {
+        for (const auto& tanker : tankers) {
+            auto it = std::find(tanker.level_gauge_ids.begin(), tanker.level_gauge_ids.end(), gauge_id);
+
+            if (it != tanker.level_gauge_ids.end()) {
+                return &tanker;
+            }
         }
         return nullptr;
     }
@@ -201,4 +293,163 @@ namespace bridge {
 
         return std::string(buffer);
     }
+
+    std::pair<std::string, std::string> utility::splitFloatString(const std::string& floatStr, size_t lenFrac) {
+        std::string intPart = "0";
+        std::string fracPart = "";
+
+        if (floatStr.empty()) {
+            return std::make_pair(intPart, std::string(lenFrac, '0'));
+        }
+
+        size_t dotPos = floatStr.find(',');
+        if (dotPos == std::string::npos) {
+            dotPos = floatStr.find('.');
+        }
+
+        if (dotPos != std::string::npos) {
+            intPart = floatStr.substr(0, dotPos);
+            fracPart = floatStr.substr(dotPos + 1);
+        } else {
+            intPart = floatStr;
+        }
+
+        if (intPart.empty()) intPart = "0";
+        if (intPart == "-")  intPart = "-0";
+
+        if (fracPart.length() > lenFrac) {
+            fracPart = fracPart.substr(0, lenFrac);
+        } else if (fracPart.length() < lenFrac) {
+            fracPart.append(lenFrac - fracPart.length(), '0');
+        }
+
+        return std::make_pair(intPart, fracPart);
+    }
+
+    bool utility::checkAllFuelPrice(std::vector<Product>& products) {
+        if (products.empty()) {
+            return false;
+        }
+
+        for (const auto& product : products) {
+            if (product.price == "0" || product.price.empty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void utility::saveTRKAmountToConfig(const std::string& configPath, int amount) {
+        try {
+            json j;
+            std::ifstream inFile(configPath);
+            if (inFile.is_open()) {
+                inFile >> j;
+                inFile.close();
+            }
+
+            if (!j.contains("gas.station")) {
+                j["gas.station"] = json::object();
+            }
+
+            j["gas.station"]["amount_trk"] = amount;
+
+            std::ofstream outFile(configPath);
+            if (!outFile.is_open()) {
+                std::cerr << "[Config] CRITICAL ERROR: Could not open file for writing: " << configPath << std::endl;
+                return;
+            }
+            outFile << j.dump(4);
+
+            std::cout << "[Config] Saved amount_trk: " << amount << std::endl;
+
+        } catch (const std::exception& e) {
+            std::cerr << "[Config] Error saving TRK amount to json: " << e.what() << std::endl;
+        }
+    }
+
+    void utility::saveFuelPriceToConfig(const std::string& configPath, const std::string& fuel_id, const std::string& price_str) {
+        try {
+            json j;
+            std::ifstream inFile(configPath);
+
+            if (inFile.is_open()) {
+                inFile >> j;
+                inFile.close();
+            } else {
+                j = json::object();
+            }
+
+            if (!j.contains("gas.station") || !j["gas.station"].is_object()) {
+                j["gas.station"] = json::object();
+            }
+
+            if (!j["gas.station"].contains("fuel_price") || !j["gas.station"]["fuel_price"].is_object()) {
+                j["gas.station"]["fuel_price"] = json::object();
+            }
+
+            j["gas.station"]["fuel_price"][fuel_id] = price_str;
+
+            std::ofstream outFile(configPath);
+            if (!outFile.is_open()) {
+                std::cerr << "[Config] CRITICAL ERROR: Could not open file for writing: " << configPath << std::endl;
+                return;
+            }
+            outFile << j.dump(4);
+            std::cout << "[Config] Saved price for " << fuel_id << " -> " << price_str << std::endl;
+
+        } catch (const json::exception& e) {
+            std::cerr << "[Config] JSON Error while saving fuel price: " << e.what() << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[Config] General Error while saving fuel price: " << e.what() << std::endl;
+        }
+    }
+
+    int utility::getPaginationIndex(int current_index, int size, int direction) {
+        int index = current_index + direction;
+        if (index >= size) {
+            index = 0;
+        } else if (index < 0) {
+            index = size - 1;
+        }
+        return index;
+    }
+
+    void utility::saveUsedTRKsToConfig(const std::string& configPath, const std::vector<std::string>& selected_trks) {
+        try {
+            json j;
+            std::ifstream inFile(configPath);
+
+            if (inFile.is_open()) {
+                inFile >> j;
+                inFile.close();
+            } else {
+                j = json::object();
+            }
+
+            // Проверяем наличие базовой структуры
+            if (!j.contains("gas.station") || !j["gas.station"].is_object()) {
+                j["gas.station"] = json::object();
+            }
+
+            // Магия nlohmann::json: он сам превратит вектор С++ в массив JSON ["trk2", "trk1"]
+            j["gas.station"]["used_trks"] = selected_trks;
+
+            std::ofstream outFile(configPath);
+            if (!outFile.is_open()) {
+                std::cerr << "[Config] CRITICAL ERROR: Could not open file for writing: " << configPath << std::endl;
+                return;
+            }
+
+            outFile << j.dump(4);
+
+            std::cout << "[Config] Saved " << selected_trks.size() << " used TRKs to config." << std::endl;
+
+        } catch (const json::exception& e) {
+            std::cerr << "[Config] JSON Error while saving used TRKs: " << e.what() << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[Config] General Error while saving used TRKs: " << e.what() << std::endl;
+        }
+    }
 }
+

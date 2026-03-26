@@ -20,6 +20,29 @@ std::vector<uint8_t> makeIntPayload(uint16_t pageId) {
     };
 }
 
+void sendTextToVp(MessageLayer& core, uint16_t vp, const std::string& text) {
+    Message msg;
+    msg.type = DWIN_MESSAGE_TYPE_WRITE_VP;
+
+    // 1. Кладем адрес VP (2 байта: старший, затем младший)
+    msg.payload.push_back((vp >> 8) & 0xFF);
+    msg.payload.push_back(vp & 0xFF);
+
+    // 2. Записываем сам текст
+    for (char c : text) {
+        msg.payload.push_back(static_cast<uint8_t>(c));
+    }
+
+    // 3. Добиваем нулем до четного числа байт в payload.
+    // Если этого не сделать, DWIN может "проглотить" или исказить последний символ.
+    if (msg.payload.size() % 2 != 0) {
+        msg.payload.push_back(0x00);
+    }
+
+    // 4. Отправляем в UART
+    core.sendTo(UART_LAYER, msg);
+}
+
 
 int main() {
     try {
@@ -61,7 +84,7 @@ int main() {
             char choice;
             std::cout << "\n================ MENU ================" << std::endl;
             std::cout << "1 - Change page (VP 0x0084)" << std::endl;
-            std::cout << "2 - Get parameters TRK" << std::endl;
+            std::cout << "2 - Write by VP" << std::endl;
             std::cout << "q - Quit" << std::endl;
             std::cout << "Selection: ";
             std::cin >> choice;
@@ -72,12 +95,24 @@ int main() {
                     std::cout << "Type number of page" << std::endl;
                     std::cin >> page_id;
 
-                    pageMsg.type = "change_page";
+                    pageMsg.type = DWIN_MESSAGE_TYPE_CHANGE_PAGE;
                     pageMsg.payload = makeIntPayload(page_id);
                     core.sendTo(UART_LAYER, pageMsg);
                     break;
                 }
                 case '2': {
+                    uint16_t vp = 0;
+                    std::string data = "";
+
+                    std::cout << "Type vp (decimal): " << std::endl;
+                    std::cin >> std::hex >> vp;
+
+                    std::cout << "Type data text: " << std::endl;
+                    std::cin >> data;
+
+                    sendTextToVp(core, vp, data);
+
+                    std::cout << "[INFO] Sent text '" << data << "' to VP " << vp << std::endl;
                     break;
                 }
                 case '3': {

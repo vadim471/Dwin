@@ -18,6 +18,7 @@ namespace bridge {
     // Type for MESSAGE Struct
     extern const std::string DWIN_MESSAGE_TYPE_CHANGE_PAGE;
     extern const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
+    extern const std::string DWIN_MESSAGE_TYPE_WRITE_VP;
     extern const std::string HTTP_MESSAGE_TYPE_RESPONSE;
     extern const std::string FUEL_VOLUME_ORDER_TYPE;
     extern const std::string CREATE_ORDER;
@@ -28,12 +29,29 @@ namespace bridge {
     extern const int TRK_ID_LEN;
 
     // Const for HTTP Layer message
-    extern const std::string USER_TOUCH;
     extern const std::string HTTP_RESPONSE;
 
-    // TRK const
-    extern const int TRK_FUEL_PRICE;
-
+    // Const for Display Touch to HttpLayer
+    extern const std::string USER_TOUCH_VOLUME_BUTTON;
+    extern const std::string USER_TOUCH_PAGINATION_TRK_BUTTON;
+    extern const std::string USER_TOUCH_PAGINATION_FUEL_BUTTON;
+    extern const std::string USER_TOUCH_PAGINATION_LEVEL_GAUGE_BUTTON;
+    extern const std::string USER_TOUCH_CHOOSE_MULTI_TRK_BUTTON;
+    extern const std::string USER_TOUCH_CHOOSE_TRK_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
+    extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON;
+    extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON;
+    extern const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON;
+    extern const std::string USER_TOUCH_SERVICE_MENU_CHANGE_FUEL_PRICE_BUTTON;
+    extern const std::string USER_TOUCH_AMOUNT_TRK_BUTTON;
+    extern const std::string USER_TOUCH_CHOOSE_FUEL_FOR_EDIT_BUTTON;
+    extern const std::string USER_TOUCH_ACCEPT_SELECTED_TRK_BUTTON;
+    extern const std::string USER_TOUCH_RESET_SELECTED_TRK_BUTTON;
+    extern const std::string USER_TOUCH_CLOSE_ORDER_BUTTON;
+    extern const std::string USER_TOUCH_SET_USED_TRK_BUTTON;
+    extern const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON;
 
     // HTTP GET
     extern const std::string GET_PRODUCTS;
@@ -42,6 +60,7 @@ namespace bridge {
     extern const std::string GET_DISPENSER_STATUS;
     extern const std::string GET_EVENTS;
     extern const std::string GET_TASKS;
+    extern const std::string GET_TANKERS;
 
     // HTTP POST
     extern const std::string SET_COMMAND;
@@ -56,6 +75,15 @@ namespace bridge {
     extern const std::string DISPENSER_OFFLINE;
     extern const std::string DISPENSER_ERROR;
 
+    extern const std::string UPPER_VOLUME;
+    extern const std::string LOWER_VOLUME;
+    extern const std::string TOTAL_VOLUME;
+    extern const std::string UPPER_LEVEL;
+    extern const std::string LOWER_LEVEL;
+    extern const std::string FILLING;
+    extern const std::string DENSITY;
+    extern const std::string WEIGHT;
+
     extern const std::string RATING_PR_92;
     extern const std::string RATING_PR_95;
     extern const std::string RATING_PR_98;
@@ -63,5 +91,18 @@ namespace bridge {
     extern const std::string RATING_PR_DIESEL;
 
     extern const std::string API_DISPENSER;
+    extern const std::string API_IO;
 
+    extern const std::string ORDER_IDLE;
+    extern const std::string ORDER_READY;
+    extern const std::string ORDER_AUTHORIZED;
+    extern const std::string ORDER_IN_PROGRESS;
+    extern const std::string ORDER_DELIVERED;
+    extern const std::string ORDER_INTERRUPTED;
+    extern const std::string ORDER_FAILED;
+
+    extern const std::string LOW_VOLUME;
+
+    // Error codes
+    extern const int POCO_ERROR;
 }

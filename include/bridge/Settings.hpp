@@ -5,7 +5,6 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#include <iostream>
 #include "bridge/json.hpp"
 
 #define LOAD_HEX(name) \
@@ -35,12 +34,83 @@ struct Settings {
         uint16_t vp_icon_trk;
         uint16_t vp_text_trk;
         uint16_t vp_pagination_trk;
-        uint16_t vp_choose_trk;
+        uint16_t vp_choose_multi_trk;
 
     // --- Page PinPad ---
-        uint16_t vp_pinpad;
+        uint16_t vp_fuel_volume_pinpad;
         uint16_t vp_enterring_volume_order_pinpad;
 
+    // --- Page PinPad Set Fuel Price
+        uint16_t vp_set_fuel_price_pinpad;
+        uint16_t vp_text_enter_fuel_price;
+
+    // --- Page Choose Amount TRK
+        uint16_t vp_button_choose_amount_trk;
+
+    // --- Page enter PinCode PinPad
+        uint16_t vp_enter_pin_code_pinpad;
+
+    // --- Page enter service code PinPad ---
+        uint16_t vp_set_service_pincode_pinpad;
+        uint16_t vp_text_pinpad_service_code;
+
+    // --- Page Service Menu
+        uint16_t vp_button_service_menu;
+
+    // --- Page editing Fuel Type
+        std::vector<uint16_t> vp_text_fuel_price_edit_page;
+        std::vector<uint16_t> vp_text_fuel_integer_price_edit_page;
+        std::vector<uint16_t> vp_text_fuel_decimal_price_edit_page;
+
+        uint16_t vp_button_fuel_edit_price_chosen;
+        uint16_t vp_editing_fuel_type;
+        uint16_t vp_editing_fuel_integer_part;
+        uint16_t vp_editing_fuel_decimal_part;
+
+    // --- Page Level Gauges Volume ---
+        uint16_t vp_text_gauges_filling_percent;
+        uint16_t vp_text_level_gauge_id;
+        uint16_t vp_icon_level_gauges_volume;
+        uint16_t vp_button_pagination_level_gauges;
+        uint16_t vp_text_upper_level_gauges_integer;
+        uint16_t vp_text_upper_level_gauges_decimal;
+        uint16_t vp_text_upper_volume_gauges_integer;
+        uint16_t vp_text_upper_volume_gauges_decimal;
+        uint16_t vp_text_weight_gauge_integer;
+        uint16_t vp_text_weight_gauge_decimal;
+        uint16_t vp_text_density_gauge_integer;
+        uint16_t vp_text_density_gauge_decimal;
+        uint16_t vp_text_lower_level_gauge_integer;
+        uint16_t vp_text_lower_level_gauge_decimal;
+        uint16_t vp_text_lower_volume_gauge_integer;
+        uint16_t vp_text_lower_volume_gauge_decimal;
+        uint16_t vp_text_total_volume_gauge_integer;
+        uint16_t vp_text_total_volume_gauge_decimal;
+
+    // --- Page Uno TRK config
+        uint16_t vp_button_choose_trk_uno_trk_config;
+
+    // --- Page Duo TRK config
+        uint16_t vp_button_choose_left_trk_double_trk_config;
+        uint16_t vp_button_choose_right_trk_double_trk_config;
+
+    // --- Page Select Used TRK
+        std::vector<uint16_t> vp_nums_selected_trk;
+        std::vector<uint16_t> vp_values_selected_trk;
+        uint16_t vp_text_select_trk_button;
+
+    // --- Buttons ---
+
+
+    // --- Page Service Menu ---
+        uint16_t vp_back_button_service_menu;
+
+    // --- Page Choose Fuel Type For Editing (second variable) ---
+        uint16_t vp_icon_fuel_type_for_editing;
+        uint16_t vp_fuel_price_for_editing_integer;
+        uint16_t vp_fuel_price_for_editing_decimal;
+        uint16_t vp_button_pagination_fuel_type_for_edit;
+        uint16_t vp_button_chosen_fuel_type_for_edit;
 
     // --- TRK IDs ---
         uint16_t vp_trk_id_first_page;
@@ -53,30 +123,39 @@ struct Settings {
         std::vector<uint16_t> vp_product_text_pages;
 
     // --- Current order volume ---
-        std::vector<uint16_t> vp_current_order_volume_pages;
+        std::vector<uint16_t> vp_current_order_volume_integer_pages;
+        std::vector<uint16_t> vp_current_order_volume_decimal_pages;
 
     // --- Current order amount ---
-        std::vector<uint16_t> vp_current_order_amount_pages;
+        std::vector<uint16_t> vp_current_order_amount_integer_pages;
+        std::vector<uint16_t> vp_current_order_amount_decimal_pages;
 
     // --- Current fuel type price ---
-        std::vector<uint16_t> vp_current_fuel_type_price_pages;
+        std::vector<uint16_t> vp_current_fuel_type_price_pages_integer;
+        std::vector<uint16_t> vp_current_fuel_type_price_pages_decimal;
 
     // --- Current date time ---
         std::vector<uint16_t> vp_current_date_time_pages;
 
     // --- Last order (page 2) ---
-        uint16_t vp_volume_last_order;
-        uint16_t vp_price_last_order;
-        uint16_t vp_current_price_per_liter_last_order;
+        uint16_t vp_volume_last_order_integer;
+        uint16_t vp_price_last_order_integer;
+        uint16_t vp_current_price_per_liter_last_order_integer;
+
+        uint16_t vp_volume_last_order_decimal;
+        uint16_t vp_price_last_order_decimal;
+        uint16_t vp_current_price_per_liter_last_order_decimal;
 
         uint16_t vp_basic_touch;
-        uint16_t vp_next_button;
+
 
     // --- Current values ---
-        uint16_t vp_chosen_order_volume;
-        uint16_t vp_current_order_amount;
-        uint16_t vp_current_fuel_volume;
-        uint16_t vp_current_price_amount;
+        uint16_t vp_chosen_order_volume; // кнопка быстрого выбора количества топлива (не пинпад).
+
+        uint16_t vp_current_order_amount_integer;
+        std::vector<uint16_t> vp_current_fuel_volume_integer;
+        uint16_t vp_current_order_amount_decimal;
+        std::vector<uint16_t> vp_current_fuel_volume_decimal;
 
         uint16_t vp_progress_order_bar_eleventh_page;
         uint16_t vp_progress_bar_percent_text_eleventh_page;
@@ -97,11 +176,28 @@ struct Settings {
         int page_fuel_in_progress;
         int page_fuel_ended;
         int page_good_trip;
+        int page_print_pin;
+        int page_service_menu;
+        int page_level_gauges_info;
+        int page_level_gauge_info;
+        int page_select_fuel_type_edit;
+        int page_set_fuel_price;
+        int page_set_amount_trk;
+        int page_set_fuel_price_another_variable;
+        int page_choose_trk_config_uno_trk;
+        int page_choose_trk_config_double_trk;
+        int page_error_creating_order;
+        int page_error_low_fuel_level;
+        int page_return_money_process;
+        int page_return_money_process_end;
+        int page_type_service_code;
+        int page_select_used_trk;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
         int icon_dispenser_idle;
         int icon_dispenser_order_end;
+        int icon_dispenser_fueling;
 
         int icon_fuel_type_92;
         int icon_fuel_type_95;
@@ -111,13 +207,14 @@ struct Settings {
 
     // --- Text length ---
         int text_len_trk_id;
-        int text_len_order_amount;
-        int text_len_order_volume;
+        int text_len_order_decimal;
+        int text_len_order_integer;
         int text_len_fuel_type;
         int text_len_percent_progress_bar;
         int text_len_date_time_footer;
+        int text_len_fuel_price;
+        int text_len_fuel_integer;
 } dwin;
-
 
     struct BusinessLogic {
         int sleep_after_chosen_trk_page;
@@ -127,6 +224,13 @@ struct Settings {
         std::string authorize;
         std::string close;
     } APIDispenser;
+
+    struct GasStation {
+        int amount_trk; // Количество колонок на АЗС.
+        std::map<std::string, std::string> fuel_prices; // ID топлива - цена.
+        int service_code;
+        std::vector<std::string> used_trks;
+    } gas_station;
 
     static Settings load(const std::string& filename) {
         Settings s;
@@ -156,14 +260,6 @@ struct Settings {
             s.server.username = j["server"]["username"];
             s.server.password = j["server"]["password"];
 
-            LOAD_HEX(vp_icon_trk);
-            LOAD_HEX(vp_text_trk);
-            LOAD_HEX(vp_pagination_trk);
-            LOAD_HEX(vp_choose_trk);
-            LOAD_HEX(vp_pinpad);
-            LOAD_HEX(vp_enterring_volume_order_pinpad);
-
-            LOAD_HEX(vp_trk_id_first_page);
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_second_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_third_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_forth_page"));
@@ -176,6 +272,8 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_eleventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twelvth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirteenth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fourteenth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -186,39 +284,88 @@ struct Settings {
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_ninth_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_tenth_page"));
 
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_sixth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_seventh_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_eighth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_ninth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_tenth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_eleventh_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_twelvth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_second_type_twelvth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_thirteenth_page"));
-            s.dwin.vp_current_order_volume_pages.push_back(getHex("vp_current_order_volume_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_sixth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_seventh_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_eighth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_ninth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_tenth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_eleventh_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twelvth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_second_type_twelvth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_thirteenth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_fourteenth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentysixth_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentyseventh_page"));
 
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_sixth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_seventh_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_eighth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_ninth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_tenth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_eleventh_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_twelvth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_second_type_twelvth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_thirteenth_page"));
-            s.dwin.vp_current_order_amount_pages.push_back(getHex("vp_current_order_amount_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_sixth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_seventh_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_eighth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_ninth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_tenth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_eleventh_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_twelvth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_second_type_twelvth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_thirteenth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_fourteenth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_twentysixth_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_twentyseventh_page"));
 
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_third_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_forth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_fifth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_sixth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_seventh_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_eighth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_ninth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_tenth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_eleventh_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_twelvth_page"));
-            s.dwin.vp_current_fuel_type_price_pages.push_back(getHex("vp_current_fuel_type_price_thirteenth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_sixth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_seventh_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_eighth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_ninth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_tenth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_eleventh_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_twelvth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_second_type_twelvth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_thirteenth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_twentysixth_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_twentyseventh_page"));
+
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_sixth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_seventh_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_eighth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_ninth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_tenth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_eleventh_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_twelvth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_second_type_twelvth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_thirteenth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_second_type_thirteenth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_twentysixth_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_twentyseventh_page"));
+
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_third_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_forth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_fifth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_sixth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_seventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_eighth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_ninth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_tenth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_eleventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_twelvth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_thirteenth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_fourteenth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_twentysixth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_twentyseventh_page"));
+
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_third_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_forth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_fifth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_sixth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_seventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_eighth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_ninth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_tenth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_eleventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_twelvth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_thirteenth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_fourteenth_page"));
+
 
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_first_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_second_page"));
@@ -233,25 +380,143 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_eleventh_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twelvth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_fourteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_fifteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_sixteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_seventeenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_eightteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_ninteenth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyoneth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentytwoth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentythreeth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyfourth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyfifth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentysixth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyseventh_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyeighth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyninth_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_thirteenth_page"));
+            s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentysixth_page"));
+            s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentyseventh_page"));
 
-            LOAD_HEX(vp_volume_last_order);
-            LOAD_HEX(vp_price_last_order);
-            LOAD_HEX(vp_current_price_per_liter_last_order);
+            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer"));
+            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentysixth_page"));
+            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
+
+            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal"));
+            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentysixth_page"));
+            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentyseventh_page"));
+
+            LOAD_HEX(vp_volume_last_order_integer);
+            LOAD_HEX(vp_price_last_order_integer);
+            LOAD_HEX(vp_current_price_per_liter_last_order_integer);
+
+            LOAD_HEX(vp_volume_last_order_decimal);
+            LOAD_HEX(vp_price_last_order_decimal);
+            LOAD_HEX(vp_current_price_per_liter_last_order_decimal);
+
             LOAD_HEX(vp_chosen_order_volume);
-            LOAD_HEX(vp_current_order_amount);
-            LOAD_HEX(vp_current_fuel_volume);
-            LOAD_HEX(vp_current_price_amount);
+            LOAD_HEX(vp_current_order_amount_integer);
+            LOAD_HEX(vp_current_order_amount_decimal);
+
             LOAD_HEX(vp_progress_order_bar_eleventh_page);
             LOAD_HEX(vp_progress_bar_percent_text_eleventh_page);
             LOAD_HEX(vp_progress_order_bar_twelvth_page);
             LOAD_HEX(vp_progress_bar_percent_text_twelvth_page);
 
             LOAD_HEX(vp_basic_touch);
-            LOAD_HEX(vp_next_button);
+
+            LOAD_HEX(vp_icon_trk);
+            LOAD_HEX(vp_text_trk);
+            LOAD_HEX(vp_pagination_trk);
+            LOAD_HEX(vp_choose_multi_trk);
+            LOAD_HEX(vp_fuel_volume_pinpad);
+            LOAD_HEX(vp_enterring_volume_order_pinpad);
+            LOAD_HEX(vp_set_fuel_price_pinpad);
+            LOAD_HEX(vp_text_enter_fuel_price);
+            LOAD_HEX(vp_enter_pin_code_pinpad);
+            LOAD_HEX(vp_button_service_menu);
+            LOAD_HEX(vp_button_choose_amount_trk);
+
+            LOAD_HEX(vp_set_service_pincode_pinpad);
+            LOAD_HEX(vp_text_pinpad_service_code);
+
+            LOAD_HEX(vp_text_gauges_filling_percent);
+            LOAD_HEX(vp_text_level_gauge_id);
+            LOAD_HEX(vp_button_pagination_level_gauges);
+            LOAD_HEX(vp_icon_level_gauges_volume);
+            LOAD_HEX(vp_text_upper_level_gauges_integer);
+            LOAD_HEX(vp_text_upper_level_gauges_decimal);
+            LOAD_HEX(vp_text_upper_volume_gauges_integer);
+            LOAD_HEX(vp_text_upper_volume_gauges_decimal);
+            LOAD_HEX(vp_text_weight_gauge_integer);
+            LOAD_HEX(vp_text_weight_gauge_decimal);
+            LOAD_HEX(vp_text_density_gauge_integer);
+            LOAD_HEX(vp_text_density_gauge_decimal);
+            LOAD_HEX(vp_text_lower_level_gauge_integer);
+            LOAD_HEX(vp_text_lower_level_gauge_decimal);
+            LOAD_HEX(vp_text_lower_volume_gauge_integer);
+            LOAD_HEX(vp_text_lower_volume_gauge_decimal);
+            LOAD_HEX(vp_text_total_volume_gauge_integer);
+            LOAD_HEX(vp_text_total_volume_gauge_decimal);
+
+
+            LOAD_HEX(vp_button_fuel_edit_price_chosen);
+            LOAD_HEX(vp_editing_fuel_type);
+            LOAD_HEX(vp_editing_fuel_integer_part);
+            LOAD_HEX(vp_editing_fuel_decimal_part);
+
+            LOAD_HEX(vp_button_choose_left_trk_double_trk_config);
+            LOAD_HEX(vp_button_choose_right_trk_double_trk_config);
+
+            LOAD_HEX(vp_button_choose_trk_uno_trk_config);
+
+
+            s.dwin.vp_text_fuel_price_edit_page.push_back(getHex("vp_text_first_fuel_type_edit_price"));
+            s.dwin.vp_text_fuel_price_edit_page.push_back(getHex("vp_text_second_fuel_type_edit_price"));
+            s.dwin.vp_text_fuel_price_edit_page.push_back(getHex("vp_text_third_fuel_type_edit_price"));
+            s.dwin.vp_text_fuel_price_edit_page.push_back(getHex("vp_text_fourth_fuel_type_edit_price"));
+            s.dwin.vp_text_fuel_integer_price_edit_page.push_back(getHex("vp_text_first_fuel_integer_price_edit_price"));
+            s.dwin.vp_text_fuel_integer_price_edit_page.push_back(getHex("vp_text_second_fuel_integer_price_edit_price"));
+            s.dwin.vp_text_fuel_integer_price_edit_page.push_back(getHex("vp_text_third_fuel_integer_price_edit_price"));
+            s.dwin.vp_text_fuel_integer_price_edit_page.push_back(getHex("vp_text_fourth_fuel_integer_price_edit_price"));
+            s.dwin.vp_text_fuel_decimal_price_edit_page.push_back(getHex("vp_text_first_fuel_decimal_price_edit_price"));
+            s.dwin.vp_text_fuel_decimal_price_edit_page.push_back(getHex("vp_text_second_fuel_decimal_price_edit_price"));
+            s.dwin.vp_text_fuel_decimal_price_edit_page.push_back(getHex("vp_text_third_fuel_decimal_price_edit_price"));
+            s.dwin.vp_text_fuel_decimal_price_edit_page.push_back(getHex("vp_text_fourth_fuel_decimal_price_edit_price"));
+
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_first_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_second_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_third_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_fourth_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_fifth_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_sixth_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_seventh_line_num"));
+            s.dwin.vp_nums_selected_trk.push_back(getHex("vp_text_choose_trk_eighth_line_num"));
+
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_first_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_second_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_third_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_fourth_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_fifth_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_sixth_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_seventh_line_value"));
+            s.dwin.vp_values_selected_trk.push_back(getHex("vp_text_choose_trk_eighth_line_value"));
+
+            LOAD_HEX(vp_text_select_trk_button);
+            LOAD_HEX(vp_trk_id_first_page);
+
+            LOAD_HEX(vp_back_button_service_menu);
+
+            LOAD_HEX(vp_icon_fuel_type_for_editing);
+            LOAD_HEX(vp_fuel_price_for_editing_integer);
+            LOAD_HEX(vp_fuel_price_for_editing_decimal);
+            LOAD_HEX(vp_button_pagination_fuel_type_for_edit);
+            LOAD_HEX(vp_button_chosen_fuel_type_for_edit);
 
             s.dwin.page_choose_trk                     = j["dwin"]["page_choose_trk"];
             s.dwin.page_set_nozzle_into_gasoline       = j["dwin"]["page_set_nozzle_into_gasoline"];
@@ -266,11 +531,27 @@ struct Settings {
             s.dwin.page_fuel_in_progress               = j["dwin"]["page_fuel_in_progress"];
             s.dwin.page_fuel_ended                     = j["dwin"]["page_fuel_ended"];
             s.dwin.page_good_trip                      = j["dwin"]["page_good_trip"];
-
+            s.dwin.page_print_pin                      = j["dwin"]["page_print_pin"];
+            s.dwin.page_service_menu                   = j["dwin"]["page_service_menu"];
+            s.dwin.page_level_gauges_info              = j["dwin"]["page_level_gauges_info"];
+            s.dwin.page_level_gauge_info               = j["dwin"]["page_level_gauge_info"];
+            s.dwin.page_select_fuel_type_edit          = j["dwin"]["page_select_fuel_type_edit"];
+            s.dwin.page_set_fuel_price                 = j["dwin"]["page_set_fuel_price"];
+            s.dwin.page_set_amount_trk                 = j["dwin"]["page_set_amount_trk"];
+            s.dwin.page_set_fuel_price_another_variable= j["dwin"]["page_set_fuel_price_another_variable"];
+            s.dwin.page_choose_trk_config_uno_trk      = j["dwin"]["page_choose_trk_config_uno_trk"];
+            s.dwin.page_choose_trk_config_double_trk   = j["dwin"]["page_choose_trk_config_double_trk"];
+            s.dwin.page_error_creating_order           = j["dwin"]["page_error_creating_order"];
+            s.dwin.page_error_low_fuel_level           = j["dwin"]["page_error_low_fuel_level"];
+            s.dwin.page_return_money_process           = j["dwin"]["page_return_money_process"];
+            s.dwin.page_return_money_process_end       = j["dwin"]["page_return_money_process_end"];
+            s.dwin.page_type_service_code              = j["dwin"]["page_type_service_code"];
+            s.dwin.page_select_used_trk                = j["dwin"]["page_select_used_trk"];
 
             s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
             s.dwin.icon_dispenser_idle     = j["dwin"]["icon_dispenser_idle"];
             s.dwin.icon_dispenser_order_end= j["dwin"]["icon_dispenser_order_end"];
+            s.dwin.icon_dispenser_order_end= j["dwin"]["icon_dispenser_fueling"];
 
             s.dwin.icon_fuel_type_92   = j["dwin"]["icon_fuel_type_92"];
             s.dwin.icon_fuel_type_95   = j["dwin"]["icon_fuel_type_95"];
@@ -279,11 +560,13 @@ struct Settings {
             s.dwin.icon_fuel_type_dt   = j["dwin"]["icon_fuel_type_dt"];
 
             s.dwin.text_len_trk_id = j["dwin"]["text_len_trk_id"];
-            s.dwin.text_len_order_amount = j["dwin"]["text_len_order_amount"];
-            s.dwin.text_len_order_volume = j["dwin"]["text_len_order_volume"];
+            s.dwin.text_len_order_decimal = j["dwin"]["text_len_order_decimal"];
+            s.dwin.text_len_order_integer = j["dwin"]["text_len_order_integer"];
             s.dwin.text_len_fuel_type = j["dwin"]["text_len_fuel_type"];
             s.dwin.text_len_percent_progress_bar = j["dwin"]["text_len_percent_progress_bar"];
             s.dwin.text_len_date_time_footer = j["dwin"]["text_len_date_time_footer"];
+            s.dwin.text_len_fuel_price = j["dwin"]["text_len_fuel_price"];
+            s.dwin.text_len_fuel_integer = j["dwin"]["text_len_fuel_integer"];
 
             s.dwin.icon_dispenser_idle = j["dwin"]["icon_dispenser_idle"];
             s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
@@ -293,6 +576,28 @@ struct Settings {
 
             s.APIDispenser.authorize = j["api.dispenser_command"]["authorize"];
             s.APIDispenser.close = j["api.dispenser_command"]["close"];
+
+            if (j.contains("gas.station") && j["gas.station"].is_object()) {
+                auto& gas_station_node = j["gas.station"];
+
+                s.gas_station.amount_trk = gas_station_node.value("amount_trk", 0);
+                s.gas_station.service_code = gas_station_node.value("service_code", 0000);
+
+
+                if (gas_station_node.contains("fuel_price") && gas_station_node["fuel_price"].is_object()) {
+                    for (auto& el : gas_station_node["fuel_price"].items()) {
+
+                        s.gas_station.fuel_prices[el.key()] = el.value().get<std::string>();
+                    }
+                }
+
+                if (gas_station_node.contains("used_trks") && gas_station_node["used_trks"].is_array()) {
+                    for (const auto& trk_id : gas_station_node["used_trks"]) {
+                        s.gas_station.used_trks.push_back(trk_id.get<std::string>());
+                    }
+                }
+            }
+
         } catch (const std::exception& e) {
             std::cerr << "[Config] Error loading settings: " << e.what() << std::endl;
             // default

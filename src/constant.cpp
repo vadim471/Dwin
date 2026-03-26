@@ -10,7 +10,7 @@ namespace bridge {
     const std::string HTTP_LAYER = "HTTP";
     const std::string UART_LAYER = "UART";
     const std::string HTTP_UNAUTHORIZED = "HTTP/1.1 401";
-    const std::string CONFIG = "config.json";
+    const std::string CONFIG = "/home/vadim/gas_station_data/config.json";
 
     const std::string GET_PRODUCTS = "get_products";
     const std::string GET_IO_PARAMETERS = "get_io_parameters";
@@ -18,8 +18,30 @@ namespace bridge {
     const std::string GET_DISPENSER_STATUS = "get_dispenser_status";
     const std::string GET_EVENTS = "get_events";
     const std::string GET_TASKS = "get_tasks";
+    const std::string GET_TANKERS = "get_takers";
 
-    const std::string USER_TOUCH = "USER_TOUCH";
+    const std::string USER_TOUCH_VOLUME_BUTTON = "VOLUME_BUTTON";
+    const std::string USER_TOUCH_PAGINATION_TRK_BUTTON = "PAGINATION_TRK";
+    const std::string USER_TOUCH_PAGINATION_FUEL_BUTTON = "PAGINATION_FUEL";
+    const std::string USER_TOUCH_PAGINATION_LEVEL_GAUGE_BUTTON = "PAGINATION_LEVEL_GAUGE";
+    const std::string USER_TOUCH_CHOOSE_MULTI_TRK_BUTTON = "CHOOSE_MULTI_TRK";
+    const std::string USER_TOUCH_CHOOSE_TRK_BUTTON = "CHOOSE_TRK";
+    const std::string USER_TOUCH_BASIC_TOUCH_BUTTON = "BASIC_TOUCH";
+    const std::string USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON = "BASIC_TOUCH_BEGIN_FUELLING";
+    const std::string USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON = "BASIC_TOUCH_CREATE_NEW_ORDER";
+    const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON = "PIN_PAD_ENTER_FUEL_EDITING";
+    const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON = "PIN_PAD_ENTER_FUEL_VOLUME";
+    const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON = "SERVICE_MENU_LEVEL_GAUGE";
+    const std::string USER_TOUCH_SERVICE_MENU_CHANGE_FUEL_PRICE_BUTTON = "SERVICE_MENU_CHANGE_FUEL_PRICE";
+    const std::string USER_TOUCH_AMOUNT_TRK_BUTTON = "AMOUNT_TRK";
+    const std::string USER_TOUCH_CHOOSE_FUEL_FOR_EDIT_BUTTON = "CHOOSE_FUEL_FOR_EDIT";
+    const std::string USER_TOUCH_ACCEPT_SELECTED_TRK_BUTTON = "ACCEPT_SELECTED_TRK";
+    const std::string USER_TOUCH_RESET_SELECTED_TRK_BUTTON = "RESET_SELECTED_TRK";
+    const std::string USER_TOUCH_CLOSE_ORDER_BUTTON = "CLOSE_ORDER";
+    const std::string USER_TOUCH_SET_USED_TRK_BUTTON = "SET_USED_TRK";
+    const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON = "TAP_ON_USED_TRK";
+
+
     const std::string HTTP_RESPONSE = "HTTP_RESPONSE";
 
     const std::string DISPENSER_IDLE = "DSP_IDLE";
@@ -31,6 +53,15 @@ namespace bridge {
     const std::string DISPENSER_OFFLINE = "DSP_OFFLINE";
     const std::string DISPENSER_ERROR = "DSP_ERROR";
 
+    const std::string UPPER_VOLUME = "IO_UPPER_VOLUME";
+    const std::string LOWER_VOLUME = "IO_LOWER_VOLUME";
+    const std::string TOTAL_VOLUME = "IO_TOTAL_VOLUME";
+    const std::string UPPER_LEVEL = "IO_UPPER_LEVEL";
+    const std::string LOWER_LEVEL = "IO_LOWER_LEVEL";
+    const std::string FILLING = "IO_FILLING";
+    const std::string DENSITY = "IO_DENSITY";
+    const std::string WEIGHT = "IO_WEIGHT";
+
     const std::string RATING_PR_92 = "PR_92";
     const std::string RATING_PR_95 = "PR_95";
     const std::string RATING_PR_98 = "PR_98";
@@ -38,6 +69,17 @@ namespace bridge {
     const std::string RATING_PR_DIESEL = "PR_DIESEL";
 
     const std::string API_DISPENSER = "API_DISPENSER";
+    const std::string API_IO = "API_IO";
+
+    const std::string ORDER_IDLE = "ORD_IDLE";
+    const std::string ORDER_READY = "ORD_READY";
+    const std::string ORDER_AUTHORIZED = "ORD_AUTHORIZED";
+    const std::string ORDER_IN_PROGRESS = "ORD_IN_PROGRESS";
+    const std::string ORDER_DELIVERED = "ORD_DELIVERED";
+    const std::string ORDER_INTERRUPTED = "ORD_INTERRUPTED";
+    const std::string ORDER_FAILED = "ORD_FAILED";
+
+    const std::string LOW_VOLUME = "Product level too low";
 
     const std::string FUEL_VOLUME_ORDER_TYPE = "OTP_VOLUME";
     const std::string CREATE_ORDER = "create_order";
@@ -45,11 +87,14 @@ namespace bridge {
 
     const std::string DWIN_MESSAGE_TYPE_CHANGE_PAGE = "change_page";
     const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER = "change_number";
+    const std::string DWIN_MESSAGE_TYPE_WRITE_VP = "write_vp";
 
     const int FUEL_TYPE_LEN = 6;
     const int TRK_ID_LEN = 6;
 
-    const int TRK_FUEL_PRICE = 4100;
     const int VP_TEXT_STEP = 4;
+
+    const int POCO_ERROR = 599;
+
 
 }

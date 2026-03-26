@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="initp-c" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Numbers">
+				<Option output="bin/Numbers/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Numbers/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+			</Target>
+			<Target title="PipesServer">
+				<Option output="bin/PipesServer/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/PipesServer/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_NAMED_PIPE" />
+				</Compiler>
+			</Target>
+			<Target title="PipesClient">
+				<Option output="bin/PipesClient/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/PipesClient/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_NAMED_PIPE" />
+				</Compiler>
+			</Target>
+			<Target title="Aes">
+				<Option output="bin/Aes/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Aes/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Des">
+				<Option output="bin/Des/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Des/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Crc">
+				<Option output="bin/Crc/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Crc/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Test">
+				<Option output="bin/Numbers/initp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Numbers/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-DPOSIX" />
+			<Add option="-D_DEFAULT_SOURCE" />
+			<Add directory="include" />
+		</Compiler>
+		<Unit filename="aes.c">
+			<Option compilerVar="CC" />
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="crc.c">
+			<Option compilerVar="CC" />
+			<Option target="Crc" />
+		</Unit>
+		<Unit filename="des.c">
+			<Option compilerVar="CC" />
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="include/initp/helpers/manual_value.h">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="include/initp/helpers/time_filter.h">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="include/initp/platform/all.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/console.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/keyboard.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/named_pipe.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/serial_port.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/shared.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/usb.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/all.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/debug.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/system.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/time.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/aes.h">
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="include/initp/tools/all.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/ascii.h">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="include/initp/tools/crc.h">
+			<Option target="Numbers" />
+			<Option target="Crc" />
+		</Unit>
+		<Unit filename="include/initp/tools/decimal.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/des.h">
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="include/initp/tools/format.h">
+			<Option target="Numbers" />
+			<Option target="Crc" />
+		</Unit>
+		<Unit filename="include/initp/tools/number.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="numbers.c">
+			<Option compilerVar="CC" />
+			<Option target="Numbers" />
+		</Unit>
+		<Unit filename="pipes_client.c">
+			<Option compilerVar="CC" />
+			<Option target="PipesClient" />
+		</Unit>
+		<Unit filename="pipes_server.c">
+			<Option compilerVar="CC" />
+			<Option target="PipesServer" />
+		</Unit>
+		<Unit filename="source/initp/helpers/manual_value.c">
+			<Option compilerVar="CC" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="source/initp/helpers/time_filter.c">
+			<Option compilerVar="CC" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="source/initp/platform/console_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/console_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/keyboard_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/keyboard_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/named_pipe_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="PipesServer" />
+			<Option target="PipesClient" />
+		</Unit>
+		<Unit filename="source/initp/platform/named_pipe_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/serial_port_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/serial_port_stm32f407vg.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/serial_port_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/shared_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/shared_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/usb.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/system/system_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/system/system_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/system/time_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="PipesServer" />
+			<Option target="PipesClient" />
+		</Unit>
+		<Unit filename="source/initp/system/time_winapi.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/tools/aes.c">
+			<Option compilerVar="CC" />
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="source/initp/tools/ascii.c">
+			<Option compilerVar="CC" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="source/initp/tools/crc.c">
+			<Option compilerVar="CC" />
+			<Option target="Crc" />
+		</Unit>
+		<Unit filename="source/initp/tools/decimal.c">
+			<Option compilerVar="CC" />
+			<Option target="Numbers" />
+		</Unit>
+		<Unit filename="source/initp/tools/des.c">
+			<Option compilerVar="CC" />
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="source/initp/tools/format.c">
+			<Option compilerVar="CC" />
+			<Option target="PipesServer" />
+			<Option target="PipesClient" />
+			<Option target="Des" />
+			<Option target="Crc" />
+		</Unit>
+		<Unit filename="source/initp/tools/number.c">
+			<Option compilerVar="CC" />
+			<Option target="Numbers" />
+		</Unit>
+		<Unit filename="test.c">
+			<Option compilerVar="CC" />
+			<Option target="Test" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

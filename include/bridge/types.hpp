@@ -18,6 +18,28 @@ namespace bridge {
         Bytes data;
     };
 
+    enum class ErrorSeverity {
+        WARNING,
+        CRITICAL,
+        FATAL
+    };
+
+    enum class ErrorSource {
+        HTTP,
+        UART,
+        NETWORK,
+        SYSTEM
+    };
+
+    struct ErrorEvent {
+        ErrorSeverity severity;
+        ErrorSource source;
+        int code;
+        std::string description;
+        std::string context;
+
+    };
+
     struct Message {
         uint64_t id = 0;
         std::string type; //button_click, update
@@ -25,6 +47,7 @@ namespace bridge {
         std::string url; //http url response
         Bytes payload; //deserialized data
         std::string resource_id; // id replace in URL
+        int status_code;
         std::chrono::system_clock::time_point timestamp;
     };
 
@@ -41,6 +64,30 @@ namespace bridge {
         std::string price;
         std::string order_id;
         std::string product_id;
+    };
+
+    struct DatabaseOrder {
+        std::string id = "";
+        uint64_t time_begin = 0;
+        uint64_t time_end = 0;
+        std::string status = "";
+        bool complete = false;
+        bool closed = false;
+        std::string dispenser_id = "";
+        std::string product_id = "";
+        std::string product_rating = "";
+        std::string order_type = ""; // По объему / полный бак / сумма
+        double order_price = 0.0; // Цена на ТРК
+        double order_value = 0.0; // Выбранная сумма или объем
+        double order_amount = 0.0; // Сумма на ТРК
+        double order_volume = 0.0; // Объем на ТРК
+        double amount = 0.0; // Текущая сумма
+        double volume = 0.0; // Текущий объем
+        bool round_to_order =false; // Округлить до суммы заказа
+
+        DatabaseOrder() = default;
+
+        DatabaseOrder(const std::string& id) : id(id) {}
     };
 
     struct HttpRequestTask {
@@ -65,5 +112,32 @@ namespace bridge {
         std::string product_id;
 
         Dispenser(const std::string &_id) : id(_id), status(DISPENSER_IDLE) {}
+    };
+
+    struct LevelGauge {
+        std::string id;
+        std::string upper_volume; // Объём основного продукта (м³).
+        std::string lower_volume; // Объём подтоварной жидкости (м³).
+        std::string total_volume; // Общий объём (м³).
+        std::string upper_level; // Уровень основного поплавка (м).
+        std::string lower_level; // Уровень нижнего поплавка (м).
+        std::string filling; // Заполнение (%).
+        std::string density; // Плотность (кг/м³).
+        std::string weight; // Масса (кг).
+
+        LevelGauge(const std::string& _id) : id(_id) {}
+    };
+
+    struct Tanker {
+        std::string id;
+        std::string product_id;
+        std::string title;
+        bool active;
+        bool filled;
+        std::string lock;
+        std::string minimal;
+        std::vector<std::string> level_gauge_ids;
+
+        Tanker(const std::string& _id) : id(_id) {}
     };
 }

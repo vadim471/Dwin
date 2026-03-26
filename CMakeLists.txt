@@ -3,7 +3,7 @@ project(dwin_exmpl)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
 find_package(Threads REQUIRED)
 find_package(OpenSSL)
 find_package(Poco REQUIRED COMPONENTS Net Crypto Util Foundation)
@@ -46,7 +46,11 @@ add_executable(dwin_exmpl src/main.cpp
         src/constant.cpp
         include/bridge/DwinCommands.hpp
         include/bridge/PrimeCommands.hpp
+        include/bridge/Logger.hpp
+        src/Logger.cpp
 )
+
+target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK)
 
 target_link_libraries(dwin_exmpl
         ${Boost_LIBRARIES}

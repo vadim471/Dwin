@@ -111,27 +111,40 @@ namespace bridge {
                 if (response_data.status_code == 401 || response_data.status_code == 403) {
                     m_session_cookie.clear();
                 }
-
             }
 
             if (m_receive_handler) {
                 RawData raw_data;
 
-                // URL запроса.
-                raw_data.data.insert(raw_data.data.end(), response_data.url.begin(), response_data.url.end());
-
+                std::string string_status_code = std::to_string(response_data.status_code);
+                raw_data.data.insert(raw_data.data.end(), string_status_code.begin(), string_status_code.end());
                 raw_data.data.push_back('\0');
 
-                // Тело JSON.
+                raw_data.data.insert(raw_data.data.end(), response_data.url.begin(), response_data.url.end());
+                raw_data.data.push_back('\0');
                 raw_data.data.insert(raw_data.data.end(), response_data.body.begin(), response_data.body.end());
 
-                // Склеил URL + JSON Body.
                 m_receive_handler(raw_data, HTTP_LAYER);
             }
 
         } catch (Poco::Exception& ex) {
             std::cerr << "HTTP [POCO] Error: " << ex.displayText() << std::endl;
             m_session.reset();
+            if (m_receive_handler) {
+                RawData raw_data;
+
+                std::string string_status_code = std::to_string(POCO_ERROR);
+                raw_data.data.insert(raw_data.data.end(), string_status_code.begin(), string_status_code.end());
+                raw_data.data.push_back('\0');
+
+                raw_data.data.insert(raw_data.data.end(), uri.begin(), uri.end());
+                raw_data.data.push_back('\0');
+
+                std::string err_body = "{\"error\": \"" + ex.displayText() + "\"}";
+                raw_data.data.insert(raw_data.data.end(), err_body.begin(), err_body.end());
+
+                m_receive_handler(raw_data, HTTP_LAYER);
+            }
         }
     }
 
