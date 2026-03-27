@@ -11,6 +11,11 @@ namespace bridge {
     // Logic layers
     extern const std::string HTTP_LAYER;
     extern const std::string UART_LAYER;
+    extern const std::string PIPE_LAYER;
+
+    //Arkaim const
+    extern const std::string PAYMENT_WITHOUT_PINCODE;
+    extern const std::string PAYMENT_WITH_PINCODE;
 
     // Path to config file
     extern const std::string CONFIG;

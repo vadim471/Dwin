@@ -176,6 +176,9 @@ namespace bridge {
         // Создание заказа и отправка его на сервер.
         void createOrder(MessageLayer& core, int value, int exponent, int price, int price_exponent) const;
 
+        // Запрос на выполнение платежа по карте CL2_CMD_PAY_TRANSACTION.
+        void createPayment();
+
         // Команда на начало пролива ТРК.
         void authorizeOnServer(MessageLayer& core);
 

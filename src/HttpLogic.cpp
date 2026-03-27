@@ -315,6 +315,11 @@ namespace bridge {
         std::tie(value_price, exponent_price) = utility::formatFloatStringToInt(product->price);
 
         createOrder(core, volume, exponent, value_price, exponent_price);
+        createPayment();
+    }
+
+    void createPayment() {
+
     }
 
     void HttpLogic::processHandleHttpError(const Message &message, MessageLayer &core) {
@@ -759,6 +764,7 @@ namespace bridge {
     }
 
     void HttpLogic::renderDispenser(MessageLayer &core) {
+        // TODO поддержка экранов с моно/дуо ТРК
         if (m_selected_dispensers.empty()) return;
 
         //const auto &trk = m_dispensers[m_current_dispenser_index];

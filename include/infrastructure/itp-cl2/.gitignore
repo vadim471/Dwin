@@ -1,0 +1,6 @@
+[Bb]in
+[Oo]bj
+doxygen/html
+*.log
+*.depend
+*.layout

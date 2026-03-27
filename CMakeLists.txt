@@ -11,6 +11,11 @@ find_package(Poco REQUIRED COMPONENTS Net Crypto Util Foundation)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/infrastructure)
+include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/itp-c/include)
+include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/itp-cpp/include)
+include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/initp-c/include)
+include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/initp-cpp/include)
 
 configure_file(
         ${CMAKE_SOURCE_DIR}/include/bridge/config.json
@@ -48,6 +53,11 @@ add_executable(dwin_exmpl src/main.cpp
         include/bridge/PrimeCommands.hpp
         include/bridge/Logger.hpp
         src/Logger.cpp
+        include/bridge/ArkaimParser.hpp
+        src/ArkaimParser.cpp
+        include/bridge/ArkaimLogic.hpp
+        src/PipeTransport.cpp
+        src/ArkaimLogic.cpp
 )
 
 target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK)

@@ -232,6 +232,10 @@ struct Settings {
         std::vector<std::string> used_trks;
     } gas_station;
 
+    struct Pipe {
+        std::string name;
+    } pipe;
+
     static Settings load(const std::string& filename) {
         Settings s;
         try {
@@ -576,6 +580,8 @@ struct Settings {
 
             s.APIDispenser.authorize = j["api.dispenser_command"]["authorize"];
             s.APIDispenser.close = j["api.dispenser_command"]["close"];
+
+            s.pipe.name = j["pipe"]["name"];
 
             if (j.contains("gas.station") && j["gas.station"].is_object()) {
                 auto& gas_station_node = j["gas.station"];

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="itp-cpp" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/itp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-D_ITP_TRACE_BUFFERS" />
+					<Add option="-DITP_ENABLE_THREAD_SAFETY" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/itp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="Frame">
+				<Option output="bin/Frame/itp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Frame/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+					<Add option="-DITP_ENABLE_THREAD_SAFETY" />
+				</Compiler>
+			</Target>
+			<Target title="Socket">
+				<Option output="bin/Socket/itp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Socket/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+					<Add option="-DITP_ENABLE_THREAD_SAFETY" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-std=c99" />
+			<Add option="-DPOSIX" />
+			<Add option="-D_DEFAULT_SOURCE" />
+			<Add option="-DITP_EXTEND_CALLBACKS" />
+			<Add directory="../initp-c/include" />
+			<Add directory="../initp-cpp/include" />
+			<Add directory="../itp-c/include" />
+			<Add directory="include" />
+		</Compiler>
+		<Unit filename="../initp-c/source/initp/platform/serial_port_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../initp-c/source/initp/system/time_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../initp-cpp/source/initp/platform/socket.cpp">
+			<Option target="Socket" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/array.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/command.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/endpoint.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/error.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/frame.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Frame" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/handler.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/list.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/node.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/package.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/protocol.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/queue.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/root.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../itp-c/source/itp/transmit.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="debug.cpp" />
+		<Unit filename="frame.cpp">
+			<Option target="Frame" />
+		</Unit>
+		<Unit filename="include/itp/callback.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/config.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/endpoint.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/error.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/frame.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/itp.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/logger.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="include/itp/named_pipe.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="include/itp/root.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/serial_port.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="include/itp/socket.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="include/itp/stack_trace.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/tunnel.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Frame" />
+		</Unit>
+		<Unit filename="include/itp/types.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/usb.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="main.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="socket.cpp">
+			<Option target="Socket" />
+		</Unit>
+		<Unit filename="source/itp/callback.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="source/itp/root.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

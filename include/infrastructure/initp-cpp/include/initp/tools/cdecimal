@@ -1,0 +1,6 @@
+
+extern "C" {
+
+#include <initp/tools/decimal.h>
+
+}

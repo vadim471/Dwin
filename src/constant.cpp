@@ -9,8 +9,12 @@ namespace bridge {
 
     const std::string HTTP_LAYER = "HTTP";
     const std::string UART_LAYER = "UART";
+    const std::string PIPE_LAYER = "PIPE";
     const std::string HTTP_UNAUTHORIZED = "HTTP/1.1 401";
     const std::string CONFIG = "/home/vadim/gas_station_data/config.json";
+
+    const std::string PAYMENT_WITH_PINCODE = "PAYMENT_WITH_PIN";
+    const std::string PAYMENT_WITHOUT_PINCODE = "PAYMENT_WITHOUT_PINCODE";
 
     const std::string GET_PRODUCTS = "get_products";
     const std::string GET_IO_PARAMETERS = "get_io_parameters";
