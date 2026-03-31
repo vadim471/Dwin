@@ -5,13 +5,17 @@
 #pragma once
 
 #include "bridge/ILogicHandler.hpp"
+#include "bridge/PaymentData.hpp"
 #include "bridge/types.hpp"
-#include <boost/asio.hpp>
-#include <memory>
-#include <atomic>
-#include <string>
-
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/io_service.hpp>
+#include <itp/entity.hpp>
 #include <itp/frame.hpp>
+
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <string>
 #include "Settings.hpp"
 
 namespace bridge {
@@ -21,48 +25,58 @@ namespace bridge {
     class ArkaimLogic : public ILogicHandler, public std::enable_shared_from_this<ArkaimLogic> {
     public:
         ArkaimLogic(const Settings &settings, boost::asio::io_service &ios);
-        ~ArkaimLogic() override = default;
+        ~ArkaimLogic() override;
 
         void handle(const Message &message, MessageLayer &core) override;
         void startLoop(MessageLayer &core);
 
     private:
-        // --- Сетевые запросы к Arkaim (аналог HTTP запросов) ---
-        void checkCard(MessageLayer &core);
-        void closeShift(MessageLayer &core);
-        void getInfo(MessageLayer &core);
-        void transaction(MessageLayer &core);
-        void confirm(MessageLayer &core);
-        void cancelPayment(MessageLayer &core);
+        class TerminalEntity;
 
-        // --- Обработчики ответов от Arkaim ---
-        void processArkaimResponse(const Message &message, MessageLayer &core);
-        void onCheckCardResponse(itp::frame& response, MessageLayer &core);
-        void onTransactionResponse(itp::frame& response, MessageLayer &core);
-        void onConfirmResponse(itp::frame& response, MessageLayer &core);
-        void onCancelResponse(itp::frame& response, MessageLayer &core);
+        void ensurePipeSession();
+        void schedulePipePoll();
+        void submitPendingTransaction();
 
-        // --- Таймеры и поллинг (если требуется пинговать терминал) ---
         void scheduleNextTick(MessageLayer &core);
         void onTimerExpired(const boost::system::error_code &ec, MessageLayer &core);
 
-        // --- Переменные состояния ---
+        void requestApiList();
+        void requestCheckCard();
+        bool requestTransaction(const PaymentRequestData& payment);
+        void requestConfirm();
+        void requestCancel();
+        void requestCloseShift();
+
+        void onConnect(uint16_t error);
+        void onGetApiList(uint16_t error, itp::frame& response);
+        void onCheckCard(uint16_t error, itp::frame& response);
+        void onTransaction(uint16_t error, itp::frame& response);
+        void onConfirm(uint16_t error, itp::frame& response);
+        void onCancel(uint16_t error, itp::frame& response);
+        void onCloseShift(uint16_t error, itp::frame& response);
+
         Settings m_settings;
+        boost::asio::io_service& m_ios;
         boost::asio::deadline_timer m_timer;
+        boost::asio::deadline_timer m_pipe_poll_timer;
+        std::unique_ptr<TerminalEntity> m_terminal;
+
         std::atomic<bool> m_waitingResponse;
+        std::atomic<bool> m_connected;
+        std::atomic<bool> m_initialized;
 
-        uint64_t m_last_transaction_id = 0;
-        uint8_t m_reader_address = 3;
+        bool m_connecting;
+        bool m_has_pending_payment;
+        uint32_t m_connection_attempts;
 
-        // Данные текущего заказа
-        std::string m_current_card_number;
-        std::string m_current_fuel_id;
-        uint32_t m_current_price_value = 0;
-        uint8_t m_current_price_decimal = 2;
-        uint32_t m_current_volume_value = 0;
-        uint8_t m_current_volume_decimal = 2;
-        uint32_t m_current_amount_value = 0;
-        uint8_t m_current_amount_decimal = 2;
+        std::atomic<uint64_t> m_last_transaction_id;
+        uint8_t m_payment_address;
+        uint8_t m_reader_address;
+        uint32_t m_reader_api_type;
+        std::string m_reader_unique_id;
+
+        std::mutex m_payment_mutex;
+        PaymentRequestData m_current_payment;
     };
 
 }

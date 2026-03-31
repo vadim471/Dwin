@@ -14,8 +14,8 @@ namespace bridge {
     extern const std::string PIPE_LAYER;
 
     //Arkaim const
-    extern const std::string PAYMENT_WITHOUT_PINCODE;
-    extern const std::string PAYMENT_WITH_PINCODE;
+    extern const std::string PAY_TRANSACTION;
+    extern const std::string ARKAIM_REQUEST;
 
     // Path to config file
     extern const std::string CONFIG;

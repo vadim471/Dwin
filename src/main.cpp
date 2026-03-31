@@ -7,13 +7,11 @@
 #include <iostream>
 
 #include "bridge/ArkaimLogic.hpp"
-#include "bridge/ArkaimParser.hpp"
 #include "bridge/DwinLogic.hpp"
 #include "bridge/HttpLogic.hpp"
 #include "bridge/HttpParser.hpp"
 #include "bridge/HttpTransport.hpp"
 #include "bridge/constant.hpp"
-#include "bridge/PipeTransport.hpp"
 
 using namespace bridge;
 
@@ -62,12 +60,8 @@ int main() {
         auto http_trans = std::make_shared<HttpTransport>("10.9.7.228", 12080, "user", "cloud");
         auto http_pars  = std::make_shared<HttpParser>(cfg);
 
-        auto pipe_trans = std::make_shared<PipeTransport>(ios, "InitPlusArkaimPayPipe"); // заменить на настройки
-        auto arkaim_pars = std::make_shared<ArkaimParser>();
-
         core.registerChannel(UART_LAYER, dwin_trans, dwin_pars);
         core.registerChannel(HTTP_LAYER, http_trans, http_pars);
-        core.registerChannel(PIPE_LAYER, pipe_trans, arkaim_pars);
 
         auto dwin_logic = std::make_shared<DwinLogic>(cfg);
         core.registerLogic(UART_LAYER, dwin_logic);
@@ -91,6 +85,7 @@ int main() {
         bool keepRunning = true;
         Message pageMsg;
         http_logic->startLoop(core);
+        arkaim_logic->startLoop(core);
 
         while (keepRunning) {
             char choice;

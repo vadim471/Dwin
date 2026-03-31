@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package initp.ssl;
+
+message certificate_config {
+    string cl = 1;
+    string ca = 2;
+    string key = 3;
+}

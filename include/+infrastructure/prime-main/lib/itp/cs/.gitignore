@@ -1,0 +1,6 @@
+[Pp]ackages
+Debug
+Release
+.vs
+*.filters
+*.user

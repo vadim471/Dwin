@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="itp-c" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_ENABLE_ALL_CHECKS" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-D_ITP_TRACE_BUFFERS" />
+					<Add option="-DITP_USE_STACK_TRACE" />
+					<Add option="-DITP_BUFFER_SIZE=0xFFFF" />
+				</Compiler>
+				<Linker>
+					<Add library="backtrace" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/itp-c" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-fPIC" />
+					<Add option="-DITP_EXTEND_CALLBACKS" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-static-libgcc" />
+				</Linker>
+			</Target>
+			<Target title="Memory">
+				<Option output="bin/Memory/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Memory/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_ENABLE_ALL_CHECKS" />
+					<Add option="-DITP_MEMORY_CUSTOM" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+					<Add option="-DITP_BUFFER_SIZE=64" />
+					<Add option="-DITP_WAIT_ACKNOWLEDGE=2000" />
+					<Add option="-DITP_WAIT_DATA=2000" />
+					<Add option="-DITP_MAX_INPUT_PACKAGES=50" />
+					<Add option="-DITP_MAX_OUTPUT_PACKAGES=50" />
+					<Add option="-DITP_MAX_PENDING_FRAMES=50" />
+					<Add option="-DTEST_FRAMES_COUNT=50" />
+					<Add option="-DTEST_DATA_SIZE=30" />
+				</Compiler>
+			</Target>
+			<Target title="Pending">
+				<Option output="bin/Pending/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Pending/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+				</Compiler>
+			</Target>
+			<Target title="List">
+				<Option output="bin/List/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/List/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_MEMORY_CUSTOM" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+				</Compiler>
+			</Target>
+			<Target title="Queue">
+				<Option output="bin/Queue/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Queue/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG" />
+					<Add option="-DITP_MEMORY_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+				</Compiler>
+			</Target>
+			<Target title="Tests">
+				<Option output="bin/Bus/itp-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Bus/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DITP_DEBUG_CUSTOM" />
+					<Add option="-DITP_TRACE_BUFFERS" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-DPOSIX" />
+			<Add option="-D_DEFAULT_SOURCE" />
+			<Add directory="include" />
+			<Add directory="../../../util/c/include" />
+		</Compiler>
+		<Unit filename="../../../util/c/source/initp/platform/serial_port_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/system/time_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/crc.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="debug.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Memory" />
+			<Option target="Tests" />
+		</Unit>
+		<Unit filename="include/itp/array.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/bus.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/callback.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/command.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/config.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/debug.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/endpoint.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/error.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/error_code.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/frame.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/handler.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/itp.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/list.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/memory.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/node.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/package.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/protocol.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/queue.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/root.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/stack_trace.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/symbol.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/transmit.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/tunnel.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/types.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="list.c">
+			<Option compilerVar="CC" />
+			<Option target="List" />
+		</Unit>
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="memory.c">
+			<Option compilerVar="CC" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="memory_test.c">
+			<Option compilerVar="CC" />
+			<Option target="Memory" />
+		</Unit>
+		<Unit filename="memory_trace.c">
+			<Option compilerVar="CC" />
+			<Option target="Memory" />
+		</Unit>
+		<Unit filename="pending.c">
+			<Option compilerVar="CC" />
+			<Option target="Pending" />
+		</Unit>
+		<Unit filename="queue.c">
+			<Option compilerVar="CC" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="shared.c">
+			<Option compilerVar="CC" />
+			<Option target="Release" />
+			<Option target="Memory" />
+		</Unit>
+		<Unit filename="source/itp/array.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/bus.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Tests" />
+		</Unit>
+		<Unit filename="source/itp/command.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/endpoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/itp/error.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/frame.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/itp/handler.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/list.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/node.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/package.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/protocol.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/queue.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/root.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/stack_trace.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="source/itp/transmit.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+			<Option target="Pending" />
+			<Option target="List" />
+			<Option target="Queue" />
+		</Unit>
+		<Unit filename="source/itp/tunnel.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Memory" />
+		</Unit>
+		<Unit filename="tests.c">
+			<Option compilerVar="CC" />
+			<Option target="Tests" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

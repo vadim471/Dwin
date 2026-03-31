@@ -4,53 +4,95 @@
 
 #include "bridge/ArkaimParser.hpp"
 #include <iostream>
-#include "infrastructure/itp-c/include/itp/error.h"
+
+extern "C" {
+#include <itp/protocol.h>
+#include <itp/package.h>
+#include <itp/frame.h>
+#include <itp/error_code.h>
+#include <itp/memory.h>
+#include <itp/transmit.h>
+}
 
 namespace bridge {
 
     std::vector<Message> ArkaimParser::parse(const RawData& input, const std::string& sourceName) {
         std::vector<Message> messages;
 
-        // 1. Дописываем новые данные в конец буфера
         m_buffer.insert(m_buffer.end(), input.data.begin(), input.data.end());
 
-        // 2. Ищем заголовки и длину пакета Arkaim (CL2)
-        // Примерная структура кадра CL2: [Header/Sync] [Length] [Command] [Payload] [CRC]
-        // Это псевдокод, так как точный формат зависит от реализации Arkaim CL2
+        while (m_buffer.size() >= 8) {
 
-        while (m_buffer.size() >= 5) { // Минимальная длина фрейма
-
-            // Если в протоколе CL2 есть стартовый байт (например 0x02 или 0x5A)
-            /*
-            if (m_buffer[0] != SYNC_BYTE) {
-                m_buffer.erase(m_buffer.begin());
-                continue;
+            itp_buffer_t temp_buffer;
+            temp_buffer.data = m_buffer.data();
+            temp_buffer.size = m_buffer.size();
+            temp_buffer.length = m_buffer.size();
+            temp_buffer.complete = 0;
+            temp_buffer.time = 0;
+            
+            // Проверяем структуру пакета
+            itp_size_t expected_size = 0;
+            itp_parse_status_t check_result = itp_check_package(&temp_buffer, &expected_size);
+            
+            if (check_result == ITP_PARSE_OK) {
+                // Пакет полный и корректный
+                itp_error_code_t error = ITP_ERRC_NONE;
+                itp_package_tp package = itp_extract_package(&temp_buffer, &error);
+                
+                if (package && error == ITP_ERRC_NONE) {
+                    itp_frame_tp frame = itp_parse_package(package, &error);
+                    
+                    if (frame && error == ITP_ERRC_NONE) {
+                        Message msg;
+                        msg.source = sourceName;
+                        msg.type = "ARKAIM_RESPONSE";
+                        msg.timestamp = std::chrono::system_clock::now();
+                        
+                        // Сохраняем command ID для маршрутизации
+                        msg.resource_id = std::to_string(frame->command);
+                        
+                        // Копируем payload данные
+                        if (frame->data && frame->length > 0) {
+                            msg.payload.assign(frame->data, frame->data + frame->length);
+                        }
+                        
+                        messages.push_back(msg);
+                        
+                        // Удаляем обработанные байты
+                        size_t consumed = temp_buffer.complete;
+                        if (consumed > 0) {
+                            m_buffer.erase(m_buffer.begin(), m_buffer.begin() + consumed);
+                        } else {
+                            // Если complete не установлен, используем размер пакета
+                            m_buffer.erase(m_buffer.begin(), m_buffer.begin() + package->size);
+                        }
+                        
+                        itp_free_frame(frame);
+                    } else {
+                        std::cerr << "[ArkaimParser] Failed to parse package to frame" << std::endl;
+                        m_buffer.erase(m_buffer.begin());
+                    }
+                    
+                    itp_free_package(package);
+                } else {
+                    std::cerr << "[ArkaimParser] Failed to extract package" << std::endl;
+                    m_buffer.erase(m_buffer.begin());
+                }
+            } 
+            else if (check_result == ITP_PARSE_NOT_END) {
+                // Недостаточно данных, ждем еще
+                if (expected_size > 0 && m_buffer.size() < expected_size) {
+                    break;
+                }
+            } 
+            else {
+                itp_parse_status_t repair_result = itp_repair_offset(&temp_buffer);
+                if (repair_result == ITP_PARSE_OK && temp_buffer.complete > 0) {
+                    m_buffer.erase(m_buffer.begin(), m_buffer.begin() + temp_buffer.complete);
+                } else {
+                    m_buffer.erase(m_buffer.begin());
+                }
             }
-            */
-
-            // Допустим, 2-й и 3-й байты — это длина
-            // uint16_t packetLen = (m_buffer[1] << 8) | m_buffer[2];
-            // size_t totalSize = packetLen + header_size;
-
-            // Заглушка: если пока не умеем искать длину, просто отдаем всё
-            size_t totalSize = m_buffer.size();
-
-            if (m_buffer.size() < totalSize) {
-                break; // Ждем следующую порцию данных
-            }
-
-            Message msg;
-            msg.source = sourceName;
-            msg.type = "ARKAIM_RESPONSE";
-
-            // В resource_id можно положить Command ID, чтобы логика знала, что за ответ
-            // msg.resource_id = std::to_string(m_buffer[3]);
-
-            msg.payload.assign(m_buffer.begin(), m_buffer.begin() + totalSize);
-            messages.push_back(msg);
-
-            // Удаляем обработанный пакет из буфера
-            m_buffer.erase(m_buffer.begin(), m_buffer.begin() + totalSize);
         }
 
         return messages;
@@ -59,16 +101,10 @@ namespace bridge {
     RawData ArkaimParser::serialize(const Message& msg) {
         RawData raw;
 
-        // Транзитом прокидываем байты, сформированные в ArkaimLogic через itp::frame
-        if (msg.type == "ARKAIM_REQUEST") {
-            // Если протокол требует обертки (например, CRC или стартовые байты),
-            // которых нет в itp::frame, их нужно добавить здесь.
-            // Иначе — просто копируем payload.
-
-            raw.data.insert(raw.data.end(), msg.payload.begin(), msg.payload.end());
+        if (msg.type == ARKAIM_REQUEST) {
+            raw.data = msg.payload;
         }
 
         return raw;
     }
-
 }

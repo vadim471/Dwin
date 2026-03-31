@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="modbus-cpp" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Master">
+				<Option output="bin/Master/modbus-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Master/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DMODBUS_ENABLE_ALL_CHECKS" />
+					<Add option="-DMODBUS_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_SERIAL_PORT" />
+				</Compiler>
+			</Target>
+			<Target title="Slave">
+				<Option output="bin/Slave/modbus-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Slave/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DMODBUS_ENABLE_ALL_CHECKS" />
+					<Add option="-DMODBUS_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_SERIAL_PORT" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-std=c99" />
+			<Add option="-DWIN32" />
+			<Add option="-DMODBUS_EXTEND_CALLBACKS" />
+			<Add directory="include" />
+			<Add directory="../c/include" />
+			<Add directory="../../../util/c/include" />
+			<Add directory="../../../util/cpp/include" />
+		</Compiler>
+		<Unit filename="../../../util/c/source/initp/platform/serial_port_winapi.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/format.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/device.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/endpoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/frame.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/handler.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/master.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/protocol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/queue.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/range.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/repeat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/rtu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/slave.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/stack_trace.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/task.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/tools.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../c/source/modbus/transmit.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="include/modbus/callback.hpp" />
+		<Unit filename="include/modbus/config.hpp" />
+		<Unit filename="include/modbus/device.hpp" />
+		<Unit filename="include/modbus/endpoint.hpp" />
+		<Unit filename="include/modbus/master.hpp" />
+		<Unit filename="include/modbus/repeat.hpp" />
+		<Unit filename="include/modbus/slave.hpp" />
+		<Unit filename="include/modbus/stack_trace.hpp" />
+		<Unit filename="master.cpp">
+			<Option target="Master" />
+		</Unit>
+		<Unit filename="serial.hpp" />
+		<Unit filename="slave.cpp">
+			<Option target="Slave" />
+		</Unit>
+		<Unit filename="source/modbus/callback.cpp" />
+		<Unit filename="source/modbus/device.cpp">
+			<Option target="Master" />
+		</Unit>
+		<Unit filename="source/modbus/master.cpp">
+			<Option target="Master" />
+		</Unit>
+		<Unit filename="source/modbus/repeat.cpp">
+			<Option target="Master" />
+		</Unit>
+		<Unit filename="source/modbus/slave.cpp">
+			<Option target="Slave" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

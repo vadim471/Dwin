@@ -1,0 +1,1055 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="initp-cpp" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Function">
+				<Option output="bin/Function/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Function/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="FunctionPool">
+				<Option output="bin/FunctionPool/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/FunctionPool/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="EventProxy">
+				<Option output="bin/EventProxy/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/EventProxy/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="HttpRest">
+				<Option output="bin/HttpRest/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/HttpRest/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_system" />
+				</Linker>
+			</Target>
+			<Target title="HttpConnect">
+				<Option output="bin/HttpConnect/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/HttpConnect/" />
+				<Option object_output="obj/HttpConnect/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_TRACE_HTTP_REQUESTS" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_filesystem" />
+					<Add library="pthread" />
+					<Add library="dl" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="HttpLogger">
+				<Option output="bin/HttpLogger/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/HttpLogger/" />
+				<Option object_output="obj/HttpLogger/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_TRACE_HTTP_REQUESTS" />
+				</Compiler>
+				<Linker>
+					<Add library="pthread" />
+					<Add library="dl" />
+					<Add library="protobuf" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Decimal">
+				<Option output="bin/Decimal/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Decimal/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Parent">
+				<Option output="bin/Parent/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Parent/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Canv">
+				<Option output="bin/Canv/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Canv/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="WeakBind">
+				<Option output="bin/WeakBind/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/WeakBind/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Cookies">
+				<Option output="bin/Cookies/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Cookies/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_system" />
+				</Linker>
+			</Target>
+			<Target title="ProcessGroup">
+				<Option output="bin/ProcessGroup/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/ProcessGroup/" />
+				<Option object_output="obj/ProcessGroup/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="DateTime">
+				<Option output="bin/DateTime/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/DateTime/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_date_time" />
+				</Linker>
+			</Target>
+			<Target title="Sqlite">
+				<Option output="bin/Sqlite/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Sqlite/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="sqlite3" />
+				</Linker>
+			</Target>
+			<Target title="SocketServer">
+				<Option output="bin/SocketServer/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/SocketServer/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="SocketServerEx">
+				<Option output="bin/SocketServerEx/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/SocketServerEx/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="SocketClient">
+				<Option output="bin/SocketClient/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/SocketClient/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="SqlCache">
+				<Option output="bin/SqlCache/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/SqlCache/" />
+				<Option object_output="obj/SqlCache/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="sqlite3" />
+				</Linker>
+			</Target>
+			<Target title="Aes">
+				<Option output="bin/Aes/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Aes/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Des">
+				<Option output="bin/Des/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Des/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+			<Target title="Dummy">
+				<Option output="bin/Dummy/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Dummy/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="RawSocket">
+				<Option output="bin/RawSocket/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/RawSocket/" />
+				<Option object_output="obj/RawSocket/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_TRACE_HTTP_REQUESTS" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_filesystem" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+					<Add library="protobuf" />
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="VectorLogger">
+				<Option output="bin/VectorLogger/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/VectorLogger/" />
+				<Option object_output="obj/VectorLogger/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-DSYSTEM_TRACE_HTTP_REQUESTS" />
+				</Compiler>
+				<Linker>
+					<Add library="boost_filesystem" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+					<Add library="protobuf" />
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="LogFrontend">
+				<Option output="bin/LogFrontend/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/LogFrontend/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-std=c++17" />
+					<Add option="-DBOOST_LOG_DYN_LINK" />
+				</Compiler>
+				<Linker>
+					<Add library="protobuf" />
+					<Add library="boost_log" />
+					<Add library="boost_filesystem" />
+					<Add library="boost_thread" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="Singleton">
+				<Option output="bin/Singleton/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Singleton/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-std=c++17" />
+				</Compiler>
+			</Target>
+			<Target title="WebServer">
+				<Option output="bin/WebServer/initp-cpp" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/WebServer/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-std=c++17" />
+				</Compiler>
+				<Linker>
+					<Add library="pthread" />
+					<Add library="protobuf" />
+					<Add library="ssl" />
+					<Add library="crypto" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-DPOSIX" />
+			<Add option="-D_DEFAULT_SOURCE" />
+			<Add option="-DSYSTEM_DEBUG" />
+			<Add directory="proto" />
+			<Add directory="include" />
+			<Add directory="../c/include" />
+			<Add directory="../../contrib/SQLiteCpp/include" />
+		</Compiler>
+		<Unit filename="../../contrib/SQLiteCpp/src/Backup.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Column.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Database.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Exception.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Savepoint.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Statement.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../../contrib/SQLiteCpp/src/Transaction.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../c/source/initp/system/time_posix.c">
+			<Option compilerVar="CC" />
+			<Option target="ProcessGroup" />
+		</Unit>
+		<Unit filename="../c/source/initp/tools/aes.c">
+			<Option compilerVar="CC" />
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="../c/source/initp/tools/decimal.c">
+			<Option compilerVar="CC" />
+			<Option target="Decimal" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="../c/source/initp/tools/des.c">
+			<Option compilerVar="CC" />
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="../c/source/initp/tools/number.c">
+			<Option compilerVar="CC" />
+			<Option target="Decimal" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="aes.cpp">
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="canv.cpp">
+			<Option target="Canv" />
+		</Unit>
+		<Unit filename="cookies.cpp">
+			<Option target="Cookies" />
+		</Unit>
+		<Unit filename="date_time.cpp">
+			<Option target="DateTime" />
+		</Unit>
+		<Unit filename="decimal.cpp">
+			<Option target="Decimal" />
+		</Unit>
+		<Unit filename="des.cpp">
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="dummy.cpp">
+			<Option target="Dummy" />
+		</Unit>
+		<Unit filename="event_proxy.cpp">
+			<Option target="EventProxy" />
+		</Unit>
+		<Unit filename="function_pool.cpp">
+			<Option target="FunctionPool" />
+		</Unit>
+		<Unit filename="http_connect.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="http_logger.cpp">
+			<Option target="HttpLogger" />
+		</Unit>
+		<Unit filename="http_rest.cpp">
+			<Option target="HttpRest" />
+		</Unit>
+		<Unit filename="include/initp/database/cache.hpp">
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="include/initp/database/cache_detail.hpp">
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="include/initp/database/sqlite.hpp">
+			<Option target="Sqlite" />
+		</Unit>
+		<Unit filename="include/initp/database/sqlite_detail.hpp">
+			<Option target="Sqlite" />
+		</Unit>
+		<Unit filename="include/initp/generic/bind.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/can.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/canv.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/enable_class_name.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/enable_parent.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/event_proxy.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/event_proxy_safe.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/function.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/function_generic.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/function_pool.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/function_traits.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/generic/singleton.hpp">
+			<Option target="Singleton" />
+		</Unit>
+		<Unit filename="include/initp/generic/weak_bind.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/builder.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/check_button.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/combo_box.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/debug_widget.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/dispatcher.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/entry.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/label.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/link_button.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/macro.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/spin_button.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/types.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/gtk/utils.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/http/auth/basic.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/http/auth/digest.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/http/binary/basic_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/binary/connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/binary/ssl_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/cookies.hpp">
+			<Option target="Cookies" />
+		</Unit>
+		<Unit filename="include/initp/http/file/basic_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/file/connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/file/ssl_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/header_list.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/query.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/http/ranged/basic_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/ranged/connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/ranged/file_writer.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/ranged/ssl_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/rest.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/http/server/connection.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/server/handler.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/server/pool.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/server/queue.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/server/server.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/server/session.hpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="include/initp/http/string/basic_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/string/connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/http/string/ssl_connection.hpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="include/initp/interface/bindable.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/interface/cancellable.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/interface/dispatch.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/log/boost/log.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/frontend/log.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/frontend/logger.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/frontend/tools.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/http/logger.hpp">
+			<Option target="HttpLogger" />
+		</Unit>
+		<Unit filename="include/initp/log/level.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/logger.hpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="include/initp/log/vector/logger.hpp">
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="include/initp/platform/named_pipe.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/net.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/process_group.hpp">
+			<Option target="ProcessGroup" />
+		</Unit>
+		<Unit filename="include/initp/platform/serial_port.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/socket.hpp">
+			<Option target="SocketServer" />
+			<Option target="SocketClient" />
+			<Option target="SocketServerEx" />
+		</Unit>
+		<Unit filename="include/initp/platform/socket_detail.hpp">
+			<Option target="SocketServerEx" />
+		</Unit>
+		<Unit filename="include/initp/platform/tools.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/platform/usb.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/socket/raw/basic_connection.hpp">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="include/initp/socket/raw/connection.hpp">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="include/initp/socket/raw/ssl_connection.hpp">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="include/initp/system/atexit.hpp">
+			<Option target="Singleton" />
+		</Unit>
+		<Unit filename="include/initp/system/cdebug">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/compiler.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/csystem">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/ctime">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/debug.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/error_code.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/macro.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/system/time.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/aes.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/cdecimal">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/cnumber">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/date.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/decimal.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/decimal_json.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/des.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/hash.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/hex.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/input.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/ip.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/locale.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/initp/tools/string.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="log.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="parent.cpp">
+			<Option target="Parent" />
+		</Unit>
+		<Unit filename="process_group.cpp">
+			<Option target="ProcessGroup" />
+		</Unit>
+		<Unit filename="proto/initp/http/server/config.pb.cc">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/http/server/config.pb.h">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/http/server/config.proto">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/log/frontend/config.pb.cc">
+			<Option target="LogFrontend" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/log/frontend/config.pb.h">
+			<Option target="LogFrontend" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/log/frontend/config.proto">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="proto/initp/log/http/DataContracts.pb.cc">
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="proto/initp/log/http/DataContracts.proto">
+			<Option target="HttpLogger" />
+		</Unit>
+		<Unit filename="proto/initp/log/vector/event.pb.cc">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="proto/initp/log/vector/event.proto">
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="proto/initp/ssl/certificate.pb.cc">
+			<Option target="LogFrontend" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/ssl/certificate.pb.h">
+			<Option target="LogFrontend" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="proto/initp/ssl/certificate.proto">
+			<Option target="LogFrontend" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="raw_socket.cpp">
+			<Option target="RawSocket" />
+		</Unit>
+		<Unit filename="singleton.cpp">
+			<Option target="Singleton" />
+		</Unit>
+		<Unit filename="socket_client.cpp">
+			<Option target="SocketClient" />
+		</Unit>
+		<Unit filename="socket_server.cpp">
+			<Option target="SocketServer" />
+		</Unit>
+		<Unit filename="socket_server_ex.cpp">
+			<Option target="SocketServerEx" />
+		</Unit>
+		<Unit filename="source/initp/database/cache.cpp">
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="source/initp/database/sqlite.cpp">
+			<Option target="Sqlite" />
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="source/initp/generic/singleton.cpp">
+			<Option target="Singleton" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/auth/basic.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/http/auth/digest.cpp">
+			<Option target="Cookies" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/binary/basic_connection.cpp">
+			<Option target="HttpConnect" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/binary/basic_connection_post.cpp">
+			<Option target="HttpConnect" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/binary/ssl_connection.cpp">
+			<Option target="HttpConnect" />
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/binary/ssl_connection_get.cpp">
+			<Option target="HttpConnect" />
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/binary/ssl_connection_post.cpp">
+			<Option target="HttpConnect" />
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/cookies.cpp">
+			<Option target="Cookies" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/file/basic_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/file/basic_connection_post.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/file/ssl_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/file/ssl_connection_post.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/header_list.cpp">
+			<Option target="HttpConnect" />
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/http/query.cpp">
+			<Option target="HttpRest" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/basic_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/basic_connection_get.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/file_writer.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/ssl_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/ranged/ssl_connection_get.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/server/connection.cpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/server/pool.cpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/server/server.cpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/server/session.cpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/http/string/basic_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/string/basic_connection_post.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/string/ssl_connection.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/http/string/ssl_connection_post.cpp">
+			<Option target="HttpConnect" />
+		</Unit>
+		<Unit filename="source/initp/log/boost/log_async.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/log/boost/log_sync.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/log/frontend/log.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/log/frontend/logger.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/log/frontend/tools.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/log/http/logger.cpp">
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/log/vector/logger.cpp">
+			<Option target="VectorLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/platform/named_pipe.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/net_posix.cpp">
+			<Option target="HttpLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/platform/net_winapi.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/process_group_posix.cpp">
+			<Option target="ProcessGroup" />
+		</Unit>
+		<Unit filename="source/initp/platform/process_group_winapi.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/platform/socket.cpp">
+			<Option target="SocketServer" />
+			<Option target="SocketClient" />
+			<Option target="SocketServerEx" />
+		</Unit>
+		<Unit filename="source/initp/platform/tools_posix.cpp">
+			<Option target="Singleton" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/platform/tools_winapi.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/initp/socket/raw/basic_connection.cpp">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/socket/raw/ssl_connection.cpp">
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/system/atexit.cpp">
+			<Option target="Singleton" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/system/debug.cpp">
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="source/initp/system/error_code.cpp">
+			<Option target="ProcessGroup" />
+			<Option target="Sqlite" />
+			<Option target="SocketClient" />
+			<Option target="SocketServer" />
+			<Option target="SocketServerEx" />
+			<Option target="SqlCache" />
+			<Option target="HttpConnect" />
+			<Option target="HttpLogger" />
+			<Option target="RawSocket" />
+			<Option target="VectorLogger" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/tools/aes.cpp">
+			<Option target="Aes" />
+		</Unit>
+		<Unit filename="source/initp/tools/date.cpp">
+			<Option target="HttpLogger" />
+			<Option target="DateTime" />
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/tools/des.cpp">
+			<Option target="Des" />
+		</Unit>
+		<Unit filename="source/initp/tools/hash.cpp">
+			<Option target="Cookies" />
+			<Option target="WebServer" />
+		</Unit>
+		<Unit filename="source/initp/tools/ip.cpp">
+			<Option target="LogFrontend" />
+		</Unit>
+		<Unit filename="source/initp/tools/locale.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="sql_cache.cpp">
+			<Option target="SqlCache" />
+		</Unit>
+		<Unit filename="sqlite.cpp">
+			<Option target="Sqlite" />
+		</Unit>
+		<Unit filename="tools_function.cpp">
+			<Option target="Function" />
+		</Unit>
+		<Unit filename="vector_logger.cpp">
+			<Option target="VectorLogger" />
+		</Unit>
+		<Unit filename="weak_bind.cpp">
+			<Option target="WeakBind" />
+		</Unit>
+		<Unit filename="web_server.cpp">
+			<Option target="WebServer" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

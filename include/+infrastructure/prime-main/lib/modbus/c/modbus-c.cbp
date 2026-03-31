@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="modbus-c" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Master">
+				<Option output="bin/Master/modbus-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Master/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DMODBUS_ENABLE_ALL_CHECKS" />
+					<Add option="-D_MODBUS_EXTEND_CALLBACKS" />
+					<Add option="-DMODBUS_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_SERIAL_PORT" />
+				</Compiler>
+			</Target>
+			<Target title="Slave">
+				<Option output="bin/Slave/modbus-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Slave/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DMODBUS_ENABLE_ALL_CHECKS" />
+					<Add option="-D_MODBUS_EXTEND_CALLBACKS" />
+					<Add option="-DMODBUS_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_SERIAL_PORT" />
+				</Compiler>
+			</Target>
+			<Target title="Extender">
+				<Option output="bin/Extender/modbus-c" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Extender/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DMODBUS_ENABLE_ALL_CHECKS" />
+					<Add option="-D_MODBUS_EXTEND_CALLBACKS" />
+					<Add option="-DMODBUS_DEBUG" />
+					<Add option="-DSYSTEM_TRACE_SERIAL_PORT" />
+					<Add option="-DMODBUS_WAIT_RESPONSE" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c99" />
+			<Add option="-DWIN32" />
+			<Add directory="include" />
+			<Add directory="../../../util/c/include" />
+		</Compiler>
+		<Linker>
+			<Add option="-static-libgcc" />
+		</Linker>
+		<Unit filename="../../../util/c/source/initp/platform/serial_port_winapi.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/system/time_winapi.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/format.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="extender.c">
+			<Option compilerVar="CC" />
+			<Option target="Extender" />
+		</Unit>
+		<Unit filename="include/modbus/callback.h" />
+		<Unit filename="include/modbus/config.h" />
+		<Unit filename="include/modbus/debug.h" />
+		<Unit filename="include/modbus/device.h" />
+		<Unit filename="include/modbus/endpoint.h" />
+		<Unit filename="include/modbus/error_code.h" />
+		<Unit filename="include/modbus/frame.h" />
+		<Unit filename="include/modbus/handler.h" />
+		<Unit filename="include/modbus/list.h" />
+		<Unit filename="include/modbus/master.h" />
+		<Unit filename="include/modbus/memory.h" />
+		<Unit filename="include/modbus/modbus.h" />
+		<Unit filename="include/modbus/protocol.h" />
+		<Unit filename="include/modbus/queue.h" />
+		<Unit filename="include/modbus/range.h" />
+		<Unit filename="include/modbus/repeat.h" />
+		<Unit filename="include/modbus/rtu.h" />
+		<Unit filename="include/modbus/slave.h" />
+		<Unit filename="include/modbus/stack_trace.h" />
+		<Unit filename="include/modbus/symbol.h" />
+		<Unit filename="include/modbus/task.h" />
+		<Unit filename="include/modbus/tools.h" />
+		<Unit filename="include/modbus/transmit.h" />
+		<Unit filename="include/modbus/types.h" />
+		<Unit filename="master.c">
+			<Option compilerVar="CC" />
+			<Option target="Master" />
+		</Unit>
+		<Unit filename="serial.h" />
+		<Unit filename="slave.c">
+			<Option compilerVar="CC" />
+			<Option target="Slave" />
+		</Unit>
+		<Unit filename="source/modbus/device.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/endpoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/frame.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/handler.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/master.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/protocol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/queue.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/range.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/repeat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/rtu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/slave.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/stack_trace.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/task.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/tools.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="source/modbus/transmit.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

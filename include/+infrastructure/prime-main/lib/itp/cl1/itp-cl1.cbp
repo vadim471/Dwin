@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="itp-cl1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/itp-cl1" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="ToolsCPP">
+				<Option output="bin/ToolsCPP/itp-cl1" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/ToolsCPP/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-std=c99" />
+			<Add directory="include" />
+			<Add directory="../c/include" />
+			<Add directory="../../../util/c/include" />
+		</Compiler>
+		<Unit filename="../../../util/c/source/initp/tools/decimal.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../../util/c/source/initp/tools/number.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="include/itp/cl1.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/command.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/enum.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/error_code.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/order.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/tools.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/itp/tools.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/itp/order.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="source/itp/tools.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="source/itp/tools.cpp">
+			<Option target="ToolsCPP" />
+		</Unit>
+		<Unit filename="tools.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="tools.cpp">
+			<Option target="ToolsCPP" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

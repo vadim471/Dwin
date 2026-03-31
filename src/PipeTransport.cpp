@@ -4,16 +4,20 @@
 
 #include "bridge/PipeTransport.hpp"
 #include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace bridge {
 
     PipeTransport::PipeTransport(boost::asio::io_service& ios, const std::string& pipe_path, const std::string& name)
         : m_ios(ios),
-          m_socket(ios),
-          m_endpoint(pipe_path),
+          m_read_stream(ios),
+          m_write_stream(ios),
           m_pipe_path(pipe_path),
           m_name(name),
-          m_running(false) {
+          m_running(false),
+          m_read_fd(-1),
+          m_write_fd(-1) {
     }
 
     PipeTransport::~PipeTransport() {
@@ -35,37 +39,77 @@ namespace bridge {
         if (!m_running) return;
         m_running = false;
 
-        // Безопасное закрытие из потока io_service
         m_ios.post([this]() {
-            closeSocket();
+            closeStreams();
         });
     }
 
-    void PipeTransport::closeSocket() {
+    void PipeTransport::closeStreams() {
         boost::system::error_code ec;
-        if (m_socket.is_open()) {
-            m_socket.cancel(ec);
-            m_socket.close(ec);
+        
+        if (m_read_stream.is_open()) {
+            m_read_stream.cancel(ec);
+            m_read_stream.close(ec);
         }
-        if (ec) {
-            std::cerr << "[" << m_name << "] Error closing socket: " << ec.message() << std::endl;
+        
+        if (m_write_stream.is_open()) {
+            m_write_stream.cancel(ec);
+            m_write_stream.close(ec);
+        }
+        
+        if (m_read_fd >= 0) {
+            ::close(m_read_fd);
+            m_read_fd = -1;
+        }
+        
+        if (m_write_fd >= 0) {
+            ::close(m_write_fd);
+            m_write_fd = -1;
         }
     }
 
     void PipeTransport::doConnect() {
         if (!m_running) return;
 
-        m_socket.async_connect(m_endpoint, [this](const boost::system::error_code& ec) {
-            if (!ec) {
-                std::cout << "[" << m_name << "] Successfully connected to " << m_pipe_path << std::endl;
-                doRead();
-            } else {
-                std::cerr << "[" << m_name << "] Failed to connect to " << m_pipe_path
-                          << ": " << ec.message() << std::endl;
 
-                // Опционально: можно запустить таймер на переподключение, если процесс Arkaim еще не запущен
-                // m_timer.expires_from_now(boost::posix_time::seconds(2));
-                // m_timer.async_wait([this](...) { doConnect(); });
+        std::string read_path = "/tmp/" + m_pipe_path + "_w";
+        std::string write_path = "/tmp/" + m_pipe_path + "_r";
+
+        std::cout << "[" << m_name << "] Opening read FIFO: " << read_path << std::endl;
+        m_read_fd = ::open(read_path.c_str(), O_RDONLY | O_NONBLOCK);
+        if (m_read_fd < 0) {
+            std::cerr << "[" << m_name << "] Failed to open read FIFO: " << strerror(errno) << std::endl;
+            scheduleReconnect();
+            return;
+        }
+
+        std::cout << "[" << m_name << "] Opening write FIFO: " << write_path << std::endl;
+        m_write_fd = ::open(write_path.c_str(), O_WRONLY | O_NONBLOCK);
+        if (m_write_fd < 0) {
+            std::cerr << "[" << m_name << "] Failed to open write FIFO: " << strerror(errno) << std::endl;
+            ::close(m_read_fd);
+            m_read_fd = -1;
+            scheduleReconnect();
+            return;
+        }
+
+        // Присваиваем file descriptors к stream_descriptor
+        m_read_stream.assign(m_read_fd);
+        m_write_stream.assign(m_write_fd);
+
+        std::cout << "[" << m_name << "] Successfully connected to " << m_pipe_path << std::endl;
+        doRead();
+    }
+
+    void PipeTransport::scheduleReconnect() {
+        if (!m_running) return;
+        
+        // Переподключение через 2 секунды
+        auto timer = std::make_shared<boost::asio::deadline_timer>(m_ios, boost::posix_time::seconds(2));
+        timer->async_wait([this, timer](const boost::system::error_code& ec) {
+            if (!ec && m_running) {
+                std::cout << "[" << m_name << "] Reconnecting..." << std::endl;
+                doConnect();
             }
         });
     }
@@ -75,7 +119,6 @@ namespace bridge {
 
         std::lock_guard<std::mutex> lock(m_write_mutex);
 
-        // Если очередь была пуста, значит процесс записи не активен и его нужно запустить
         bool write_in_progress = !m_write_queue.empty();
         m_write_queue.push(raw_data);
 
@@ -86,10 +129,9 @@ namespace bridge {
 
     void PipeTransport::doWrite() {
         const RawData& raw_data = m_write_queue.front();
-
-        // Гарантируем полную запись фрейма через async_write
+        std::cout << "[PIPE_LAYER] Writing " << raw_data.data.size() << " bytes to pipe." << std::endl;
         boost::asio::async_write(
-            m_socket,
+            m_write_stream,
             boost::asio::buffer(raw_data.data),
             [this](const boost::system::error_code& ec, std::size_t bytes_transferred) {
                 handleWrite(ec, bytes_transferred);
@@ -101,9 +143,8 @@ namespace bridge {
         std::lock_guard<std::mutex> lock(m_write_mutex);
 
         if (!ec) {
-            m_write_queue.pop(); // Удаляем успешно отправленный пакет
+            m_write_queue.pop();
 
-            // Если в очереди есть еще пакеты, продолжаем запись
             if (!m_write_queue.empty()) {
                 doWrite();
             }
@@ -111,10 +152,12 @@ namespace bridge {
             if (ec != boost::asio::error::operation_aborted) {
                 std::cerr << "[" << m_name << "] Write error: " << ec.message() << std::endl;
 
-                // Очищаем очередь при разрыве соединения
                 while (!m_write_queue.empty()) {
                     m_write_queue.pop();
                 }
+                
+                closeStreams();
+                scheduleReconnect();
             }
         }
     }
@@ -122,7 +165,7 @@ namespace bridge {
     void PipeTransport::doRead() {
         if (!m_running) return;
 
-        m_socket.async_read_some(
+        m_read_stream.async_read_some(
             boost::asio::buffer(m_read_buffer),
             [this](const boost::system::error_code& ec, std::size_t bytes) {
                 handleRead(ec, bytes);
@@ -134,12 +177,14 @@ namespace bridge {
         if (ec) {
             if (ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset) {
                 std::cerr << "[" << m_name << "] Disconnected from Arkaim." << std::endl;
-                // Демон Arkaim упал или закрыл соединение.
-                closeSocket();
+                closeStreams();
+                scheduleReconnect();
                 return;
             }
             if (ec != boost::asio::error::operation_aborted) {
                 std::cerr << "[" << m_name << "] Read error: " << ec.message() << std::endl;
+                closeStreams();
+                scheduleReconnect();
             }
             return;
         }

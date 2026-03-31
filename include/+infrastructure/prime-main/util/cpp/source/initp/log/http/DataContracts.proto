@@ -1,0 +1,58 @@
+﻿syntax = "proto3";
+package UniversalLogger.ProtobufDto;
+
+/* UNIX TIMESTAMP from .NET TICKS (on JS)
+function ticksToUnixTimeStamp(ticks)
+{
+    //ticks are in nanotime; convert to microtime
+    var ticksToMicrotime = ticks / 10000;
+
+    //ticks are recorded from 1/1/1; get microtime difference from 1/1/1/ to 1/1/1970
+    var epochMicrotimeDiff = 62135596800000;
+
+    //new date is ticks, converted to microtime, minus difference from epoch microtime
+    var unixTimeStamp = (ticksToMicrotime - epochMicrotimeDiff) / 1000;
+
+    return unixTimeStamp;
+}
+*/
+
+enum ApiResultStatusDto
+{
+	UnknownError = 0;	// Неизвестная ошибка
+	Success = 1;		// Успешно
+}
+
+message ApiResultDto
+{
+	ApiResultStatusDto ApiResultStatus = 1; // Статус выполненной операции
+}
+
+enum LogLevelDto 
+{
+	Trace = 0;	// Тип записи Trace (трассировочное сообщение)
+	Debug = 1;	// Тип записи Debug (отладочное сообщение)
+	Info = 2;	// Тип записи Info (информационное сообщение
+	Warn = 3;	// Тип записи Warn (предупреждающее сообщение)
+	Error = 4;	// Тип записи Error (сообщение об ошибке)
+	Fatal = 5;	// Тип записи Fatal (сообщение о критическом сбое)
+}
+
+message LogRecordsBatchItemDto
+{	
+	int32 SequenceId = 1;		// №
+	int64 GlobalTimeStamp = 2;	// Время записи в тиках по UTC (from 0001.01.01 00:00:00, 1 tick = 100 nanoseconds)
+	int64 LocalTimeStamp = 3;	// Время записи в тиках локальное (from 0001.01.01 00:00:00, 1 tick = 100 nanoseconds)
+	string InternalName = 4;	// Внутреннее имя (источник события / call stack)
+	LogLevelDto Level = 5;		// Тип записи
+	string Message = 6;			// Сообщение
+}
+
+message LogRecordsBatchDto
+{
+	string HostName = 1;						// Хост (название ПК)
+	string AppName = 2;							// Приложение (имя процесса)
+	int64 StartUpGlobalTimeStamp = 3;			// Время запуска логгера в тиках по UTC (from 0001.01.01 00:00:00, 1 tick = 100 nanoseconds)
+	int64 StartUpLocalTimeStamp = 4;			// Локальное время запуска логгера в тиках (from 0001.01.01 00:00:00, 1 tick = 100 nanoseconds)
+	repeated LogRecordsBatchItemDto Items = 5;	// Список записей пакета
+}

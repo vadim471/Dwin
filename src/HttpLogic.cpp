@@ -314,12 +314,46 @@ namespace bridge {
         int value_price, exponent_price;
         std::tie(value_price, exponent_price) = utility::formatFloatStringToInt(product->price);
 
+        // int value_price_per_liter, exponent_price_per_liter;
+        // std::tie(value_price_per_liter, exponent_price_per_liter) = utility::formatFloatStringToInt(product->price);
+        //
         createOrder(core, volume, exponent, value_price, exponent_price);
-        createPayment();
     }
 
-    void createPayment() {
+    void HttpLogic::createPayment(MessageLayer& core,
+                                  const std::string& order_id,
+                                  const std::string& product_id,
+                                  uint32_t int_price_per_fuel,
+                                  uint8_t dec_price_per_fuel,
+                                  uint32_t int_value_fuel,
+                                  uint8_t dec_value_fuel,
+                                  uint32_t int_order_price,
+                                  uint8_t dec_order_price) {
+        if (order_id.empty()) {
+            return;
+        }
 
+        if (m_payment_requested_order_ids.find(order_id) != m_payment_requested_order_ids.end()) {
+            return;
+        }
+
+        PaymentRequestData payment;
+        payment.product_id = product_id;
+        payment.price_value = int_price_per_fuel;
+        payment.price_decimal = dec_price_per_fuel;
+        payment.volume_value = int_value_fuel;
+        payment.volume_decimal = dec_value_fuel;
+        payment.amount_value = int_order_price;
+        payment.amount_decimal = dec_order_price;
+
+        Message message;
+        message.source = HTTP_LAYER;
+        message.type = PAY_TRANSACTION;
+        message.resource_id = order_id;
+        message.payload = serializePaymentRequest(payment);
+
+        core.sendToLogicLayer(PIPE_LAYER, message);
+        m_payment_requested_order_ids.insert(order_id);
     }
 
     void HttpLogic::processHandleHttpError(const Message &message, MessageLayer &core) {
@@ -842,17 +876,27 @@ namespace bridge {
                     if (jObj.contains("order")) {
                         auto order = jObj["order"];
 
+                        auto nozzle = jObj["nozzle"];
+                        auto product_id = nozzle["product_id"];
+
                         auto target_amount = order["target_amount"];
                         std::string target_amount_string = utility::getFormattedStringFromJson(
                             utility::parseStringFromJson(target_amount["value"]),
                             utility::parseIntFromJson(target_amount["exponent"]));
+                        std::string target_amount_value = target_amount["value"];
+                        int target_amount_exponent = target_amount["exponent"];
+
 
                         auto target_volume = order["target_volume"];
                         std::string target_volume_string = utility::getFormattedStringFromJson(
                             utility::parseStringFromJson(target_volume["value"]),
                             utility::parseIntFromJson(target_volume["exponent"]));
+                        std::string target_volume_value = target_volume["value"];
+                        int target_volume_exponent = target_volume["exponent"];
 
-                        auto price = order["price"];
+                        auto price = jObj["price"];
+                        std::string price_value = price["value"];
+                        int price_exponent = price["exponent"];
 
                         m_dispensers[i].order.volume    = target_volume_string;
                         m_dispensers[i].order.amount    = target_amount_string;
@@ -868,6 +912,10 @@ namespace bridge {
 
                         setCurrentOrderAmountOnDisplay(core, m_dispensers[i].order.amount);
                         setCurrentOrderVolumeOnDisplay(core, m_dispensers[i].order.volume);
+
+                        createPayment(core, m_orders[trk_id].id, product_id, std::stoi(price_value), price_exponent,
+                            std::stoi(target_volume_value), target_volume_exponent, std::stoi(target_amount_value),
+                            target_amount_exponent);
                     }
                     if (static_cast<int>(i) == m_current_dispenser_index) {
                         is_current_trk_updated = true;

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "initp/ssl/certificate.proto";
+
+package initp.http;
+
+message user_credentials {
+    string name = 1;
+    string password = 2;
+}
+
+message auth_config {
+    string private_key = 1;
+    string realm = 2;
+    repeated user_credentials users = 3;
+}
+
+message server_config {
+    uint32 port = 1;
+    uint32 auth_timeout = 2;
+    uint32 session_timeout = 3;
+    uint32 max_sessions = 4;
+    optional string files_root = 5;
+    optional auth_config authorization = 6;
+    optional initp.ssl.certificate_config ssl = 7;
+}

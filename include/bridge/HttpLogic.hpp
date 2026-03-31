@@ -5,8 +5,12 @@
 #include <future>
 #include <mutex>
 #include <queue>
+#include <unordered_set>
+
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_service.hpp>
+
+#include "bridge/PaymentData.hpp"
 #include "bridge/json.hpp"
 #include "bridge/MessageLayer.hpp"
 #include "ILogicHandler.hpp"
@@ -177,7 +181,15 @@ namespace bridge {
         void createOrder(MessageLayer& core, int value, int exponent, int price, int price_exponent) const;
 
         // Запрос на выполнение платежа по карте CL2_CMD_PAY_TRANSACTION.
-        void createPayment();
+        void createPayment(MessageLayer& core,
+                           const std::string& order_id,
+                           const std::string& product_id,
+                           uint32_t int_price_per_fuel,
+                           uint8_t dec_price_per_fuel,
+                           uint32_t int_value_fuel,
+                           uint8_t dec_value_fuel,
+                           uint32_t int_order_price,
+                           uint8_t dec_order_price);
 
         // Команда на начало пролива ТРК.
         void authorizeOnServer(MessageLayer& core);
@@ -251,6 +263,7 @@ namespace bridge {
 
         bool m_dwin_button_next_for_start_fuel = false;
         bool m_is_server_ready_for_start_fuel = false;
+        std::unordered_set<std::string> m_payment_requested_order_ids;
 
         // Для отправки времени в Footer каждую секунду.
         std::string m_last_time_str;

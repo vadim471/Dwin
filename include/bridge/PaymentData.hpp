@@ -1,0 +1,53 @@
+#pragma once
+
+#include "bridge/json.hpp"
+#include "bridge/types.hpp"
+
+#include <string>
+
+namespace bridge {
+
+struct PaymentRequestData {
+    std::string product_id;
+    uint32_t price_value = 0;
+    uint8_t price_decimal = 0;
+    uint32_t volume_value = 0;
+    uint8_t volume_decimal = 0;
+    uint32_t amount_value = 0;
+    uint8_t amount_decimal = 0;
+};
+
+inline Bytes serializePaymentRequest(const PaymentRequestData& request) {
+    nlohmann::json json = {
+        {"product_id", request.product_id},
+        {"price_value", request.price_value},
+        {"price_decimal", request.price_decimal},
+        {"volume_value", request.volume_value},
+        {"volume_decimal", request.volume_decimal},
+        {"amount_value", request.amount_value},
+        {"amount_decimal", request.amount_decimal},
+    };
+
+    const auto body = json.dump();
+    return Bytes(body.begin(), body.end());
+}
+
+inline bool deserializePaymentRequest(const Bytes& payload, PaymentRequestData& request) {
+    try {
+        const std::string body(payload.begin(), payload.end());
+        const auto json = nlohmann::json::parse(body);
+
+        request.product_id = json.value("product_id", std::string());
+        request.price_value = json.value("price_value", uint32_t(0));
+        request.price_decimal = json.value("price_decimal", uint8_t(0));
+        request.volume_value = json.value("volume_value", uint32_t(0));
+        request.volume_decimal = json.value("volume_decimal", uint8_t(0));
+        request.amount_value = json.value("amount_value", uint32_t(0));
+        request.amount_decimal = json.value("amount_decimal", uint8_t(0));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+} // namespace bridge

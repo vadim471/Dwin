@@ -1,0 +1,203 @@
+#                                    __   __  __
+#                                    \ \ / / / /
+#                                     \ V / / /
+#                                      \_/  \/
+#
+#                                    V E C T O R
+#                                   Configuration
+#
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+# Change this to use a non-default directory for Vector data storage:
+data_dir = "/var/lib/vector"
+api.enabled = true
+
+[sources.native_socket]
+    type                          = "socket"
+    address                       = "0.0.0.0:9876"
+    mode                          = "tcp"
+    path                          = "/var/run/vector_socket"
+    connection_limit              = 1024
+    decoding.codec                = "native"
+    framing.method                = "length_delimited"
+
+[transforms.native_stream]
+    inputs = ["native_socket"]
+    type = "filter"
+    # Required fields
+    condition = '''
+        exists(.device) &&
+        exists(.type)
+    '''
+
+[transforms.prime_stream]
+    inputs = ["native_stream"]
+    type = "filter"
+    condition = '''
+        .device == "prime"
+    '''
+
+# Prime 'sales' table
+
+[transforms.prime_sales_stream]
+    inputs = ["prime_stream"]
+    type = "filter"
+    condition = '''
+        .type == "sales"
+    '''
+
+[transforms.prime_sales_formatted]
+    inputs = ["prime_sales_stream"]
+    type = "remap"
+
+    # Some VRL transforms here
+    source = '''
+        del(.device)
+        del(.type)
+    '''
+
+[sinks.prime_sales_clickhouse]
+    inputs   = ["prime_sales_formatted"]
+    type     = "clickhouse"
+    endpoint = "http://localhost:8123"
+
+    database = "prime"
+    healthcheck = true
+    table = "sales"
+
+    auth.strategy = "basic"
+    auth.user = "vector"
+    auth.password = "vector"
+
+    encoding.timestamp_format = "unix"
+
+#    buffer.type = "disk"
+#    buffer.max_size = 268435488
+#    buffer.when_full = "drop_newest"
+    buffer.type = "memory"
+    buffer.max_events = 10
+
+# Prime 'logs' table
+
+[transforms.prime_logs_stream]
+    inputs = ["prime_stream"]
+    type = "filter"
+    condition = '''
+        .type == "logs"
+    '''
+
+[transforms.prime_logs_formatted]
+    inputs = ["prime_logs_stream"]
+    type = "remap"
+
+    # Some VRL transforms here
+    source = '''
+        del(.device)
+        del(.type)
+    '''
+
+[sinks.prime_logs_clickhouse]
+    inputs   = ["prime_logs_formatted"]
+    type     = "clickhouse"
+    endpoint = "http://localhost:8123"
+
+    database = "prime"
+    healthcheck = true
+    table = "logs"
+
+    auth.strategy = "basic"
+    auth.user = "vector"
+    auth.password = "vector"
+
+    encoding.timestamp_format = "unix"
+
+#    buffer.type = "disk"
+#    buffer.max_size = 268435488
+#    buffer.when_full = "drop_newest"
+    buffer.type = "memory"
+    buffer.max_events = 10
+
+# Prime 'sensors' table
+
+[transforms.prime_sensors_stream]
+    inputs = ["prime_stream"]
+    type = "filter"
+    condition = '''
+        .type == "sensors"
+    '''
+
+[transforms.prime_sensors_formatted]
+    inputs = ["prime_sensors_stream"]
+    type = "remap"
+
+    # Some VRL transforms here
+    source = '''
+        del(.device)
+        del(.type)
+    '''
+
+[sinks.prime_sensors_clickhouse]
+    inputs   = ["prime_sensors_formatted"]
+    type     = "clickhouse"
+    endpoint = "http://localhost:8123"
+
+    database = "prime"
+    healthcheck = true
+    table = "sensors"
+
+    auth.strategy = "basic"
+    auth.user = "vector"
+    auth.password = "vector"
+
+    encoding.timestamp_format = "unix"
+
+#    buffer.type = "disk"
+#    buffer.max_size = 268435488
+#    buffer.when_full = "drop_newest"
+    buffer.type = "memory"
+    buffer.max_events = 10
+
+# Prime 'dido' table
+
+[transforms.prime_dido_stream]
+    inputs = ["prime_stream"]
+    type = "filter"
+    condition = '''
+        .type == "dido"
+    '''
+
+[transforms.prime_dido_formatted]
+    inputs = ["prime_dido_stream"]
+    type = "remap"
+
+    # Some VRL transforms here
+    source = '''
+        del(.device)
+        del(.type)
+    '''
+
+[sinks.prime_dido_clickhouse]
+    inputs   = ["prime_dido_formatted"]
+    type     = "clickhouse"
+    endpoint = "http://localhost:8123"
+
+    database = "prime"
+    healthcheck = true
+    table = "dido"
+
+    auth.strategy = "basic"
+    auth.user = "vector"
+    auth.password = "vector"
+
+    encoding.timestamp_format = "unix"
+
+#    buffer.type = "disk"
+#    buffer.max_size = 268435488
+#    buffer.when_full = "drop_newest"
+    buffer.type = "memory"
+    buffer.max_events = 10
+

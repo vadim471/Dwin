@@ -3,6 +3,35 @@ project(dwin_exmpl)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(ARKAIM_INFRASTRUCTURE_DIR "" CACHE PATH "Path to forstandalone/+infrastructure used by terminal")
+
+if(NOT ARKAIM_INFRASTRUCTURE_DIR OR NOT EXISTS "${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp")
+    set(_ARKAIM_INFRA_CANDIDATES
+        "${CMAKE_SOURCE_DIR}/include/+infrastructure"
+        "C:/Users/vadim.tissen/Desktop/Standalone/forstandalone/+infrastructure"
+        "${CMAKE_SOURCE_DIR}/../+infrastructure"
+        "${CMAKE_SOURCE_DIR}/../forstandalone/+infrastructure"
+        "$ENV{ARKAIM_INFRASTRUCTURE_DIR}"
+    )
+
+    foreach(_candidate IN LISTS _ARKAIM_INFRA_CANDIDATES)
+        if(_candidate AND EXISTS "${_candidate}/prime-main/lib/itp/cpp/source/itp/root.cpp")
+            set(ARKAIM_INFRASTRUCTURE_DIR "${_candidate}" CACHE PATH "Path to forstandalone/+infrastructure used by terminal" FORCE)
+            break()
+        endif()
+    endforeach()
+endif()
+
+if(NOT EXISTS "${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp")
+    message(FATAL_ERROR "Arkaim terminal infrastructure not found. Set ARKAIM_INFRASTRUCTURE_DIR to forstandalone/+infrastructure")
+endif()
+
+if(WIN32)
+    set(ARKAIM_PLATFORM_SUFFIX winapi)
+else()
+    set(ARKAIM_PLATFORM_SUFFIX posix)
+endif()
+
 find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
 find_package(Threads REQUIRED)
 find_package(OpenSSL)
@@ -11,11 +40,43 @@ find_package(Poco REQUIRED COMPONENTS Net Crypto Util Foundation)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/infrastructure)
-include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/itp-c/include)
-include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/itp-cpp/include)
-include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/initp-c/include)
-include_directories(${CMAKE_SOURCE_DIR}/include/infrastructure/initp-cpp/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/cpp/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/include)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/include_1)
+include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/include_2)
+
+set(ARKAIM_INFRA_SOURCES
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/platform/named_pipe_${ARKAIM_PLATFORM_SUFFIX}.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/system/time_${ARKAIM_PLATFORM_SUFFIX}.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/tools/decimal.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/tools/format.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/tools/number.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/c/source/initp/tools/crc.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/cpp/source/initp/platform/named_pipe.cpp
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/util/cpp/source/initp/platform/socket.cpp
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/array.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/bus.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/command.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/endpoint.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/error.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/frame.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/handler.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/list.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/node.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/package.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/protocol.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/queue.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/root.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/stack_trace.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/transmit.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/tunnel.c
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/source/itp/entity.cpp
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/callback.cpp
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp
+)
 
 configure_file(
         ${CMAKE_SOURCE_DIR}/include/bridge/config.json
@@ -51,16 +112,19 @@ add_executable(dwin_exmpl src/main.cpp
         src/constant.cpp
         include/bridge/DwinCommands.hpp
         include/bridge/PrimeCommands.hpp
-        include/bridge/Logger.hpp
-        src/Logger.cpp
-        include/bridge/ArkaimParser.hpp
-        src/ArkaimParser.cpp
-        include/bridge/ArkaimLogic.hpp
-        src/PipeTransport.cpp
-        src/ArkaimLogic.cpp
+         include/bridge/Logger.hpp
+         src/Logger.cpp
+         include/bridge/PaymentData.hpp
+         include/bridge/ArkaimLogic.hpp
+         src/ArkaimLogic.cpp
+         ${ARKAIM_INFRA_SOURCES}
 )
 
-target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK)
+if(WIN32)
+    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS WIN32)
+else()
+    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS POSIX)
+endif()
 
 target_link_libraries(dwin_exmpl
         ${Boost_LIBRARIES}
@@ -72,6 +136,4 @@ target_link_libraries(dwin_exmpl
         Poco::Util
         Poco::Foundation
 )
-
-
 

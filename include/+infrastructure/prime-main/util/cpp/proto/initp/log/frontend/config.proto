@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+import "initp/ssl/certificate.proto";
+
+package initp.log;
+
+enum log_level {
+    LL_NULL = 0;
+    LL_FATAL = 1;
+    LL_ERROR = 2;
+    LL_WARNING = 3;
+    LL_INFO = 4;
+    LL_DEBUG = 5;
+    LL_TRACE = 6;
+    LL_ALL = 7;
+}
+
+message frontend_config {
+    message logger_config {
+        oneof logger_config_type {
+            std_out_config std_out = 1;
+            boost_log_config file = 2;
+            http_initp_config http = 3;
+            vector_config vector = 4;
+        }
+    }
+    repeated logger_config loggers = 1;
+}
+
+message std_out_config {
+    bool enabled = 1;
+    log_level level = 2;
+    log_level stderr_level = 3;
+}
+
+message boost_log_config {
+    bool enabled = 1;
+    bool async = 2;
+    log_level level = 3;
+    string path = 4;
+    uint32 rotation_size = 5;
+    uint32 max_files_size = 6;
+    uint32 max_files_count = 7;
+    uint32 min_free_space = 8;
+}
+
+message http_initp_config {
+    bool enabled = 1;
+    log_level level = 2;
+    string host = 3;
+    string query = 4;
+    uint32 delay = 5;
+    uint32 max_batch_size = 6;
+    uint32 max_queue_size = 7;
+    optional initp.ssl.certificate_config ssl = 8;
+}
+
+message vector_config {
+    bool enabled = 1;
+    log_level level = 2;
+    string host = 3;
+    uint32 delay = 4;
+    uint32 max_batch_size = 5;
+    uint32 max_queue_size = 6;
+    optional initp.ssl.certificate_config ssl = 7;
+}

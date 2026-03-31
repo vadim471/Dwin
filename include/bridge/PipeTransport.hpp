@@ -32,15 +32,19 @@ namespace bridge {
         void doWrite();
         void handleWrite(const boost::system::error_code& ec, std::size_t bytes_transferred);
 
-        void closeSocket();
+        void closeStreams();
+        void scheduleReconnect();
 
         boost::asio::io_service& m_ios;
-        boost::asio::local::stream_protocol::socket m_socket;
-        boost::asio::local::stream_protocol::endpoint m_endpoint;
+        boost::asio::posix::stream_descriptor m_read_stream;
+        boost::asio::posix::stream_descriptor m_write_stream;
 
         std::string m_pipe_path;
         std::string m_name;
         bool m_running;
+        
+        int m_read_fd;
+        int m_write_fd;
 
         std::array<uint8_t, 2048> m_read_buffer;
 
