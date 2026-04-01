@@ -123,6 +123,9 @@ namespace bridge {
 
         // Хендлер нажатия на ТРК выбора ТРК для использования на АЗС.
         void handleTrkSelectionToggle(MessageLayer& core, uint8_t slot_index);
+        
+        // Хендлер обработки ответа от Arkaim платежного процессинга
+        void handlePaymentResponse(const Message& msg, MessageLayer& core);
 
         // Обработка нажатия на кнопку пагинации страницы выбора ТРК.
         void handlePaginationDispenser(int direction, MessageLayer& core);

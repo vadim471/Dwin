@@ -193,6 +193,8 @@ namespace bridge {
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
             getDispenserStatus(core, m_current_dispenser_id);
+        } else if (message.type == "PAY_TRANSACTION_RESPONSE") {
+            handlePaymentResponse(message, core);
         }
     }
 
@@ -1280,5 +1282,37 @@ namespace bridge {
 
         DwinCommands::sendRightAlignmentWithPadding(core, int_vp, int_part, int_length);
         DwinCommands::sendRightAlignmentWithPadding(core, dec_vp, dec_part, dec_length);
+    }
+
+    void HttpLogic::handlePaymentResponse(const Message& msg, MessageLayer& core) {
+        std::string order_id = msg.resource_id;
+        
+        // Parse JSON from payload
+        std::string json_str(msg.payload.begin(), msg.payload.end());
+        auto json = nlohmann::json::parse(json_str);
+        
+        bool success = json["success"];
+        
+        if (success) {
+            uint64_t transaction_id = json["transaction_id"];
+            std::string message = json["message"];
+            
+            std::cout << "[HttpLogic] ✓ Payment SUCCESS for order " << order_id 
+                      << ", transaction_id=" << transaction_id << std::endl;
+            
+            // TODO: Show "Оплата подтверждена" on DWIN
+            // TODO: Allow fueling to start
+            
+        } else {
+            std::string error_msg = json["message"];
+            
+            std::cerr << "[HttpLogic] ✗ Payment FAILED for order " << order_id 
+                      << ", message=" << error_msg << std::endl;
+            
+            // TODO: Show error on DWIN
+            // TODO: Cancel order on Prime
+            std::string command = m_settings.APIDispenser.close;
+            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+        }
     }
 }

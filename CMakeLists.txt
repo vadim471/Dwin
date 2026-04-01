@@ -93,7 +93,6 @@ add_executable(dwin_exmpl src/main.cpp
         src/SerialTransport.cpp
         src/DwinParser.cpp
         include/bridge/HttpTransport.hpp
-        include/bridge/PipeTransport.hpp
         include/bridge/IMessageParser.hpp
         include/bridge/ILogicHandler.hpp
         include/bridge/DwinLogic.hpp
@@ -115,15 +114,22 @@ add_executable(dwin_exmpl src/main.cpp
          include/bridge/Logger.hpp
          src/Logger.cpp
          include/bridge/PaymentData.hpp
+         include/bridge/TerminalEntity.hpp
+         src/TerminalEntity.cpp
+         include/bridge/ArkaimTransport.hpp
+         src/ArkaimTransport.cpp
+         include/bridge/ArkaimParser.hpp
+         src/ArkaimParser.cpp
          include/bridge/ArkaimLogic.hpp
          src/ArkaimLogic.cpp
-         ${ARKAIM_INFRA_SOURCES}
+         src/debug_print.cpp
+        ${ARKAIM_INFRA_SOURCES}
 )
 
 if(WIN32)
-    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS WIN32)
+    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS WIN32 ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM)
 else()
-    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS POSIX)
+    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS POSIX ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM)
 endif()
 
 target_link_libraries(dwin_exmpl
