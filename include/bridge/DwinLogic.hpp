@@ -59,6 +59,9 @@ namespace bridge {
         // Хендлер выбора ТРК страницы выбора используемых ТРК.
         void handleSelectedTRK(const Message &message, MessageLayer& core);
 
+        // Хендлер обработки отмены заказа.
+        void handleCancelTransaction(const Message &message, MessageLayer& core);
+
         // Строка, содержащая значение, введенное с пинпада.
         std::string d_pinpad_buffer;
     };

@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <boost/asio.hpp>
+#include <boost/make_unique.hpp>
 #include <iostream>
 
 #include "bridge/DwinLogic.hpp"
@@ -14,6 +15,8 @@
 #include "bridge/ArkaimParser.hpp"
 #include "bridge/ArkaimLogic.hpp"
 #include "bridge/constant.hpp"
+
+#include <itp/named_pipe.hpp>
 
 using namespace bridge;
 
@@ -63,7 +66,8 @@ int main() {
         auto http_pars  = std::make_shared<HttpParser>(cfg);
 
         // Arkaim payment processing integration
-        auto arkaim_trans = std::make_shared<ArkaimTransport>(ios, "InitPlusArkaimPayPipe");
+        // Pipe will be opened by ArkaimLogic::startLoop() via entity::open_pipe()
+        auto arkaim_trans = std::make_shared<ArkaimTransport>(itp::named_pipe::uptr());
         auto arkaim_pars  = std::make_shared<ArkaimParser>();
 
         core.registerChannel(UART_LAYER, dwin_trans, dwin_pars);
@@ -76,8 +80,7 @@ int main() {
         auto http_logic = std::make_shared<HttpLogic>(cfg, ios);
         core.registerLogic(HTTP_LAYER, http_logic);
 
-        auto arkaim_logic = std::make_shared<ArkaimLogic>(ios);
-        arkaim_logic->setTransport(arkaim_trans);
+        auto arkaim_logic = std::make_shared<ArkaimLogic>(ios, arkaim_trans);
         core.registerLogic(PIPE_LAYER, arkaim_logic);
 
 

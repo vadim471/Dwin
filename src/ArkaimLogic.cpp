@@ -1,529 +1,714 @@
 #include "bridge/ArkaimLogic.hpp"
-#include "bridge/MessageLayer.hpp"
 #include "bridge/constant.hpp"
+#include "bridge/MessageLayer.hpp"
 #include "bridge/json.hpp"
-#include <iostream>
 
 extern "C" {
 #include <initp/system/time.h>
 }
 
+#include <itp/tools.hpp>
+#include <itp/named_pipe.hpp>
+#include <initp/platform/named_pipe.hpp>
+#include <initp/system/time.hpp>
+
+#include <boost/make_unique.hpp>
+
+#include <iostream>
+#include <sys/stat.h>
+
+// Explicit bind macro for ArkaimLogic (RBIND uses entity's private self_type)
+#define ABIND(f, ...) std::bind(&ArkaimLogic::f, this, ##__VA_ARGS__)
+
 namespace bridge {
 
-ArkaimLogic::ArkaimLogic(boost::asio::io_service& ios)
-    : m_ios(ios)
-    , m_reconnect_timer(ios)
-    , m_pipe_name("InitPlusArkaimPayPipe")
-    , m_connected(false)
-    , m_payment_device_address(0)
-    , m_controller_device_address(0)
+using namespace std::placeholders;
+
+// ============================================================
+//  Construction / Destruction
+// ============================================================
+
+ArkaimLogic::ArkaimLogic(boost::asio::io_service& ios,
+                         ArkaimTransportPtr transport)
+    : entity(itp::CL2_API_ACTIVE_TERMINAL, itp::CL2_DEV_GENERIC)
+    , m_ios(ios)
+    , m_transport(std::move(transport))
 {
-    std::cout << "[ArkaimLogic] Created" << std::endl;
 }
 
-void ArkaimLogic::setTransport(std::shared_ptr<ArkaimTransport> transport) {
-    m_transport = transport;
+ArkaimLogic::~ArkaimLogic() {
+    m_started = false;
+    if (m_poll_thread.joinable()) {
+        m_poll_thread.join();
+    }
 }
 
-void ArkaimLogic::startLoop(MessageLayer& core) {
-    std::cout << "[ArkaimLogic] Starting Arkaim integration" << std::endl;
-    scheduleReconnect(core);
-}
+// ============================================================
+//  ILogicHandler: handle()
+// ============================================================
 
 void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
+    m_core = &core;
+
     if (msg.type == PAY_TRANSACTION) {
-        handleTransaction(msg, core);
-    } else if (msg.type == "PAY_CONFIRM") {
-        handleConfirm(msg, core);
-    } else if (msg.type == "PAY_CANCEL") {
-        handleCancel(msg, core);
-    } else if (msg.type == "PIN_ENTERED") {
-        handlePinEntered(msg, core);
+        PaymentRequestData payment;
+        if (!deserializePaymentRequest(msg.payload, payment)) {
+            std::cerr << "[ArkaimLogic] Failed to deserialize payment request" << std::endl;
+            sendPaymentResponse(msg.resource_id, false, 0, "Deserialize error");
+            return;
+        }
+
+        std::cout << "[ArkaimLogic] PAY_TRANSACTION received for order " << msg.resource_id
+                  << ", product=" << payment.product_id
+                  << ", price=" << payment.price_value << "e" << (int)payment.price_decimal
+                  << ", volume=" << payment.volume_value << "e" << (int)payment.volume_decimal
+                  << ", amount=" << payment.amount_value << "e" << (int)payment.amount_decimal
+                  << std::endl;
+
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_pending.active = true;
+            m_pending.order_id = msg.resource_id;
+            m_pending.payment = payment;
+            m_pending.transaction_time = initp::system::time::now();
+        }
+
+        tryProcessPendingPayment();
+
+    } else if (msg.type == PAY_CONFIRM) {
+        handleConfirm(msg);
+    } else if (msg.type == PAY_CANCEL) {
+        handleCancel(msg);
+    } else {
+        std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
     }
 }
 
-void ArkaimLogic::scheduleReconnect(MessageLayer& core) {
-    // First attempt after 5 seconds to give Arkaim time to initialize
-    static bool first_attempt = true;
-    int delay = first_attempt ? 5 : 3;
-    first_attempt = false;
-    
-    m_reconnect_timer.expires_from_now(boost::posix_time::seconds(delay));
-    
-    auto self = shared_from_this();
-    m_reconnect_timer.async_wait([self, &core](const boost::system::error_code& ec) {
-        if (!ec) {
-            if (!self->m_connected) {
-                self->ensurePipeSession(core);
-            }
-            self->scheduleReconnect(core);
+// ============================================================
+//  startLoop — connect to processing via ITP
+// ============================================================
+
+void ArkaimLogic::startLoop(MessageLayer& core) {
+    m_core = &core;
+
+    itp::named_pipe::uptr pipe = boost::make_unique<itp::named_pipe>("InitPlusArkaimPayPipe");
+
+    if (!pipe->open()) {
+        std::cerr << "[ArkaimLogic] Failed to open pipe" << std::endl;
+        return;
+    }
+    std::cout << "[ArkaimLogic] Pipe opened" << std::endl;
+
+    this->node_.set_parent(std::move(pipe), nullptr);
+    std::cout << "[ArkaimLogic] set_parent done" << std::endl;
+
+    itp_error_code_t errc = this->node_.request_connect(
+        initp::system::time::now(),
+        ABIND(onConnect, _2)
+    );
+    if (errc) {
+        std::cerr << "[ArkaimLogic] request_connect error=" << errc << std::endl;
+        return;
+    }
+
+    // 5. Start poll (manager::start, manager.cpp:66)
+    m_started = true;
+    m_poll_thread = std::thread([this]() {
+        while (m_started.load()) {
+            entity::poll(sys_clock_ms());
+            sys_sleep_for(5);
         }
     });
+
+    std::cout << "[ArkaimLogic] Started, waiting for connection..." << std::endl;
 }
 
-void ArkaimLogic::ensurePipeSession(MessageLayer& core) {
-    if (m_connected || !m_transport) {
-        return;
-    }
-    
-    std::cout << "[ArkaimLogic] ========================================" << std::endl;
-    std::cout << "[ArkaimLogic] Attempting to connect to Arkaim pipe..." << std::endl;
-    std::cout << "[ArkaimLogic] Pipe name: " << m_pipe_name << std::endl;
-    
-    // Transport will create terminal and start polling
-    m_transport->start();
-    
-    if (!m_transport->isConnected()) {
-        std::cerr << "[ArkaimLogic] ✗ Failed to connect to pipe, will retry in 3 seconds..." << std::endl;
-        std::cerr << "[ArkaimLogic] ========================================" << std::endl;
-        return;
-    }
-    
-    std::cout << "[ArkaimLogic] ✓ Pipe connected, sending connect request..." << std::endl;
-    std::cout << "[ArkaimLogic] Current time: " << sys_clock_ms() << std::endl;
-    std::cout << "[ArkaimLogic] Terminal node address: " << (void*)&m_transport->terminal()->node() << std::endl;
-    std::cout << "[ArkaimLogic] Terminal node root_address: " << (int)m_transport->terminal()->node().root_address() << std::endl;
-    
-    // Send request_connect
-    auto self = shared_from_this();
-    itp_error_code_t errc = m_transport->terminal()->node().request_connect(
-        sys_clock_ms(),
-        [self, &core](itp::root&, uint16_t error) {
-            std::cout << "[ArkaimLogic] Connect callback received! error=" << error << std::endl;
-            self->onConnect(error, core);
-        }
-    );
-    
-    if (errc) {
-        std::cerr << "[ArkaimLogic] ✗ request_connect failed immediately with error: " << errc << std::endl;
-        m_connected = false;
-    } else {
-        std::cout << "[ArkaimLogic] request_connect sent successfully, waiting for response..." << std::endl;
-        std::cout << "[ArkaimLogic] Timeout is 5 seconds" << std::endl;
-    }
+uint32_t ArkaimLogic::status() const {
+    return itp::CL2_DST_ONLINE;
 }
 
-void ArkaimLogic::onConnect(uint16_t error, MessageLayer& core) {
+void ArkaimLogic::onConnect(uint16_t error) {
     if (error) {
-        std::cerr << "[ArkaimLogic] ✗ Connect failed with error: " << error;
-        if (error == 5) {
-            std::cerr << " (TIMEOUT - Arkaim processing is not responding)" << std::endl;
-            std::cerr << "[ArkaimLogic] Make sure Arkaim processing server is running!" << std::endl;
-            std::cerr << "[ArkaimLogic] Expected: ./terminal pipe InitPlusArkaimPayPipe" << std::endl;
-        } else {
-            std::cerr << std::endl;
-        }
-        m_connected = false;
+        std::cerr << "[ArkaimLogic] Connection failed, error=" << error << std::endl;
+        m_started = false;
         return;
     }
-    
-    std::cout << "[ArkaimLogic] ✓ Connected successfully, requesting device list..." << std::endl;
-    
-    // Request device list
-    itp::frame::uptr request = std::make_unique<itp::frame>(itp::CL2_CMD_GET_API_LIST);
-    
-    auto self = shared_from_this();
-    m_transport->terminal()->node().push_request(
+
+    std::cout << "[ArkaimLogic] Connected successfully" << std::endl;
+
+    itp::frame::uptr request = boost::make_unique<itp::frame>(itp::CL2_CMD_GET_API_LIST);
+    itp_error_code_t errc = this->node_.push_request(
         std::move(request),
-        m_transport->terminal()->node().root_address(),
-        [self, &core](itp::root&, uint16_t error, itp::frame& response) {
-            self->onGetApiList(error, response, core);
-        }
+        this->node_.root_address(),
+        ABIND(onGetApiList, _2, _3)
     );
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to request API list, error=" << errc << std::endl;
+        m_started = false;
+    }
 }
 
-void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response, MessageLayer& core) {
+void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
     if (error) {
-        std::cerr << "[ArkaimLogic] Get API list failed: " << error << std::endl;
-        m_connected = false;
+        std::cerr << "[ArkaimLogic] Get API list error=" << error << std::endl;
+        m_started = false;
         return;
     }
-    
-    std::cout << "[ArkaimLogic] Parsing device list..." << std::endl;
-    
-    // Parse devices
+
+    std::cout << "[ArkaimLogic] Parsing API list..." << std::endl;
+
+    itp_error_code_t errc;
+    uint8_t address, type;
+    uint32_t api;
+    std::string id;
+
     while (response.has_more()) {
-        uint8_t address;
-        uint32_t api;
-        uint8_t type;
-        std::string id;
-        
-        itp_error_code_t errc;
         std::tie(address, errc) = response.read_value<uint8_t>();
         if (!errc) std::tie(api, errc) = response.read_value<uint32_t>();
         if (!errc) std::tie(type, errc) = response.read_value<uint8_t>();
         if (!errc) std::tie(id, errc) = response.read_string();
-        
-        if (errc) break;
-        
-        std::cout << "[ArkaimLogic] Device: address=" << (int)address 
-                  << ", api=0x" << std::hex << api << std::dec
-                  << ", type=" << (int)type 
-                  << ", id=" << id << std::endl;
-        
-        // Find payment device
-        if (api & itp::CL2_API_PAYMENT) {
-            m_payment_device_address = address;
-            std::cout << "[ArkaimLogic] ✓ Found payment device at address " << (int)address << std::endl;
+        if (errc) {
+            std::cerr << "[ArkaimLogic] Failed to read device entry" << std::endl;
+            m_started = false;
+            return;
         }
-        
-        // Find controller
-        if (api & itp::CL2_API_CONTROLLER) {
-            m_controller_device_address = address;
-            std::cout << "[ArkaimLogic] ✓ Found controller at address " << (int)address << std::endl;
-        }
-        
-        // Find card readers
-        if (api & itp::CL2_API_CONTACTLESS_READER) {
-            m_card_reader_addresses.push_back(address);
-            std::cout << "[ArkaimLogic] ✓ Found contactless reader at address " << (int)address << std::endl;
-            
-            // Subscribe to card events
-            auto self = shared_from_this();
-            if (itp::root::handler_proxy_t* proxy = m_transport->terminal()->node()
-                    .create_handler_proxy(address, itp::CL2_CMD_CRD_CARD_DETECTED)) {
-                proxy->connect([self, &core](itp::frame& event) {
-                    self->onCardDetected(event, core);
-                }, this);
-                std::cout << "[ArkaimLogic] ✓ Subscribed to card events from address " << (int)address << std::endl;
+
+        DeviceInfo dev;
+        dev.address = address;
+        dev.api = api;
+        dev.type = type;
+        dev.id = id;
+        m_devices.push_back(dev);
+
+        std::cout << "[ArkaimLogic] Device: addr=" << (int)address
+                  << " api=0x" << std::hex << api << std::dec
+                  << " type=" << (int)type
+                  << " id=\"" << id << "\"" << std::endl;
+
+        // Subscribe to status changes
+        {
+            std::vector<uint16_t> commands;
+            commands.push_back(itp::CL2_CMD_ALL_STATUS_CHANGED);
+            errc = this->node_.listen_remote(
+                address, commands,
+                ABIND(onListenResult, _2, address,
+                      itp::tools::get_device_name(type),
+                      itp::cl2_command_t::CL2_CMD_ALL_STATUS_CHANGED)
+            );
+            if (!errc) {
+                if (itp::root::handler_proxy_t* proxy =
+                        this->node_.create_handler_proxy(address, itp::CL2_CMD_ALL_STATUS_CHANGED)) {
+                    proxy->connect(ABIND(onDeviceStatus, _1, address, type), this);
+                }
             }
         }
-    }
-    
-    m_connected = true;
-    std::cout << "[ArkaimLogic] ✓✓✓ Ready for payments ✓✓✓" << std::endl;
-}
 
-void ArkaimLogic::handleTransaction(const Message& msg, MessageLayer& core) {
-    if (!m_connected) {
-        std::cerr << "[ArkaimLogic] ✗ Not connected to Arkaim processing" << std::endl;
-        std::cerr << "[ArkaimLogic] Payment request rejected for order: " << msg.resource_id << std::endl;
-        std::cerr << "[ArkaimLogic] Please start Arkaim processing server first!" << std::endl;
-        sendPaymentResult(false, msg.resource_id, 0, "Payment processing unavailable - server not running", core);
-        return;
-    }
-    
-    std::string order_id = msg.resource_id;
-    
-    // Deserialize payment data
-    PaymentRequestData payment_data;
-    if (!deserializePaymentRequest(msg.payload, payment_data)) {
-        std::cerr << "[ArkaimLogic] Failed to deserialize payment request" << std::endl;
-        sendPaymentResult(false, order_id, 0, "Invalid payment data", core);
-        return;
-    }
-    
-    std::cout << "[ArkaimLogic] Payment request for order " << order_id << std::endl;
-    std::cout << "[ArkaimLogic]   product_id: " << payment_data.product_id << std::endl;
-    std::cout << "[ArkaimLogic]   amount: " << payment_data.amount_value 
-              << "e-" << (int)payment_data.amount_decimal << std::endl;
-    
-    // Create pending payment
-    PendingPayment pending;
-    pending.order_id = order_id;
-    pending.payment_data = payment_data;
-    pending.card_data = m_current_card;
-    
-    // Save
-    m_pending_payments[order_id] = pending;
-    
-    // Check: do we have a card?
-    if (!m_current_card.has_card) {
-        std::cout << "[ArkaimLogic] No card detected, waiting for card..." << std::endl;
-        // TODO: Show on DWIN "Поднесите карту"
-        return;
-    }
-    
-    // Send transaction
-    sendTransaction(pending, core);
-}
+        // Helper lambda for subscribing to events
+        auto listen = [this](uint8_t addr, uint8_t dev_type,
+                             const std::vector<uint16_t>& cmds) {
+            for (uint16_t cmd : cmds) {
+                std::vector<uint16_t> current_command;
+                current_command.push_back(cmd);
+                if (!this->node_.listen_remote(
+                        addr, current_command,
+                        std::bind(&ArkaimLogic::onListenResult, this, _2, addr,
+                                  itp::tools::get_device_name(dev_type),
+                                  (itp::cl2_command_t)cmd))) {
+                    this->node_.create_handler_proxy(addr, cmd);
+                }
+            }
+        };
 
-void ArkaimLogic::onCardDetected(itp::frame& event, MessageLayer& core) {
-    std::cout << "[ArkaimLogic] Card detected!" << std::endl;
-    
-    event.prepare_to_read();
-    
-    uint8_t type;
-    std::vector<uint8_t> uid;
-    itp_error_code_t errc;
-    
-    std::tie(type, errc) = event.read_value<uint8_t>();
-    if (!errc) errc = event.read_array(uid);
-    
-    if (errc) {
-        std::cerr << "[ArkaimLogic] Failed to read card data" << std::endl;
-        return;
-    }
-    
-    std::cout << "[ArkaimLogic] Card UID: ";
-    for (uint8_t b : uid) {
-        printf("%02X ", b);
-    }
-    std::cout << std::endl;
-    
-    // Send resolve card type
-    itp::frame::uptr request = std::make_unique<itp::frame>(itp::CL2_CMD_CTR_RESOLVE_CARD_TYPE);
-    
-    auto self = shared_from_this();
-    m_transport->terminal()->node().push_request(
-        std::move(request),
-        m_controller_device_address,
-        [self, &core](itp::root&, uint16_t error, itp::frame& response) {
-            self->onCardResolve(error, response, core);
+        // Subscribe to contactless reader card-detected events
+        if (api & itp::CL2_API_CONTACTLESS_READER) {
+            std::vector<uint16_t> commands;
+            commands.push_back(itp::CL2_CMD_CRD_CARD_DETECTED);
+            listen(address, type, commands);
+
+            if (itp::root::handler_proxy_t* proxy =
+                    this->node_.create_handler_proxy(address, itp::CL2_CMD_CRD_CARD_DETECTED)) {
+                proxy->connect(ABIND(onCardDetected, _1), this);
+                std::cout << "[ArkaimLogic] Listening for card on device addr=" << (int)address << std::endl;
+            }
         }
-    );
+
+        // Subscribe to pinpad events
+        if (api & itp::CL2_API_PINPAD) {
+            std::vector<uint16_t> commands;
+            commands.push_back(itp::CL2_CMD_PIN_KEY_PRESSED);
+            commands.push_back(itp::CL2_CMD_PIN_COMPLETE);
+            listen(address, type, commands);
+
+            if (itp::root::handler_proxy_t* proxy =
+                    this->node_.create_handler_proxy(address, itp::CL2_CMD_PIN_COMPLETE)) {
+                proxy->connect(ABIND(onPinReady, _1), this);
+                std::cout << "[ArkaimLogic] Listening for PIN on device addr=" << (int)address << std::endl;
+            }
+
+            m_pinpad_address = address;
+            m_has_pinpad = true;
+        }
+
+        // Track controller
+        if (api & itp::CL2_API_CONTROLLER) {
+            m_controller_address = address;
+            m_has_controller = true;
+            std::cout << "[ArkaimLogic] Controller found at addr=" << (int)address << std::endl;
+        }
+
+        // Subscribe to barcode scanner
+        if (api & itp::CL2_API_BARCODE_SCANNER) {
+            std::vector<uint16_t> commands;
+            commands.push_back(itp::CL2_CMD_BARCODE_SCANNED);
+            listen(address, type, commands);
+        }
+    }
+
+    std::cout << "[ArkaimLogic] Total " << m_devices.size() << " devices found" << std::endl;
 }
 
-void ArkaimLogic::onCardResolve(uint16_t error, itp::frame& response, MessageLayer& core) {
+void ArkaimLogic::onListenResult(uint16_t error, uint8_t address,
+                                  const std::string& device_name,
+                                  itp::cl2_command_t event) {
     if (error) {
-        std::cerr << "[ArkaimLogic] Card resolve failed: " << error << std::endl;
+        std::cerr << "[ArkaimLogic] Listen error=" << error
+                  << " addr=" << (int)address
+                  << " device=" << device_name << std::endl;
+    }
+}
+
+void ArkaimLogic::onDeviceStatus(itp::frame& event, uint8_t address, uint8_t type) {
+    itp_error_code_t errc;
+    uint32_t dev_status;
+    std::tie(dev_status, errc) = event.read_value<uint32_t>();
+    if (errc) return;
+
+    std::cout << "[ArkaimLogic] Device status: addr=" << (int)address
+              << " status=0x" << std::hex << dev_status << std::dec << std::endl;
+}
+
+
+void ArkaimLogic::onCardDetected(itp::frame& event) {
+    event.prepare_to_read();
+
+    itp_error_code_t errc;
+    uint8_t card_type;
+    std::tie(card_type, errc) = event.read_value<uint8_t>();
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to read card type" << std::endl;
         return;
     }
-    
+
+    std::vector<uint8_t> uid;
+    errc = event.read_array(uid);
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to read card UID" << std::endl;
+        return;
+    }
+
+    std::cout << "[ArkaimLogic] Card detected, type=" << (int)card_type
+              << ", UID size=" << uid.size() << std::endl;
+
+    if (!m_has_controller) {
+        std::cerr << "[ArkaimLogic] No controller to resolve card" << std::endl;
+        return;
+    }
+
+    itp::frame::uptr request(new itp::frame(itp::CL2_CMD_CTR_RESOLVE_CARD_TYPE));
+    errc = this->node_.push_request(
+        std::move(request),
+        m_controller_address,
+        ABIND(onCardResolve, _1, _2, _3)
+    );
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to send resolve card, error=" << errc << std::endl;
+    }
+}
+
+void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& response) {
+    if (error) {
+        std::cerr << "[ArkaimLogic] Card resolve error=" << error << std::endl;
+        return;
+    }
+
     itp_error_code_t errc;
-    
-    std::tie(m_current_card.reader_address, errc) = response.read_value<uint8_t>();
-    if (!errc) std::tie(m_current_card.reader_api, errc) = response.read_value<uint32_t>();
-    
-    uint8_t pay_address;
     uint32_t pay_api;
     uint8_t pay_type;
-    uint16_t pay_service;
-    
-    if (!errc) std::tie(pay_address, errc) = response.read_value<uint8_t>();
+
+    std::tie(m_reader_address, errc) = response.read_value<uint8_t>();
+    if (!errc) std::tie(m_reader_api, errc) = response.read_value<uint32_t>();
+    if (!errc) std::tie(m_pay_address, errc) = response.read_value<uint8_t>();
     if (!errc) std::tie(pay_api, errc) = response.read_value<uint32_t>();
     if (!errc) std::tie(pay_type, errc) = response.read_value<uint8_t>();
-    if (!errc) std::tie(pay_service, errc) = response.read_value<uint16_t>();
-    if (!errc) std::tie(m_current_card.card_number, errc) = response.read_string();
-    
-    int32_t card_issuer;
-    if (!errc) std::tie(card_issuer, errc) = response.read_value<int32_t>();
-    if (!errc) errc = response.read_array(m_current_card.card_data);
-    
+    if (!errc) std::tie(m_pay_service, errc) = response.read_value<uint16_t>();
+    if (!errc) std::tie(m_card_number, errc) = response.read_string();
+    if (!errc) std::tie(m_card_issuer, errc) = response.read_value<int32_t>();
+    if (!errc) errc = response.read_array(m_card_data);
+
     if (errc) {
         std::cerr << "[ArkaimLogic] Failed to parse card resolve response" << std::endl;
         return;
     }
-    
-    m_current_card.has_card = true;
-    
-    std::cout << "[ArkaimLogic] ✓ Card resolved:" << std::endl;
-    std::cout << "[ArkaimLogic]   reader_address: " << (int)m_current_card.reader_address << std::endl;
-    std::cout << "[ArkaimLogic]   card_number: " << m_current_card.card_number << std::endl;
-    std::cout << "[ArkaimLogic]   card_data size: " << m_current_card.card_data.size() << std::endl;
-    
-    // Check: is there a pending payment?
-    if (!m_pending_payments.empty()) {
-        std::cout << "[ArkaimLogic] Found pending payment, processing..." << std::endl;
-        
-        // Take first pending payment
-        auto& pending = m_pending_payments.begin()->second;
-        pending.card_data = m_current_card;
-        
-        sendTransaction(pending, core);
-    }
+
+    m_card_resolved = true;
+    m_pin_data.clear();
+
+    std::cout << "[ArkaimLogic] Card resolved:"
+              << " reader_addr=" << (int)m_reader_address
+              << " reader_api=0x" << std::hex << m_reader_api << std::dec
+              << " pay_addr=" << (int)m_pay_address
+              << " pay_service=" << m_pay_service
+              << " card=\"" << m_card_number << "\""
+              << " card_data_size=" << m_card_data.size()
+              << std::endl;
+
+    tryProcessPendingPayment();
 }
 
-void ArkaimLogic::sendTransaction(const PendingPayment& payment, MessageLayer& core) {
-    std::cout << "[ArkaimLogic] Sending transaction for order " << payment.order_id << std::endl;
-    
-    itp::frame::uptr request = std::make_unique<itp::frame>(itp::CL2_CMD_PAY_TRANSACTION);
-    
-    // Write parameters
-    request->write_value(payment.card_data.reader_address);
-    request->write_value(payment.card_data.reader_api);
-    request->write_string(payment.card_data.card_number);
-    request->write_array(payment.card_data.card_data);
-    request->write_array(payment.pin_data);
-    request->write_value(sys_clock_ms());
-    request->write_string(payment.payment_data.product_id);
-    request->write_value(payment.payment_data.price_value);
-    request->write_value(payment.payment_data.price_decimal);
-    request->write_value(payment.payment_data.volume_value);
-    request->write_value(payment.payment_data.volume_decimal);
-    request->write_value(payment.payment_data.amount_value);
-    request->write_value(payment.payment_data.amount_decimal);
-    
-    auto self = shared_from_this();
-    std::string order_id = payment.order_id;
-    m_transport->terminal()->node().push_request(
+void ArkaimLogic::tryProcessPendingPayment() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_pending.active || !m_card_resolved) return;
+
+    sendTransaction(m_pending.order_id, m_pending.payment);
+}
+
+void ArkaimLogic::sendTransaction(const std::string& order_id,
+                                   const PaymentRequestData& payment) {
+    std::cout << "[ArkaimLogic] Sending PAY_TRANSACTION for order " << order_id << std::endl;
+
+    itp::frame::uptr request(new itp::frame(itp::CL2_CMD_PAY_TRANSACTION));
+    request->write_value(m_reader_address);
+    request->write_value(m_reader_api);
+    request->write_string(m_card_number);
+    request->write_array(m_card_data);
+    request->write_array(m_pin_data);
+    request->write_value(m_pending.transaction_time);
+    request->write_string(payment.product_id);
+    request->write_value(payment.price_value);
+    request->write_value(payment.price_decimal);
+    request->write_value(payment.volume_value);
+    request->write_value(payment.volume_decimal);
+    request->write_value(payment.amount_value);
+    request->write_value(payment.amount_decimal);
+
+    std::string captured_order_id = order_id;
+    itp_error_code_t errc = this->node_.push_request(
         std::move(request),
-        m_payment_device_address,
-        [self, &core, order_id](itp::root&, uint16_t error, itp::frame& response) {
-            self->onTransactionResponse(error, response, core, order_id);
+        m_pay_address,
+        [this, captured_order_id](itp::root& root, uint16_t err, itp::frame& resp) {
+            this->onTransactionResponse(root, err, resp, captured_order_id);
         }
     );
-    
-    std::cout << "[ArkaimLogic] Transaction request sent, waiting for response..." << std::endl;
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to send transaction, error=" << errc << std::endl;
+        sendPaymentResponse(order_id, false, 0, "ITP send error");
+        m_pending.active = false;
+    }
 }
 
-void ArkaimLogic::onTransactionResponse(uint16_t error, itp::frame& response, 
-                                        MessageLayer& core, const std::string& order_id) {
-    std::cout << "[ArkaimLogic] Transaction response received for order " << order_id << std::endl;
-    
-    // Check for PIN required
+void ArkaimLogic::onTransactionResponse(itp::root& root, uint16_t error,
+                                          itp::frame& response, std::string order_id) {
     if (error == itp::CL2_ERR_PAY_PIN_REQUIRED) {
-        std::cout << "[ArkaimLogic] PIN required for this transaction" << std::endl;
-        requestPinFromUser(order_id, core);
+        std::cout << "[ArkaimLogic] PIN required for order " << order_id << std::endl;
+        processPinRequired(response, order_id);
         return;
     }
-    
+
     if (error) {
-        std::cerr << "[ArkaimLogic] Transaction failed with error: " << error << std::endl;
-        sendPaymentResult(false, order_id, 0, "Transaction error: " + std::to_string(error), core);
-        
-        // Remove pending payment
-        m_pending_payments.erase(order_id);
+        std::cerr << "[ArkaimLogic] Transaction error=" << error
+                  << " for order " << order_id << std::endl;
+        sendPaymentResponse(order_id, false, 0,
+                            "Transaction error " + std::to_string(error));
+        m_pending.active = false;
         return;
     }
-    
-    // Parse response
+
     itp_error_code_t errc;
     uint8_t code;
-    std::string receipt_wide;
+    std::string receipt;
     std::string message;
-    int32_t internal_code;
-    std::string internal_message;
-    
+    int32_t int_code;
+    std::string int_message;
+    uint64_t transaction_id = 0;
+
     std::tie(code, errc) = response.read_value<uint8_t>();
-    if (!errc) std::tie(receipt_wide, errc) = response.read_wide_string();
+    if (!errc) std::tie(receipt, errc) = response.read_wide_string();
     if (!errc) std::tie(message, errc) = response.read_string();
-    if (!errc) std::tie(internal_code, errc) = response.read_value<int32_t>();
-    if (!errc) std::tie(internal_message, errc) = response.read_string();
-    
+    if (!errc) std::tie(int_code, errc) = response.read_value<int32_t>();
+    if (!errc) std::tie(int_message, errc) = response.read_string();
+
+    if (code == itp::CL2_PAY_ERR_NONE) {
+        uint32_t price_v = 0, volume_v = 0, amount_v = 0;
+        uint8_t price_e = 0, volume_e = 0, amount_e = 0;
+
+        if (!errc) std::tie(transaction_id, errc) = response.read_value<uint64_t>();
+        if (!errc) std::tie(price_v, errc) = response.read_value<uint32_t>();
+        if (!errc) std::tie(price_e, errc) = response.read_value<uint8_t>();
+        if (!errc) std::tie(volume_v, errc) = response.read_value<uint32_t>();
+        if (!errc) std::tie(volume_e, errc) = response.read_value<uint8_t>();
+        if (!errc) std::tie(amount_v, errc) = response.read_value<uint32_t>();
+        if (!errc) std::tie(amount_e, errc) = response.read_value<uint8_t>();
+    }
+
     if (errc) {
         std::cerr << "[ArkaimLogic] Failed to parse transaction response" << std::endl;
-        sendPaymentResult(false, order_id, 0, "Failed to parse response", core);
-        m_pending_payments.erase(order_id);
+        sendPaymentResponse(order_id, false, 0, "Parse error");
+        m_pending.active = false;
         return;
     }
-    
-    if (code != 0) {
-        std::cerr << "[ArkaimLogic] Payment declined: code=" << (int)code 
-                  << ", message=" << message << std::endl;
-        sendPaymentResult(false, order_id, 0, message, core);
-        m_pending_payments.erase(order_id);
-        return;
+
+    std::cout << "[ArkaimLogic] Transaction response: code=" << (int)code
+              << " message=\"" << message << "\""
+              << " int_code=" << int_code << std::endl;
+
+    if (code == itp::CL2_PAY_ERR_NONE) {
+        std::cout << "[ArkaimLogic] Transaction SUCCESS, id=" << transaction_id << std::endl;
+        m_order_transactions[order_id] = transaction_id;
+        sendPaymentResponse(order_id, true, transaction_id, message);
+    } else {
+        std::cerr << "[ArkaimLogic] Transaction FAILED, code=" << (int)code
+                  << " msg=\"" << message << "\"" << std::endl;
+        sendPaymentResponse(order_id, false, 0, message);
     }
-    
-    // Success - read transaction details
-    uint64_t transaction_id;
-    uint32_t price_v, volume_v, amount_v;
-    uint8_t price_e, volume_e, amount_e;
-    
-    std::tie(transaction_id, errc) = response.read_value<uint64_t>();
-    if (!errc) std::tie(price_v, errc) = response.read_value<uint32_t>();
-    if (!errc) std::tie(price_e, errc) = response.read_value<uint8_t>();
-    if (!errc) std::tie(volume_v, errc) = response.read_value<uint32_t>();
-    if (!errc) std::tie(volume_e, errc) = response.read_value<uint8_t>();
-    if (!errc) std::tie(amount_v, errc) = response.read_value<uint32_t>();
-    if (!errc) std::tie(amount_e, errc) = response.read_value<uint8_t>();
-    
-    if (errc) {
-        std::cerr << "[ArkaimLogic] Failed to parse transaction details" << std::endl;
-        sendPaymentResult(false, order_id, 0, "Failed to parse transaction details", core);
-        m_pending_payments.erase(order_id);
-        return;
-    }
-    
-    // Save mapping
-    m_order_to_transaction[order_id] = transaction_id;
-    
-    std::cout << "[ArkaimLogic] ✓✓✓ Payment SUCCESS ✓✓✓" << std::endl;
-    std::cout << "[ArkaimLogic]   order_id: " << order_id << std::endl;
-    std::cout << "[ArkaimLogic]   transaction_id: " << transaction_id << std::endl;
-    std::cout << "[ArkaimLogic]   amount: " << amount_v << "e-" << (int)amount_e << std::endl;
-    
-    sendPaymentResult(true, order_id, transaction_id, message, core);
-    
-    // Remove pending payment
-    m_pending_payments.erase(order_id);
+
+    m_pending.active = false;
 }
 
-void ArkaimLogic::requestPinFromUser(const std::string& order_id, MessageLayer& core) {
-    std::cout << "[ArkaimLogic] Requesting PIN from user for order " << order_id << std::endl;
-    
-    // TODO: Send message to DWIN to show PIN entry page
+void ArkaimLogic::sendPaymentResponse(const std::string& order_id, bool success,
+                                        uint64_t transaction_id, const std::string& message) {
+    if (!m_core) return;
+
+    nlohmann::json json;
+    json["success"] = success;
+    json["transaction_id"] = transaction_id;
+    json["message"] = message;
+
+    std::string body = json.dump();
+
     Message msg;
-    msg.type = "SHOW_PIN_PAGE";
     msg.source = PIPE_LAYER;
+    msg.type = PAY_TRANSACTION_RESPONSE;
     msg.resource_id = order_id;
-    
-    core.sendToLogicLayer(UART_LAYER, msg);
+    msg.payload.assign(body.begin(), body.end());
+
+    m_core->sendToLogicLayer(HTTP_LAYER, msg);
 }
 
-void ArkaimLogic::sendPaymentResult(bool success, const std::string& order_id,
-                                    uint64_t transaction_id, const std::string& message,
-                                    MessageLayer& core) {
-    nlohmann::json result = {
-        {"success", success},
-        {"order_id", order_id},
-        {"transaction_id", transaction_id},
-        {"message", message}
-    };
-    
-    std::string json_str = result.dump();
-    
-    Message response_msg;
-    response_msg.type = "PAY_TRANSACTION_RESPONSE";
-    response_msg.source = PIPE_LAYER;
-    response_msg.resource_id = order_id;
-    response_msg.payload = Bytes(json_str.begin(), json_str.end());
-    
-    core.sendToLogicLayer(HTTP_LAYER, response_msg);
-}
-
-void ArkaimLogic::handleConfirm(const Message& msg, MessageLayer& core) {
+void ArkaimLogic::handleConfirm(const Message& msg) {
     std::string order_id = msg.resource_id;
-    
-    auto it = m_order_to_transaction.find(order_id);
-    if (it == m_order_to_transaction.end()) {
+
+    auto it = m_order_transactions.find(order_id);
+    if (it == m_order_transactions.end()) {
         std::cerr << "[ArkaimLogic] No transaction found for order " << order_id << std::endl;
         return;
     }
-    
+
     uint64_t transaction_id = it->second;
-    
-    std::cout << "[ArkaimLogic] Confirming transaction " << transaction_id 
+
+    PaymentRequestData payment;
+    deserializePaymentRequest(msg.payload, payment);
+
+    std::cout << "[ArkaimLogic] Confirming transaction " << transaction_id
               << " for order " << order_id << std::endl;
-    
-    // TODO: Implement PAY_CONFIRM
-    std::cout << "[ArkaimLogic] TODO: Implement PAY_CONFIRM" << std::endl;
+
+    itp::frame::uptr request = boost::make_unique<itp::frame>(itp::CL2_CMD_PAY_CONFIRM);
+    request->write_value(m_reader_address);
+    request->write_value(m_reader_api);
+    request->write_string(m_card_number);
+    request->write_array(m_card_data);
+    request->write_value(m_pending.transaction_time);
+    request->write_string(payment.product_id);
+    request->write_value(transaction_id);
+    request->write_value(payment.price_value);
+    request->write_value(payment.price_decimal);
+    request->write_value(payment.volume_value);
+    request->write_value(payment.volume_decimal);
+    request->write_value(payment.amount_value);
+    request->write_value(payment.amount_decimal);
+    request->write_value<uint8_t>(0);
+    request->write_value(payment.volume_value);
+    request->write_value(payment.volume_decimal);
+    request->write_value(payment.amount_value);
+    request->write_value(payment.amount_decimal);
+
+    std::string captured_order_id = order_id;
+    itp_error_code_t errc = this->node_.push_request(
+        std::move(request),
+        m_pay_address,
+        [this, captured_order_id](itp::root&, uint16_t err, itp::frame& resp) {
+            this->onConfirmResponse(err, resp, captured_order_id);
+        }
+    );
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to send confirm, error=" << errc << std::endl;
+    }
 }
 
-void ArkaimLogic::handleCancel(const Message& msg, MessageLayer& core) {
+void ArkaimLogic::handleCancel(const Message& msg) {
     std::string order_id = msg.resource_id;
-    
-    auto it = m_order_to_transaction.find(order_id);
-    if (it == m_order_to_transaction.end()) {
-        std::cerr << "[ArkaimLogic] No transaction found for order " << order_id << std::endl;
+
+    auto it = m_order_transactions.find(order_id);
+    if (it == m_order_transactions.end()) {
+        std::cerr << "[ArkaimLogic] No transaction found for cancel, order " << order_id << std::endl;
         return;
     }
-    
+
     uint64_t transaction_id = it->second;
-    
-    std::cout << "[ArkaimLogic] Cancelling transaction " << transaction_id 
+
+    PaymentRequestData payment;
+    deserializePaymentRequest(msg.payload, payment);
+
+    std::cout << "[ArkaimLogic] Cancelling transaction " << transaction_id
               << " for order " << order_id << std::endl;
-    
-    // TODO: Implement PAY_CANCEL
-    std::cout << "[ArkaimLogic] TODO: Implement PAY_CANCEL" << std::endl;
+
+    itp::frame::uptr request = boost::make_unique<itp::frame>(itp::CL2_CMD_PAY_CANCEL);
+    request->write_value(m_reader_address);
+    request->write_value(m_reader_api);
+    request->write_string(m_card_number);
+    request->write_array(m_card_data);
+    request->write_value(m_pending.transaction_time);
+    request->write_string(payment.product_id);
+    request->write_value(transaction_id);
+    request->write_value(payment.price_value);
+    request->write_value(payment.price_decimal);
+    request->write_value(payment.volume_value);
+    request->write_value(payment.volume_decimal);
+    request->write_value(payment.amount_value);
+    request->write_value(payment.amount_decimal);
+
+    std::string captured_order_id = order_id;
+    itp_error_code_t errc = this->node_.push_request(
+        std::move(request),
+        m_pay_address,
+        [this, captured_order_id](itp::root&, uint16_t err, itp::frame& resp) {
+            this->onCancelResponse(err, resp, captured_order_id);
+        }
+    );
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to send cancel, error=" << errc << std::endl;
+    }
 }
 
-void ArkaimLogic::handlePinEntered(const Message& msg, MessageLayer& core) {
-    std::string order_id = msg.resource_id;
-    
-    std::cout << "[ArkaimLogic] PIN entered for order " << order_id << std::endl;
-    
-    // TODO: Retry transaction with PIN
-    std::cout << "[ArkaimLogic] TODO: Retry transaction with PIN" << std::endl;
+void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response,
+                                      std::string order_id) {
+    if (error) {
+        std::cerr << "[ArkaimLogic] Confirm error=" << error
+                  << " for order " << order_id << std::endl;
+    } else {
+        std::cout << "[ArkaimLogic] Confirm SUCCESS for order " << order_id << std::endl;
+    }
+
+    m_card_resolved = false;
+    m_card_number.clear();
+    m_card_data.clear();
+    m_pin_data.clear();
+    m_order_transactions.erase(order_id);
 }
 
-void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response, MessageLayer& core) {
-    // TODO: Implement
+void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response,
+                                     std::string order_id) {
+    if (error) {
+        std::cerr << "[ArkaimLogic] Cancel error=" << error
+                  << " for order " << order_id << std::endl;
+    } else {
+        std::cout << "[ArkaimLogic] Cancel SUCCESS for order " << order_id << std::endl;
+    }
+
+    m_card_resolved = false;
+    m_card_number.clear();
+    m_card_data.clear();
+    m_pin_data.clear();
+    m_order_transactions.erase(order_id);
 }
 
-void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response, MessageLayer& core) {
-    // TODO: Implement
+void ArkaimLogic::processPinRequired(itp::frame& response, const std::string& order_id) {
+    itp_error_code_t errc;
+    uint8_t type;
+
+    std::tie(type, errc) = response.read_value<uint8_t>();
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to read PIN type" << std::endl;
+        sendPaymentResponse(order_id, false, 0, "PIN type read error");
+        m_pending.active = false;
+        return;
+    }
+
+    m_pin_type = type;
+    m_waiting_pin = true;
+
+    std::cout << "[ArkaimLogic] PIN required, type=" << (int)type << std::endl;
+
+    if (!m_has_pinpad) {
+        std::cerr << "[ArkaimLogic] No pinpad available" << std::endl;
+        sendPaymentResponse(order_id, false, 0, "No pinpad");
+        m_pending.active = false;
+        m_waiting_pin = false;
+        return;
+    }
+
+    uint16_t pin_cmd = (type == itp::CL2_PIN_TYPE_PLAIN)
+                     ? itp::CL2_CMD_PIN_GET_PLAIN
+                     : itp::CL2_CMD_PIN_GET_DUKPT;
+
+    itp::frame::uptr request(new itp::frame(pin_cmd));
+    errc = request->write_value<uint16_t>(30);
+
+    if (!errc) {
+        errc = this->node_.push_request(
+            std::move(request),
+            m_pinpad_address,
+            ABIND(onPinRequest, _2, _3)
+        );
+    }
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to request PIN, error=" << errc << std::endl;
+        sendPaymentResponse(order_id, false, 0, "PIN request error");
+        m_pending.active = false;
+        m_waiting_pin = false;
+    }
+}
+
+void ArkaimLogic::onPinRequest(uint16_t error, itp::frame& response) {
+    if (error) {
+        std::cerr << "[ArkaimLogic] PIN request failed, error=" << error << std::endl;
+    } else {
+        std::cout << "[ArkaimLogic] PIN entry started, waiting for input..." << std::endl;
+    }
+}
+
+void ArkaimLogic::onPinReady(itp::frame& event) {
+    event.prepare_to_read();
+
+    uint32_t dukpt_id = 0;
+    itp_error_code_t errc = event.read_array(m_pin_data);
+    if (!errc && m_pin_type == itp::CL2_PIN_TYPE_DUKPT) {
+        errc = event.read_value(dukpt_id);
+    }
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to read PIN data" << std::endl;
+        if (m_pending.active) {
+            sendPaymentResponse(m_pending.order_id, false, 0, "PIN read error");
+            m_pending.active = false;
+        }
+        m_waiting_pin = false;
+        return;
+    }
+
+    std::cout << "[ArkaimLogic] PIN received, data size=" << m_pin_data.size() << std::endl;
+    m_waiting_pin = false;
+
+    if (m_pending.active) {
+        sendTransaction(m_pending.order_id, m_pending.payment);
+    }
 }
 
 } // namespace bridge
+
+#undef ABIND

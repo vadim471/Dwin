@@ -74,6 +74,7 @@ set(ARKAIM_INFRA_SOURCES
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/transmit.c
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/source/itp/tunnel.c
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/source/itp/entity.cpp
+    ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/source/itp/tools.cpp
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/callback.cpp
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp
 )
@@ -114,22 +115,44 @@ add_executable(dwin_exmpl src/main.cpp
          include/bridge/Logger.hpp
          src/Logger.cpp
          include/bridge/PaymentData.hpp
-         include/bridge/TerminalEntity.hpp
-         src/TerminalEntity.cpp
-         include/bridge/ArkaimTransport.hpp
-         src/ArkaimTransport.cpp
-         include/bridge/ArkaimParser.hpp
-         src/ArkaimParser.cpp
-         include/bridge/ArkaimLogic.hpp
-         src/ArkaimLogic.cpp
-         src/debug_print.cpp
+        src/debug_print.cpp
+        src/ArkaimTransport.cpp
+        src/ArkaimParser.cpp
+        src/ArkaimLogic.cpp
+        include/bridge/ArkaimTransport.hpp
+        include/bridge/ArkaimParser.hpp
+        include/bridge/ArkaimLogic.hpp
         ${ARKAIM_INFRA_SOURCES}
 )
 
 if(WIN32)
-    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS WIN32 ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM)
+    target_compile_definitions(dwin_exmpl PRIVATE
+        BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS WIN32
+        ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM
+        ITP_REVISION=5
+        ITP_WAIT_SENDING=10000
+        ITP_WAIT_RECEIVING=10000
+        ITP_WAIT_ACKNOWLEDGE=10000
+        ITP_WAIT_CONTROL=30000
+        ITP_WAIT_PROXY=120000
+        ITP_WAIT_DATA=120000
+        ITP_MAX_BUFFER_SIZE=0xFFFF
+        ITP_ENABLE_THREAD_SAFETY
+    )
 else()
-    target_compile_definitions(dwin_exmpl PRIVATE BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS POSIX ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM)
+    target_compile_definitions(dwin_exmpl PRIVATE
+        BOOST_LOG_DYN_LINK ITP_COMPILE_CXX ITP_EXTEND_CALLBACKS POSIX
+        ITP_DEBUG_CUSTOM SYSTEM_DEBUG_CUSTOM
+        ITP_REVISION=5
+        ITP_WAIT_SENDING=10000
+        ITP_WAIT_RECEIVING=10000
+        ITP_WAIT_ACKNOWLEDGE=10000
+        ITP_WAIT_CONTROL=30000
+        ITP_WAIT_PROXY=120000
+        ITP_WAIT_DATA=120000
+        ITP_MAX_BUFFER_SIZE=0xFFFF
+        ITP_ENABLE_THREAD_SAFETY
+    )
 endif()
 
 target_link_libraries(dwin_exmpl

@@ -1,25 +1,33 @@
 #include "bridge/ArkaimParser.hpp"
+#include "bridge/constant.hpp"
+
 #include <iostream>
 
 namespace bridge {
 
-ArkaimParser::ArkaimParser()
-    : m_terminal(nullptr)
-{
-}
+std::vector<Message> ArkaimParser::parse(const RawData& raw_data, const std::string& message_source) {
+    // ITP protocol framing is handled by itp::entity inside ArkaimLogic.
+    // This parser only handles Messages routed through sendToLogicLayer().
+    // Raw pipe data never reaches here — it goes through the entity's internal transport.
+    std::vector<Message> messages;
 
-std::vector<Message> ArkaimParser::parse(const RawData& data, const std::string& source) {
-    // ITP protocol uses callbacks, not polling
-    // Responses are handled in callbacks registered with push_request()
-    // So this method returns empty vector
-    return {};
+    if (!raw_data.data.empty()) {
+        Message msg;
+        msg.source = message_source;
+        msg.payload = raw_data.data;
+        messages.push_back(msg);
+    }
+
+    return messages;
 }
 
 RawData ArkaimParser::serialize(const Message& message) {
-    // ITP protocol sending happens through terminal->node().push_request()
-    // in ArkaimLogic, not through this serialize method
-    // So this method returns empty RawData
-    return RawData{};
+    // ArkaimLogic sends commands via itp::root::push_request(), not via transport.send().
+    // This serialize is only called if someone does core.sendTo(PIPE_LAYER, msg),
+    // which is not the normal path. Pass payload through for completeness.
+    RawData raw;
+    raw.data = message.payload;
+    return raw;
 }
 
 } // namespace bridge

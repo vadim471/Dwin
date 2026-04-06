@@ -93,6 +93,10 @@ namespace bridge {
         if (vp == m_settings.dwin.vp_back_button_service_menu) {
 
         }
+
+        if (vp == m_settings.dwin.vp_button_cancel_transaction) {
+            handleCancelTransaction(message, core);
+        }
     }
 
     void DwinLogic::handleSelectedTRK(const Message &message, MessageLayer &core) {
@@ -254,6 +258,14 @@ namespace bridge {
         core.sendToLogicLayer(HTTP_LAYER, msg);
     }
 
+    void DwinLogic::handleCancelTransaction(const Message &message, MessageLayer& core) {
+        Message msg;
+        msg.source = UART_LAYER;
+        msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
+
+        core.sendToLogicLayer(PIPE_LAYER, msg);
+    }
+
     void DwinLogic::handleBasicTouch(const Message &message, MessageLayer &core) {
         uint16_t key_value = (message.payload[3] << 8) | message.payload[4];
         Message msg;
@@ -272,6 +284,11 @@ namespace bridge {
         if (key_value == 3) {
             msg.type = USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
         }
+
+        // Кнопка "ОТМЕНЫ" заказа после оплаты.
+        // if (key_value == 4) {
+        //     msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
+        // }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.
         if  (key_value == 8) {

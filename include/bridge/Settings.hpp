@@ -100,7 +100,7 @@ struct Settings {
         uint16_t vp_text_select_trk_button;
 
     // --- Buttons ---
-
+        uint16_t vp_button_cancel_transaction;
 
     // --- Page Service Menu ---
         uint16_t vp_back_button_service_menu;
@@ -278,6 +278,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fourteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyth_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -400,6 +401,7 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyseventh_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyeighth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyninth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyth_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -513,6 +515,8 @@ struct Settings {
 
             LOAD_HEX(vp_text_select_trk_button);
             LOAD_HEX(vp_trk_id_first_page);
+
+            LOAD_HEX(vp_button_cancel_transaction);
 
             LOAD_HEX(vp_back_button_service_menu);
 

@@ -3,88 +3,122 @@
 #include "ILogicHandler.hpp"
 #include "ArkaimTransport.hpp"
 #include "PaymentData.hpp"
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/deadline_timer.hpp>
+
+#include <itp/entity.hpp>
 #include <itp/itp.hpp>
 #include <itp/cl2.h>
-#include <unordered_map>
-#include <memory>
+#include <itp/command.h>
+
+#include <initp/generic/event_proxy.hpp>
+
+#include <boost/asio.hpp>
+
+#include <thread>
+#include <atomic>
+#include <map>
+#include <mutex>
 
 namespace bridge {
 
-struct CardData {
-    uint8_t reader_address = 0;
-    uint32_t reader_api = 0;
-    std::string card_number;
-    std::vector<uint8_t> card_data;
-    bool has_card = false;
-};
+class ArkaimLogic : public ILogicHandler, public itp::entity {
 
-struct PendingPayment {
-    std::string order_id;
-    PaymentRequestData payment_data;
-    CardData card_data;
-    std::vector<uint8_t> pin_data;
-};
-
-class ArkaimLogic : public std::enable_shared_from_this<ArkaimLogic>,
-                    public ILogicHandler {
 public:
-    ArkaimLogic(boost::asio::io_service& ios);
-    ~ArkaimLogic() override = default;
-    
-    void startLoop(MessageLayer& core);
+    ArkaimLogic(boost::asio::io_service& ios,
+                ArkaimTransportPtr transport);
+    ~ArkaimLogic() override;
+
+    // ILogicHandler
     void handle(const Message& msg, MessageLayer& core) override;
-    void setTransport(std::shared_ptr<ArkaimTransport> transport);
+
+    // Start the ITP connection and poll loop
+    void startLoop(MessageLayer& core);
+
+    // itp::entity
+    uint32_t status() const override;
 
 private:
-    // Lifecycle
-    void scheduleReconnect(MessageLayer& core);
-    void ensurePipeSession(MessageLayer& core);
-    
-    // ITP callbacks
-    void onConnect(uint16_t error, MessageLayer& core);
-    void onGetApiList(uint16_t error, itp::frame& response, MessageLayer& core);
-    
-    // Card reader events
-    void onCardDetected(itp::frame& event, MessageLayer& core);
-    void onCardResolve(uint16_t error, itp::frame& response, MessageLayer& core);
-    
-    // Payment operations
-    void handleTransaction(const Message& msg, MessageLayer& core);
-    void handleConfirm(const Message& msg, MessageLayer& core);
-    void handleCancel(const Message& msg, MessageLayer& core);
-    void handlePinEntered(const Message& msg, MessageLayer& core);
-    
-    // Payment callbacks
-    void onTransactionResponse(uint16_t error, itp::frame& response, 
-                               MessageLayer& core, const std::string& order_id);
-    void onConfirmResponse(uint16_t error, itp::frame& response, MessageLayer& core);
-    void onCancelResponse(uint16_t error, itp::frame& response, MessageLayer& core);
-    
-    // Helpers
-    void sendTransaction(const PendingPayment& payment, MessageLayer& core);
-    void requestPinFromUser(const std::string& order_id, MessageLayer& core);
-    void sendPaymentResult(bool success, const std::string& order_id,
-                          uint64_t transaction_id, const std::string& message,
-                          MessageLayer& core);
-    
+    // ---- Connection flow (mirrors manager.cpp) ----
+    void onConnect(uint16_t error);
+    void onGetApiList(uint16_t error, itp::frame& response);
+    void onListenResult(uint16_t error, uint8_t address,
+                        const std::string& device_name, itp::cl2_command_t event);
+    void onDeviceStatus(itp::frame& event, uint8_t address, uint8_t type);
+
+    // ---- Card flow (mirrors controller.cpp) ----
+    void onCardDetected(itp::frame& event);
+    void onCardResolve(itp::root& root, uint16_t error, itp::frame& response);
+
+    // ---- Payment flow ----
+    void sendTransaction(const std::string& order_id, const PaymentRequestData& payment);
+    void onTransactionResponse(itp::root& root, uint16_t error,
+                               itp::frame& response, std::string order_id);
+    void sendPaymentResponse(const std::string& order_id, bool success,
+                             uint64_t transaction_id, const std::string& message);
+
+    // ---- Confirm / Cancel ----
+    void handleConfirm(const Message& msg);
+    void handleCancel(const Message& msg);
+    void onConfirmResponse(uint16_t error, itp::frame& response, std::string order_id);
+    void onCancelResponse(uint16_t error, itp::frame& response, std::string order_id);
+
+    // ---- PIN handling ----
+    void processPinRequired(itp::frame& response, const std::string& order_id);
+    void onPinRequest(uint16_t error, itp::frame& response);
+    void onPinReady(itp::frame& event);
+
+    // ---- Helpers ----
+    void tryProcessPendingPayment();
+
+private:
+    MessageLayer* m_core = nullptr;
     boost::asio::io_service& m_ios;
-    boost::asio::deadline_timer m_reconnect_timer;
-    std::shared_ptr<ArkaimTransport> m_transport;
-    
-    std::string m_pipe_name;
-    bool m_connected;
-    uint8_t m_payment_device_address;
-    uint8_t m_controller_device_address;
-    
-    // Card reader state
-    std::vector<uint8_t> m_card_reader_addresses;
-    CardData m_current_card;
-    
-    // Payment state
-    std::unordered_map<std::string, uint64_t> m_order_to_transaction;
-    std::unordered_map<std::string, PendingPayment> m_pending_payments;
+    ArkaimTransportPtr m_transport;
+    std::thread m_poll_thread;
+    std::atomic<bool> m_started{false};
+    std::mutex m_mutex;
+
+    // ---- Device addresses discovered from API list ----
+    struct DeviceInfo {
+        uint8_t address = 0;
+        uint32_t api = 0;
+        uint8_t type = 0;
+        std::string id;
+    };
+    std::vector<DeviceInfo> m_devices;
+
+    uint8_t m_controller_address = 0;
+    bool m_has_controller = false;
+    uint8_t m_pinpad_address = 0;
+    bool m_has_pinpad = false;
+
+    // ---- Card state (from on_card_resolve) ----
+    bool m_card_resolved = false;
+    uint8_t m_reader_address = 0;
+    uint32_t m_reader_api = 0;
+    uint8_t m_pay_address = 0;
+    uint16_t m_pay_service = 0;
+    std::string m_card_number;
+    std::vector<uint8_t> m_card_data;
+    int32_t m_card_issuer = 0;
+
+    // ---- PIN state ----
+    std::vector<uint8_t> m_pin_data;
+    uint8_t m_pin_type = 0;
+    bool m_waiting_pin = false;
+
+    // ---- Pending payment (waiting for card) ----
+    struct PendingPayment {
+        bool active = false;
+        std::string order_id;
+        PaymentRequestData payment;
+        uint64_t transaction_time = 0;
+    };
+    PendingPayment m_pending;
+
+    // ---- Order -> Transaction mapping ----
+    std::map<std::string, uint64_t> m_order_transactions;
 };
+
+using ArkaimLogicPtr = std::shared_ptr<ArkaimLogic>;
 
 } // namespace bridge

@@ -15,6 +15,9 @@ namespace bridge {
 
     //Arkaim const
     extern const std::string PAY_TRANSACTION;
+    extern const std::string PAY_TRANSACTION_RESPONSE;
+    extern const std::string PAY_CONFIRM;
+    extern const std::string PAY_CANCEL;
     extern const std::string ARKAIM_REQUEST;
 
     // Path to config file
@@ -57,6 +60,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_CLOSE_ORDER_BUTTON;
     extern const std::string USER_TOUCH_SET_USED_TRK_BUTTON;
     extern const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
 
     // HTTP GET
     extern const std::string GET_PRODUCTS;

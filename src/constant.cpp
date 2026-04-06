@@ -14,6 +14,9 @@ namespace bridge {
     const std::string CONFIG = "/home/vadim/gas_station_data/config.json";
 
     const std::string PAY_TRANSACTION = "PAYMENT_TRANSACTION";
+    const std::string PAY_TRANSACTION_RESPONSE = "PAY_TRANSACTION_RESPONSE";
+    const std::string PAY_CONFIRM = "PAY_CONFIRM";
+    const std::string PAY_CANCEL = "PAY_CANCEL";
     const std::string ARKAIM_REQUEST = "ARKAIM_REQUEST";
 
     const std::string GET_PRODUCTS = "get_products";
@@ -44,6 +47,7 @@ namespace bridge {
     const std::string USER_TOUCH_CLOSE_ORDER_BUTTON = "CLOSE_ORDER";
     const std::string USER_TOUCH_SET_USED_TRK_BUTTON = "SET_USED_TRK";
     const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON = "TAP_ON_USED_TRK";
+    const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON = "CANCEL_TRANSACTION";
 
 
     const std::string HTTP_RESPONSE = "HTTP_RESPONSE";
