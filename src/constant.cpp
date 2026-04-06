@@ -17,6 +17,8 @@ namespace bridge {
     const std::string PAY_TRANSACTION_RESPONSE = "PAY_TRANSACTION_RESPONSE";
     const std::string PAY_CONFIRM = "PAY_CONFIRM";
     const std::string PAY_CANCEL = "PAY_CANCEL";
+    const std::string PAY_CANCEL_RESPONSE_SUCCESS = "PAY_CANCEL_RESPONSE_SUCCESS";
+    const std::string PAY_CONFIRM_RESPONSE_SUCCESS = "PAY_CONFIRM_RESPONSE_SUCCESS";
     const std::string ARKAIM_REQUEST = "ARKAIM_REQUEST";
 
     const std::string GET_PRODUCTS = "get_products";

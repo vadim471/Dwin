@@ -108,6 +108,7 @@ namespace bridge {
     struct Dispenser {
         std::string id;
         std::string status;
+        std::string prev_status;
         Order order;
         std::string product_id;
 

@@ -15,6 +15,13 @@ struct PaymentRequestData {
     uint8_t volume_decimal = 0;
     uint32_t amount_value = 0;
     uint8_t amount_decimal = 0;
+
+    // Confirm-specific fields (from reference: payment.cpp)
+    uint8_t not_complete = 0;       // 0 = full delivery, 1 = partial
+    uint32_t fact_volume_value = 0;
+    uint8_t fact_volume_decimal = 0;
+    uint32_t fact_amount_value = 0;
+    uint8_t fact_amount_decimal = 0;
 };
 
 inline Bytes serializePaymentRequest(const PaymentRequestData& request) {
@@ -26,6 +33,11 @@ inline Bytes serializePaymentRequest(const PaymentRequestData& request) {
         {"volume_decimal", request.volume_decimal},
         {"amount_value", request.amount_value},
         {"amount_decimal", request.amount_decimal},
+        {"not_complete", request.not_complete},
+        {"fact_volume_value", request.fact_volume_value},
+        {"fact_volume_decimal", request.fact_volume_decimal},
+        {"fact_amount_value", request.fact_amount_value},
+        {"fact_amount_decimal", request.fact_amount_decimal},
     };
 
     const auto body = json.dump();
@@ -44,6 +56,11 @@ inline bool deserializePaymentRequest(const Bytes& payload, PaymentRequestData& 
         request.volume_decimal = json.value("volume_decimal", uint8_t(0));
         request.amount_value = json.value("amount_value", uint32_t(0));
         request.amount_decimal = json.value("amount_decimal", uint8_t(0));
+        request.not_complete = json.value("not_complete", uint8_t(0));
+        request.fact_volume_value = json.value("fact_volume_value", uint32_t(0));
+        request.fact_volume_decimal = json.value("fact_volume_decimal", uint8_t(0));
+        request.fact_amount_value = json.value("fact_amount_value", uint32_t(0));
+        request.fact_amount_decimal = json.value("fact_amount_decimal", uint8_t(0));
         return true;
     } catch (...) {
         return false;

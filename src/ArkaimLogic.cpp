@@ -77,7 +77,7 @@ void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
 
     } else if (msg.type == PAY_CONFIRM) {
         handleConfirm(msg);
-    } else if (msg.type == PAY_CANCEL) {
+    } else if (msg.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
         handleCancel(msg);
     } else {
         std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
@@ -528,11 +528,11 @@ void ArkaimLogic::handleConfirm(const Message& msg) {
     request->write_value(payment.volume_decimal);
     request->write_value(payment.amount_value);
     request->write_value(payment.amount_decimal);
-    request->write_value<uint8_t>(0);
-    request->write_value(payment.volume_value);
-    request->write_value(payment.volume_decimal);
-    request->write_value(payment.amount_value);
-    request->write_value(payment.amount_decimal);
+    request->write_value(payment.not_complete);
+    request->write_value(payment.fact_volume_value);
+    request->write_value(payment.fact_volume_decimal);
+    request->write_value(payment.fact_amount_value);
+    request->write_value(payment.fact_amount_decimal);
 
     std::string captured_order_id = order_id;
     itp_error_code_t errc = this->node_.push_request(
@@ -549,7 +549,20 @@ void ArkaimLogic::handleConfirm(const Message& msg) {
 }
 
 void ArkaimLogic::handleCancel(const Message& msg) {
-    std::string order_id = msg.resource_id;
+    std::string order_id;
+    PaymentRequestData payment;
+
+    if (!msg.payload.empty() && deserializePaymentRequest(msg.payload, payment)) {
+        order_id = msg.resource_id;
+    } else {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_pending.active) {
+            std::cerr << "[ArkaimLogic] Cancel: no payload and no pending payment" << std::endl;
+            return;
+        }
+        order_id = m_pending.order_id;
+        payment = m_pending.payment;
+    }
 
     auto it = m_order_transactions.find(order_id);
     if (it == m_order_transactions.end()) {
@@ -558,9 +571,6 @@ void ArkaimLogic::handleCancel(const Message& msg) {
     }
 
     uint64_t transaction_id = it->second;
-
-    PaymentRequestData payment;
-    deserializePaymentRequest(msg.payload, payment);
 
     std::cout << "[ArkaimLogic] Cancelling transaction " << transaction_id
               << " for order " << order_id << std::endl;
@@ -601,6 +611,14 @@ void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response,
                   << " for order " << order_id << std::endl;
     } else {
         std::cout << "[ArkaimLogic] Confirm SUCCESS for order " << order_id << std::endl;
+
+        if (m_core) {
+            Message msg;
+            msg.source = PIPE_LAYER;
+            msg.type = PAY_CONFIRM_RESPONSE_SUCCESS;
+            msg.resource_id = order_id;
+            m_core->sendToLogicLayer(UART_LAYER, msg);
+        }
     }
 
     m_card_resolved = false;
@@ -617,6 +635,14 @@ void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response,
                   << " for order " << order_id << std::endl;
     } else {
         std::cout << "[ArkaimLogic] Cancel SUCCESS for order " << order_id << std::endl;
+
+        if (m_core) {
+            Message msg;
+            msg.source = PIPE_LAYER;
+            msg.type = PAY_CANCEL_RESPONSE_SUCCESS;
+            msg.resource_id = order_id;
+            m_core->sendToLogicLayer(UART_LAYER, msg);
+        }
     }
 
     m_card_resolved = false;

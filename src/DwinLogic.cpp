@@ -23,6 +23,12 @@ namespace bridge {
         else if (message.type == "write_ack") {
             // std::cout << "Write OK" << std::endl;
         }
+        else if (message.type == PAY_CANCEL_RESPONSE_SUCCESS) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process_end);
+        }
+        else if (message.type == PAY_CONFIRM_RESPONSE_SUCCESS) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
+        }
     }
 
     // Обработка нажатий на дисплей.
@@ -284,11 +290,6 @@ namespace bridge {
         if (key_value == 3) {
             msg.type = USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
         }
-
-        // Кнопка "ОТМЕНЫ" заказа после оплаты.
-        // if (key_value == 4) {
-        //     msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
-        // }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.
         if  (key_value == 8) {

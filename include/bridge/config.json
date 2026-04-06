@@ -82,6 +82,7 @@
           "vp_current_order_amount_integer_second_type_thirteenth_page": "0x6250",
           "vp_current_order_amount_integer_twentysixth_page": "0x7502",
           "vp_current_order_amount_integer_twentyseventh_page": "0x7602",
+          "vp_current_order_amount_integer_thirtyth_page": "0x7902",
 
           "vp_current_order_amount_decimal_sixth_page": "0x5528",
           "vp_current_order_amount_decimal_seventh_page": "0x5628",
@@ -95,6 +96,7 @@
           "vp_current_order_amount_decimal_second_type_thirteenth_page": "0x6258",
           "vp_current_order_amount_decimal_twentysixth_page": "0x7509",
           "vp_current_order_amount_decimal_twentyseventh_page": "0x7609",
+          "vp_current_order_amount_decimal_thirtyth_page": "0x7909",
 
           "vp_current_fuel_type_price_integer_third_page": "0x8800",
           "vp_current_fuel_type_price_integer_forth_page": "0x8806",
@@ -312,6 +314,7 @@
           "page_return_money_process_end": 27,
           "page_type_service_code": 28,
           "page_select_used_trk": 29,
+          "page_return_money_cancel_transaction": 30,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,

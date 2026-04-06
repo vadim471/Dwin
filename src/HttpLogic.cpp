@@ -126,6 +126,15 @@ namespace bridge {
             m_waitingResponse.store(true); // Ставим флаг
         }
 
+        // 3. Idle timer — через 5с переключаем на page_idle
+        if (m_is_idle_timer_running) {
+            auto elapsed = std::chrono::steady_clock::now() - m_idle_timer_start;
+            if (elapsed >= std::chrono::seconds(5)) {
+                m_is_idle_timer_running = false;
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_idle);
+            }
+        }
+
         // Перезавод таймера
         scheduleNextTick(core);
     }
@@ -193,7 +202,7 @@ namespace bridge {
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
             getDispenserStatus(core, m_current_dispenser_id);
-        } else if (message.type == "PAY_TRANSACTION_RESPONSE") {
+        } else if (message.type == PAY_TRANSACTION_RESPONSE) {
             handlePaymentResponse(message, core);
         }
     }
@@ -665,6 +674,12 @@ namespace bridge {
             std::string volume_string = utility::getFormattedStringFromJson(
                 utility::parseStringFromJson(volume["value"]), utility::parseIntFromJson(volume["exponent"]));
 
+            // Сохранение фактических данных пролива в m_orders
+            if (m_orders.count(trk_id)) {
+                m_orders[trk_id].amount = std::stod(amount_string);
+                m_orders[trk_id].volume = std::stod(volume_string);
+            }
+
             setCurrentFuelingVolume(core, volume_string);
 
             sendFloatToDwin(m_settings.dwin.vp_current_order_amount_integer,
@@ -709,6 +724,7 @@ namespace bridge {
         auto device_id = utility::parseStringFromJson(event["device_id"]);
 
         Dispenser *dispenser = utility::getDispenserById(m_dispensers, device_id);
+        dispenser->prev_status = dispenser->status;
         dispenser->status = status;
 
         if (data.contains("nozzle")) {
@@ -728,11 +744,16 @@ namespace bridge {
         } else if (status == DISPENSER_IDLE) {
             m_is_idle_timer_running = true;
             m_idle_timer_start = std::chrono::steady_clock::now();
-            // Dispenser* dispenser = utility::getDispenserById(m_dispensers, device_id);
-            // dispenser->status = status;
 
-            uint8_t page_id = m_settings.dwin.page_set_nozzle_into_gasoline;
-            DwinCommands::sendPageToDwin(core, page_id);
+            if (dispenser->prev_status == DISPENSER_COMPLETE ||
+                dispenser->prev_status == DISPENSER_FUELING ||
+                dispenser->prev_status == DISPENSER_HALTED) {
+                // После пролива — "Счастливого пути"
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
+            } else {
+                // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
+            }
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
             uint8_t page_id = m_settings.dwin.page_fuel_ended;
@@ -744,6 +765,8 @@ namespace bridge {
                     m_settings.dwin.text_len_percent_progress_bar);
             }
             m_current_dispenser_id.clear();
+        } else if (status == DISPENSER_FUELING) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_in_progress);
         }
     }
 
@@ -755,12 +778,73 @@ namespace bridge {
 
             m_orders[device_id].status = status;
 
-            if (status == ORDER_INTERRUPTED) {
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
+            if (status == ORDER_INTERRUPTED || status == ORDER_DELIVERED) {
+                if (status == ORDER_INTERRUPTED) {
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
+                }
+
+                auto& order = m_orders[device_id];
+
+                // Парсим фактические данные из event
+                uint32_t fact_amount_value = 0;
+                uint8_t fact_amount_decimal = 0;
+                uint32_t fact_volume_value = 0;
+                uint8_t fact_volume_decimal = 0;
+
+                if (data.contains("amount")) {
+                    auto amount = data["amount"];
+                    fact_amount_value = static_cast<uint32_t>(std::stoul(utility::parseStringFromJson(amount["value"])));
+                    fact_amount_decimal = static_cast<uint8_t>(utility::parseIntFromJson(amount["exponent"]));
+                }
+                if (data.contains("volume")) {
+                    auto volume = data["volume"];
+                    fact_volume_value = static_cast<uint32_t>(std::stoul(utility::parseStringFromJson(volume["value"])));
+                    fact_volume_decimal = static_cast<uint8_t>(utility::parseIntFromJson(volume["exponent"]));
+                }
+
+                // Цена за литр (исходная)
+                int price_val = 0, price_exp = 0;
+                Product* product = utility::getProductById(m_products, order.product_id);
+                if (product) {
+                    std::tie(price_val, price_exp) = utility::formatFloatStringToInt(product->price);
+                }
+
+                // Исходные данные заказа (заказанные объём/сумма)
+                int order_volume_val = 0, order_volume_exp = 0;
+                int order_amount_val = 0, order_amount_exp = 0;
+                Dispenser* dispenser = utility::getDispenserById(m_dispensers, device_id);
+                if (dispenser) {
+                    std::tie(order_volume_val, order_volume_exp) = utility::formatFloatStringToInt(dispenser->order.volume);
+                    std::tie(order_amount_val, order_amount_exp) = utility::formatFloatStringToInt(dispenser->order.amount);
+                }
+
+                PaymentRequestData payment;
+                payment.product_id = order.product_id;
+                payment.price_value = static_cast<uint32_t>(price_val);
+                payment.price_decimal = static_cast<uint8_t>(price_exp);
+                payment.volume_value = static_cast<uint32_t>(order_volume_val);
+                payment.volume_decimal = static_cast<uint8_t>(order_volume_exp);
+                payment.amount_value = static_cast<uint32_t>(order_amount_val);
+                payment.amount_decimal = static_cast<uint8_t>(order_amount_exp);
+                payment.not_complete = (status == ORDER_INTERRUPTED) ? 1 : 0;
+                payment.fact_volume_value = fact_volume_value;
+                payment.fact_volume_decimal = fact_volume_decimal;
+                payment.fact_amount_value = fact_amount_value;
+                payment.fact_amount_decimal = fact_amount_decimal;
+
+                Message msg;
+                msg.source = HTTP_LAYER;
+                msg.type = PAY_CONFIRM;
+                msg.resource_id = order.id;
+                msg.payload = serializePaymentRequest(payment);
+
+                core.sendToLogicLayer(PIPE_LAYER, msg);
+
             } else if (status == ORDER_AUTHORIZED) {
                 std::string time_begin_string = data["time_begin"];
-                m_orders[device_id].time_begin = std::stoull(time_begin_string); // Здесь есть tanker_begin + counter_begin
+                m_orders[device_id].time_begin = std::stoull(time_begin_string);
             }
+
         } catch (const std::exception &e) {
             std::cerr << "[Logic] Error Dispenser Order Status: " << e.what() << std::endl;
         }
@@ -1024,8 +1108,8 @@ namespace bridge {
                 sendTaskToHttp(core, std::to_string(task_id));
             } else {
                 if (task_id == m_current_order_task) {
-                    // Перелистываем на страницу "операция по карте выполнена успешно".
-                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_success_processing_fuel_card);
+                    // Перелистываем на страницу "операция по карте выполняется".
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
                 }
                 getDispenserStatus(core, m_current_dispenser_id);
             }
@@ -1297,16 +1381,17 @@ namespace bridge {
             uint64_t transaction_id = json["transaction_id"];
             std::string message = json["message"];
             
-            std::cout << "[HttpLogic] ✓ Payment SUCCESS for order " << order_id 
+            std::cout << "[HttpLogic] Payment SUCCESS for order " << order_id
                       << ", transaction_id=" << transaction_id << std::endl;
             
             // TODO: Show "Оплата подтверждена" on DWIN
             // TODO: Allow fueling to start
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_success_processing_fuel_card);
             
         } else {
             std::string error_msg = json["message"];
             
-            std::cerr << "[HttpLogic] ✗ Payment FAILED for order " << order_id 
+            std::cerr << "[HttpLogic] Payment FAILED for order " << order_id
                       << ", message=" << error_msg << std::endl;
             
             // TODO: Show error on DWIN

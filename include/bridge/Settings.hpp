@@ -192,6 +192,7 @@ struct Settings {
         int page_return_money_process_end;
         int page_type_service_code;
         int page_select_used_trk;
+        int page_return_money_cancel_transaction;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -329,6 +330,7 @@ struct Settings {
             s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_second_type_thirteenth_page"));
             s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_twentysixth_page"));
             s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_twentyseventh_page"));
+            s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_thirtyth_page"));
 
             s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_sixth_page"));
             s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_seventh_page"));
@@ -342,6 +344,7 @@ struct Settings {
             s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_second_type_thirteenth_page"));
             s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_twentysixth_page"));
             s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_twentyseventh_page"));
+            s.dwin.vp_current_order_amount_decimal_pages.push_back(getHex("vp_current_order_amount_decimal_thirtyth_page"));
 
             s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_third_page"));
             s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_forth_page"));
@@ -555,6 +558,7 @@ struct Settings {
             s.dwin.page_return_money_process_end       = j["dwin"]["page_return_money_process_end"];
             s.dwin.page_type_service_code              = j["dwin"]["page_type_service_code"];
             s.dwin.page_select_used_trk                = j["dwin"]["page_select_used_trk"];
+            s.dwin.page_return_money_cancel_transaction= j["dwin"]["page_return_money_cancel_transaction"];
 
             s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
             s.dwin.icon_dispenser_idle     = j["dwin"]["icon_dispenser_idle"];
