@@ -126,14 +126,8 @@ namespace bridge {
             m_waitingResponse.store(true); // Ставим флаг
         }
 
-        // 3. Idle timer — через 5с переключаем на page_idle
-        if (m_is_idle_timer_running) {
-            auto elapsed = std::chrono::steady_clock::now() - m_idle_timer_start;
-            if (elapsed >= std::chrono::seconds(5)) {
-                m_is_idle_timer_running = false;
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_idle);
-            }
-        }
+        // 3. Проверка таймеров отложенных страниц
+        checkTimers(core);
 
         // Перезавод таймера
         scheduleNextTick(core);
@@ -207,7 +201,7 @@ namespace bridge {
         }
     }
 
-    void HttpLogic::handleBasicTouch(MessageLayer& core) {
+    void HttpLogic::handleBasicTouch(MessageLayer& core) const {
             getDispenserStatus(core, m_current_dispenser_id);
     }
 
@@ -325,9 +319,6 @@ namespace bridge {
         int value_price, exponent_price;
         std::tie(value_price, exponent_price) = utility::formatFloatStringToInt(product->price);
 
-        // int value_price_per_liter, exponent_price_per_liter;
-        // std::tie(value_price_per_liter, exponent_price_per_liter) = utility::formatFloatStringToInt(product->price);
-        //
         createOrder(core, volume, exponent, value_price, exponent_price);
     }
 
@@ -442,19 +433,34 @@ namespace bridge {
         }
     }
 
-    void HttpLogic::checkIdleTimeout(MessageLayer &core) {
-        if (!m_is_idle_timer_running) return;
-
-        // Считаем сколько прошло времени
+    void HttpLogic::checkTimers(MessageLayer &core) {
         auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - m_idle_timer_start).count();
 
-        if (elapsed >= m_settings.business_logic.sleep_after_chosen_trk_page) {
-            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_choose_trk);
-            m_current_dispenser_id.clear();
-            renderDispenser(core);
-            m_is_idle_timer_running = false;
+        for (auto it = m_page_timers.begin(); it != m_page_timers.end(); ) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - it->start).count();
+            if (elapsed >= it->timeout_seconds) {
+                DwinCommands::sendPageToDwin(core, it->page_id);
+                if (it->on_expire) {
+                    it->on_expire();
+                }
+                it = m_page_timers.erase(it);
+            } else {
+                ++it;
+            }
         }
+    }
+
+    void HttpLogic::startPageTimer(int timeout_seconds, uint16_t page_id, std::function<void()> on_expire) {
+        PageTimer timer;
+        timer.start = std::chrono::steady_clock::now();
+        timer.timeout_seconds = timeout_seconds;
+        timer.page_id = page_id;
+        timer.on_expire = std::move(on_expire);
+        m_page_timers.push_back(std::move(timer));
+    }
+
+    void HttpLogic::clearTimers() {
+        m_page_timers.clear();
     }
 
     void HttpLogic::handleAmountTRK(int amount) {
@@ -473,7 +479,6 @@ namespace bridge {
             std::string fuel_to_edit = m_edit_page_row_to_fuel_id[index];
             m_current_fuel_id_editing = fuel_to_edit;
 
-            // Заполнить информацию о редактируемом виде топлива.
             const Product *product = utility::getProductById(m_products, fuel_to_edit);
             int icon_fuel = utility::getIconForProduct(product->rating, m_settings);
             DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_editing_fuel_type, icon_fuel);
@@ -619,7 +624,7 @@ namespace bridge {
             }
         }
         setFooterDateTime(core);
-        checkIdleTimeout(core);
+        checkTimers(core);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
@@ -655,7 +660,7 @@ namespace bridge {
         database_order.dispenser_id = dispenser_id;
         getDispenserStatus(core, dispenser_id);
 
-        m_is_server_ready_for_start_fuel = true; // Заглушка под добавление процессинга оплаты.
+        m_is_server_ready_for_start_fuel = true; // флаг на начало пролива только после нажатия на дисплей
         authorizeOnServer(core);
 
         m_orders[dispenser_id] = database_order;
@@ -674,7 +679,6 @@ namespace bridge {
             std::string volume_string = utility::getFormattedStringFromJson(
                 utility::parseStringFromJson(volume["value"]), utility::parseIntFromJson(volume["exponent"]));
 
-            // Сохранение фактических данных пролива в m_orders
             if (m_orders.count(trk_id)) {
                 m_orders[trk_id].amount = std::stod(amount_string);
                 m_orders[trk_id].volume = std::stod(volume_string);
@@ -708,7 +712,6 @@ namespace bridge {
             std::string percent_str = std::to_string(percent);
 
             DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_progress_order_bar_eleventh_page, percent);
-            //DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_progress_bar_percent_text_eleventh_page, percent_str, m_settings.dwin.text_len_percent_progress_bar);
             DwinCommands::sendRightAlignmentWithPadding(
                 core, m_settings.dwin.vp_progress_bar_percent_text_eleventh_page, percent_str,
                 m_settings.dwin.text_len_percent_progress_bar);
@@ -742,8 +745,7 @@ namespace bridge {
 
             processDispenserNozzleUpAfterUserTouch(core, product);
         } else if (status == DISPENSER_IDLE) {
-            m_is_idle_timer_running = true;
-            m_idle_timer_start = std::chrono::steady_clock::now();
+            clearTimers();
 
             if (dispenser->prev_status == DISPENSER_COMPLETE ||
                 dispenser->prev_status == DISPENSER_FUELING ||
@@ -754,6 +756,7 @@ namespace bridge {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
             }
+            startPageTimer(5, m_settings.dwin.page_idle);
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
             uint8_t page_id = m_settings.dwin.page_fuel_ended;
@@ -780,6 +783,7 @@ namespace bridge {
 
             if (status == ORDER_INTERRUPTED || status == ORDER_DELIVERED) {
                 if (status == ORDER_INTERRUPTED) {
+                    // TODO добавить таймер на возврат пистолета в налив.
                     DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
                 }
 
@@ -900,12 +904,17 @@ namespace bridge {
 
     void HttpLogic::processDispenserIdleAfterUserTouch(MessageLayer &core) {
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
-        m_is_idle_timer_running = true;
-        m_idle_timer_start = std::chrono::steady_clock::now();
+        clearTimers();
+        startPageTimer(m_settings.business_logic.sleep_after_chosen_trk_page,
+                       m_settings.dwin.page_choose_trk,
+                       [this, &core]() {
+                           m_current_dispenser_id.clear();
+                           renderDispenser(core);
+                       });
     }
 
     void HttpLogic::processDispenserNozzleUpAfterUserTouch(MessageLayer &core, Product *product) {
-        m_is_idle_timer_running = false;
+        clearTimers();
 
         int icon_fuel = utility::getIconForProduct(product->rating, m_settings);
         setProductIdOnDisplay(core, icon_fuel);

@@ -3,6 +3,7 @@
 //
 #pragma once
 #include <future>
+#include <functional>
 #include <mutex>
 #include <queue>
 #include <unordered_set>
@@ -116,7 +117,7 @@ namespace bridge {
         void handleCreateOrder(MessageLayer& core, uint16_t volume, int exponent);
 
         // Хендлер обработки нажатий кнопки Basic Touch.
-        void handleBasicTouch(MessageLayer& core);
+        void handleBasicTouch(MessageLayer& core) const;
 
         // Хендлер обработки выбора ТРК для использования на АЗС.
         void handleAcceptSelectedTRK(MessageLayer& core);
@@ -200,8 +201,10 @@ namespace bridge {
         void onTimerExpired(const boost::system::error_code& ec, MessageLayer& core);
         void scheduleNextTick(MessageLayer& core);
 
-        // Таймаут на снятие пистолета выбранной ТРК.
-        void checkIdleTimeout(MessageLayer& core);
+        // Таймаут: проверка и запуск отложенных страниц.
+        void checkTimers(MessageLayer& core);
+        void startPageTimer(int timeout_seconds, uint16_t page_id, std::function<void()> on_expire = nullptr);
+        void clearTimers();
 
         // Заполнение страницы с редактированием типов топлива 1 вариант со строками.
         void fillPageEditingFuelType(std::vector<Product>& products, MessageLayer& core);
@@ -244,7 +247,7 @@ namespace bridge {
 
         std::vector<std::string> m_selected_dispensers; // ID выбранных ТРК в правильном порядке
 
-        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая все созданные заказы на ААЗС. Dispenser_id - DatabaseOrder
+        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая все созданные заказы на ААЗС. Dispenser_id - DatabaseOrder. Order хранится фактически налитый
 
         // Для пагинации ТРК.
         int m_current_dispenser_index = 0;
@@ -271,8 +274,14 @@ namespace bridge {
         // Для отправки времени в Footer каждую секунду.
         std::string m_last_time_str;
 
-        std::chrono::steady_clock::time_point m_idle_timer_start;
-        bool m_is_idle_timer_running = false;
+        // Универсальный таймер для отложенного показа страниц
+        struct PageTimer {
+            std::chrono::steady_clock::time_point start;
+            int timeout_seconds = 0;
+            uint16_t page_id = 0;
+            std::function<void()> on_expire; // доп. действие при срабатывании (опционально)
+        };
+        std::vector<PageTimer> m_page_timers;
     };
 
     using HttpLogicPtr = std::shared_ptr<HttpLogic>;
