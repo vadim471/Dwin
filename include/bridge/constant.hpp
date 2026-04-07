@@ -20,6 +20,7 @@ namespace bridge {
     extern const std::string PAY_CANCEL;
     extern const std::string PAY_CANCEL_RESPONSE_SUCCESS;
     extern const std::string PAY_CONFIRM_RESPONSE_SUCCESS;
+    extern const std::string PAY_CARD_RESOLVED;
     extern const std::string ARKAIM_REQUEST;
 
     // Path to config file

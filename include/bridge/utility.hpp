@@ -3,6 +3,7 @@
 //
 #pragma once
 #include <string>
+#include <map>
 
 
 #include "Settings.hpp"
@@ -74,5 +75,10 @@ namespace bridge {
 
         // Заполняет информацию об используемых ТРК в файл конфигурации.
         static void saveUsedTRKsToConfig(const std::string& configPath, const std::vector<std::string>& selected_trks);
+
+        // Конвертирует prime product_id в processing product_id.
+        static std::string primeIdToProcessingId(const std::string& prime_product_id,
+                                                  const std::map<std::string, std::string>& prime_standalone,
+                                                  const std::map<std::string, std::string>& processing_standalone);
     };
 }

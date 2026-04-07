@@ -451,5 +451,19 @@ namespace bridge {
             std::cerr << "[Config] General Error while saving used TRKs: " << e.what() << std::endl;
         }
     }
+
+    std::string utility::primeIdToProcessingId(const std::string& prime_product_id,
+                                                const std::map<std::string, std::string>& prime_standalone,
+                                                const std::map<std::string, std::string>& processing_standalone) {
+        for (const auto& pair : prime_standalone) {
+            if (pair.second == prime_product_id) {
+                auto it = processing_standalone.find(pair.first);
+                if (it != processing_standalone.end()) {
+                    return it->second;
+                }
+            }
+        }
+        return prime_product_id;
+    }
 }
 

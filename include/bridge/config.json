@@ -352,7 +352,19 @@
                 "95": "69,66",
                 "dt": "79,99"
           },
-          "service_code": 1234
+          "service_code": 1234,
+          "standalone_processing": {
+                "92": "ai92",
+                "95": "ai95",
+                "100": "ai100",
+                "dt": "diesel"
+          },
+          "standalone_prime": {
+                "92": "ai92",
+                "100": "100",
+                "95": "95",
+                "dt": "dt"
+          }
     },
     "pipe": {
           "name": "InitPlusArkaimPayPipe"

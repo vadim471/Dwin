@@ -140,6 +140,9 @@ namespace bridge {
         // Хендлер нажатия на Enter PinPad ввода объема заказа.
         void handleEnterFuelVolumeOrderPinPad(MessageLayer& core, std::string buffer);
 
+        // Хендлер обработки распознания карты.
+        void handleCardResolved(MessageLayer& core);
+
         // Отрисовка страницы выбора ТРК для использования на АЗС.
         void renderTrkSelectionPage(MessageLayer& core);
 
@@ -230,7 +233,6 @@ namespace bridge {
 
         long long m_lastId = 0;
         Settings m_settings;
-        //Order m_current_order;
 
         std::vector<Product> m_products;
         std::vector<Dispenser> m_dispensers;
@@ -279,7 +281,7 @@ namespace bridge {
             std::chrono::steady_clock::time_point start;
             int timeout_seconds = 0;
             uint16_t page_id = 0;
-            std::function<void()> on_expire; // доп. действие при срабатывании (опционально)
+            std::function<void()> on_expire;
         };
         std::vector<PageTimer> m_page_timers;
     };

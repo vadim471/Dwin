@@ -231,6 +231,8 @@ struct Settings {
         std::map<std::string, std::string> fuel_prices; // ID топлива - цена.
         int service_code;
         std::vector<std::string> used_trks;
+        std::map<std::string, std::string> prime_standalone;
+        std::map<std::string, std::string> processing_standalone;
     } gas_station;
 
     struct Pipe {
@@ -608,6 +610,18 @@ struct Settings {
                 if (gas_station_node.contains("used_trks") && gas_station_node["used_trks"].is_array()) {
                     for (const auto& trk_id : gas_station_node["used_trks"]) {
                         s.gas_station.used_trks.push_back(trk_id.get<std::string>());
+                    }
+                }
+
+                if (gas_station_node.contains("prime_standalone") && gas_station_node["prime_standalone"].is_object()) {
+                    for (const auto& fuel_id : gas_station_node["prime_standalone"].items()) {
+                        s.gas_station.prime_standalone[fuel_id.key()] = fuel_id.value().get<std::string>();
+                    }
+                }
+
+                if (gas_station_node.contains("processing_standalone") && gas_station_node["processing_standalone"].is_object()) {
+                    for (const auto& fuel_id : gas_station_node["processing_standalone"].items()) {
+                        s.gas_station.processing_standalone[fuel_id.key()] = fuel_id.value().get<std::string>();
                     }
                 }
             }

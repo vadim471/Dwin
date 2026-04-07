@@ -198,6 +198,17 @@ namespace bridge {
             getDispenserStatus(core, m_current_dispenser_id);
         } else if (message.type == PAY_TRANSACTION_RESPONSE) {
             handlePaymentResponse(message, core);
+        } else if (message.type == PAY_CARD_RESOLVED) {
+            handleCardResolved(core);
+        }
+    }
+
+    void HttpLogic::handleCardResolved(MessageLayer& core) {
+        if (!m_current_dispenser_id.empty()) {
+            Dispenser* dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
+            if (dispenser->status == DISPENSER_NOZZLE_UP) {
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_volume);
+            }
         }
     }
 
@@ -752,11 +763,12 @@ namespace bridge {
                 dispenser->prev_status == DISPENSER_HALTED) {
                 // После пролива — "Счастливого пути"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
+                m_current_dispenser_id.clear();
             } else {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
             }
-            startPageTimer(5, m_settings.dwin.page_idle);
+            startPageTimer(5, m_settings.dwin.page_choose_trk);
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
             uint8_t page_id = m_settings.dwin.page_fuel_ended;
@@ -767,7 +779,7 @@ namespace bridge {
                     core, m_settings.dwin.vp_progress_bar_percent_text_twelvth_page, "100",
                     m_settings.dwin.text_len_percent_progress_bar);
             }
-            m_current_dispenser_id.clear();
+            //m_current_dispenser_id.clear();
         } else if (status == DISPENSER_FUELING) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_in_progress);
         }
@@ -971,7 +983,7 @@ namespace bridge {
                     if (jObj.contains("order")) {
                         auto order = jObj["order"];
 
-                        auto nozzle = jObj["nozzle"];
+                        auto nozzle = order["nozzle"];
                         auto product_id = nozzle["product_id"];
 
                         auto target_amount = order["target_amount"];
@@ -1007,8 +1019,9 @@ namespace bridge {
 
                         setCurrentOrderAmountOnDisplay(core, m_dispensers[i].order.amount);
                         setCurrentOrderVolumeOnDisplay(core, m_dispensers[i].order.volume);
+                        std::string product_id_processing = utility::primeIdToProcessingId(product_id, m_settings.gas_station.prime_standalone, m_settings.gas_station.processing_standalone);
 
-                        createPayment(core, m_orders[trk_id].id, product_id, std::stoi(price_value), price_exponent,
+                        createPayment(core, m_orders[trk_id].id, product_id_processing, std::stoi(price_value), price_exponent,
                             std::stoi(target_volume_value), target_volume_exponent, std::stoi(target_amount_value),
                             target_amount_exponent);
                     }

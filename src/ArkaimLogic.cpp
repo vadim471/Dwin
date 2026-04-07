@@ -364,6 +364,12 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
               << " card_data_size=" << m_card_data.size()
               << std::endl;
 
+    Message msg;
+    msg.source = PIPE_LAYER;
+    msg.type = PAY_CARD_RESOLVED;
+
+    m_core->sendToLogicLayer(HTTP_LAYER, msg);
+
     tryProcessPendingPayment();
 }
 
