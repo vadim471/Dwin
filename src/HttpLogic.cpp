@@ -200,6 +200,9 @@ namespace bridge {
             handlePaymentResponse(message, core);
         } else if (message.type == PAY_CARD_RESOLVED) {
             handleCardResolved(core);
+        } else if (message.type == PAY_CONFIRM_RESPONSE_SUCCESS) {
+            std::string command = m_settings.APIDispenser.close;
+            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
         }
     }
 
@@ -314,6 +317,10 @@ namespace bridge {
                 Product *product = utility::getProductById(m_products, dispenser->product_id);
                 processDispenserNozzleUpAfterUserTouch(core, product);
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
+            } else if (dispenser->status == DISPENSER_FUELLING) {
+                //TODO ОТКРЫТЬ ЭКРАН НАЛИВА (11) page_fuel_in_progress
+            } else if (dispenser->status == DISPENSER_COMPLETE) {
+                //TODO ОТКРЫТЬ ЗАПРАВКА ЗАВЕРШЕНА (12) page_fuel_ended
             }
 
             setTRKIdOnDisplay(core, utility::extractFirstInt(m_current_dispenser_id));
@@ -416,6 +423,7 @@ namespace bridge {
 
         if (error.code == 400 && error.description.find(LOW_VOLUME) != std::string::npos) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_low_fuel_level);
+            //TODO добавить возврат средств и закрытие заказа
         }
 
         if (error.context.find("/order") != std::string::npos) {
@@ -759,7 +767,7 @@ namespace bridge {
             clearTimers();
 
             if (dispenser->prev_status == DISPENSER_COMPLETE ||
-                dispenser->prev_status == DISPENSER_FUELING ||
+                dispenser->prev_status == DISPENSER_FUELLING ||
                 dispenser->prev_status == DISPENSER_HALTED) {
                 // После пролива — "Счастливого пути"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
@@ -771,17 +779,18 @@ namespace bridge {
             startPageTimer(5, m_settings.dwin.page_choose_trk);
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
-            uint8_t page_id = m_settings.dwin.page_fuel_ended;
+            |//uint8_t page_id = m_settings.dwin.page_fuel_ended;
             if (!m_new_order_created) {
-                DwinCommands::sendPageToDwin(core, page_id);
+               // DwinCommands::sendPageToDwin(core, page_id);
                 DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_progress_order_bar_twelvth_page, 100);
                 DwinCommands::sendRightAlignmentWithPadding(
                     core, m_settings.dwin.vp_progress_bar_percent_text_twelvth_page, "100",
                     m_settings.dwin.text_len_percent_progress_bar);
             }
             //m_current_dispenser_id.clear();
-        } else if (status == DISPENSER_FUELING) {
+        } else if (status == DISPENSER_FUELLING) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_in_progress);
+            renderDispenser(core);
         }
     }
 
@@ -801,7 +810,6 @@ namespace bridge {
 
                 auto& order = m_orders[device_id];
 
-                // Парсим фактические данные из event
                 uint32_t fact_amount_value = 0;
                 uint8_t fact_amount_decimal = 0;
                 uint32_t fact_volume_value = 0;
@@ -818,14 +826,12 @@ namespace bridge {
                     fact_volume_decimal = static_cast<uint8_t>(utility::parseIntFromJson(volume["exponent"]));
                 }
 
-                // Цена за литр (исходная)
                 int price_val = 0, price_exp = 0;
                 Product* product = utility::getProductById(m_products, order.product_id);
                 if (product) {
                     std::tie(price_val, price_exp) = utility::formatFloatStringToInt(product->price);
                 }
 
-                // Исходные данные заказа (заказанные объём/сумма)
                 int order_volume_val = 0, order_volume_exp = 0;
                 int order_amount_val = 0, order_amount_exp = 0;
                 Dispenser* dispenser = utility::getDispenserById(m_dispensers, device_id);

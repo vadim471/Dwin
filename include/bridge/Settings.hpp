@@ -613,14 +613,14 @@ struct Settings {
                     }
                 }
 
-                if (gas_station_node.contains("prime_standalone") && gas_station_node["prime_standalone"].is_object()) {
-                    for (const auto& fuel_id : gas_station_node["prime_standalone"].items()) {
+                if (gas_station_node.contains("standalone_prime") && gas_station_node["standalone_prime"].is_object()) {
+                    for (const auto& fuel_id : gas_station_node["standalone_prime"].items()) {
                         s.gas_station.prime_standalone[fuel_id.key()] = fuel_id.value().get<std::string>();
                     }
                 }
 
-                if (gas_station_node.contains("processing_standalone") && gas_station_node["processing_standalone"].is_object()) {
-                    for (const auto& fuel_id : gas_station_node["processing_standalone"].items()) {
+                if (gas_station_node.contains("standalone_processing") && gas_station_node["standalone_processing"].is_object()) {
+                    for (const auto& fuel_id : gas_station_node["standalone_processing"].items()) {
                         s.gas_station.processing_standalone[fuel_id.key()] = fuel_id.value().get<std::string>();
                     }
                 }

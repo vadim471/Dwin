@@ -81,7 +81,7 @@ namespace bridge {
     extern const std::string DISPENSER_IDLE;
     extern const std::string DISPENSER_NOZZLE_UP;
     extern const std::string DISPENSER_AUTHORIZED;
-    extern const std::string DISPENSER_FUELING;
+    extern const std::string DISPENSER_FUELLING;
     extern const std::string DISPENSER_COMPLETE;
     extern const std::string DISPENSER_HALTED;
     extern const std::string DISPENSER_OFFLINE;

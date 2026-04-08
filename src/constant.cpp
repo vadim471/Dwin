@@ -58,7 +58,7 @@ namespace bridge {
     const std::string DISPENSER_IDLE = "DSP_IDLE";
     const std::string DISPENSER_NOZZLE_UP = "DSP_NOZZLE_UP";
     const std::string DISPENSER_AUTHORIZED = "DSP_AUTHORIZED";
-    const std::string DISPENSER_FUELING = "DSP_FUELING";
+    const std::string DISPENSER_FUELLING = "DSP_FUELLING";
     const std::string DISPENSER_COMPLETE = "DSP_COMPLETE";
     const std::string DISPENSER_HALTED = "DSP_HALTED";
     const std::string DISPENSER_OFFLINE = "DSP_OFFLINE";

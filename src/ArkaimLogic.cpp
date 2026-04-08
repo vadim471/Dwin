@@ -474,13 +474,13 @@ void ArkaimLogic::onTransactionResponse(itp::root& root, uint16_t error,
         std::cout << "[ArkaimLogic] Transaction SUCCESS, id=" << transaction_id << std::endl;
         m_order_transactions[order_id] = transaction_id;
         sendPaymentResponse(order_id, true, transaction_id, message);
+        // m_pending остаётся active — данные нужны для cancel/confirm
     } else {
         std::cerr << "[ArkaimLogic] Transaction FAILED, code=" << (int)code
                   << " msg=\"" << message << "\"" << std::endl;
         sendPaymentResponse(order_id, false, 0, message);
+        m_pending.active = false;
     }
-
-    m_pending.active = false;
 }
 
 void ArkaimLogic::sendPaymentResponse(const std::string& order_id, bool success,
@@ -624,6 +624,7 @@ void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response,
             msg.type = PAY_CONFIRM_RESPONSE_SUCCESS;
             msg.resource_id = order_id;
             m_core->sendToLogicLayer(UART_LAYER, msg);
+            m_core->sendToLogicLayer(HTTP_LAYER, msg);
         }
     }
 
@@ -631,6 +632,7 @@ void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response,
     m_card_number.clear();
     m_card_data.clear();
     m_pin_data.clear();
+    m_pending.active = false;
     m_order_transactions.erase(order_id);
 }
 
@@ -655,6 +657,7 @@ void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response,
     m_card_number.clear();
     m_card_data.clear();
     m_pin_data.clear();
+    m_pending.active = false;
     m_order_transactions.erase(order_id);
 }
 
