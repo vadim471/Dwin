@@ -79,6 +79,8 @@ void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
         handleConfirm(msg);
     } else if (msg.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
         handleCancel(msg);
+    } else if (msg.type == PAY_PIN_ENTERED) {
+        handlePinEntered(msg);
     } else {
         std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
     }
@@ -354,6 +356,18 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
 
     m_card_resolved = true;
     m_pin_data.clear();
+    m_pin_required_on_transaction = false;
+
+    // Проверяем card_data на PinRequiredOnInitializeTransaction
+    try {
+        std::string card_json_str(m_card_data.begin(), m_card_data.end());
+        auto card_json = nlohmann::json::parse(card_json_str);
+        if (card_json.contains("PinRequiredOnInitializeTransaction")) {
+            m_pin_required_on_transaction = card_json.value("PinRequiredOnInitializeTransaction", false);
+            std::cout << "[ArkaimLogic] PIN required on transaction (from card data)" << std::endl;
+        }
+    } catch (...) {
+    }
 
     std::cout << "[ArkaimLogic] Card resolved:"
               << " reader_addr=" << (int)m_reader_address
@@ -368,9 +382,13 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
     msg.source = PIPE_LAYER;
     msg.type = PAY_CARD_RESOLVED;
 
+    msg.payload.push_back(m_pin_required_on_transaction ? 1 : 0);
+
     m_core->sendToLogicLayer(HTTP_LAYER, msg);
 
-    tryProcessPendingPayment();
+    if (!m_pin_required_on_transaction) {
+        tryProcessPendingPayment();
+    }
 }
 
 void ArkaimLogic::tryProcessPendingPayment() {
@@ -650,6 +668,7 @@ void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response,
             msg.type = PAY_CANCEL_RESPONSE_SUCCESS;
             msg.resource_id = order_id;
             m_core->sendToLogicLayer(UART_LAYER, msg);
+            m_core->sendToLogicLayer(HTTP_LAYER, msg);
         }
     }
 
@@ -659,6 +678,15 @@ void ArkaimLogic::onCancelResponse(uint16_t error, itp::frame& response,
     m_pin_data.clear();
     m_pending.active = false;
     m_order_transactions.erase(order_id);
+}
+
+void ArkaimLogic::handlePinEntered(const Message& msg) {
+    m_pin_data.assign(msg.payload.begin(), msg.payload.end());
+    m_waiting_pin = false;
+
+    std::cout << "[ArkaimLogic] PIN entered, length=" << m_pin_data.size() << std::endl;
+
+    tryProcessPendingPayment();
 }
 
 void ArkaimLogic::processPinRequired(itp::frame& response, const std::string& order_id) {

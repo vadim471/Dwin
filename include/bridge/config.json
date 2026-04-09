@@ -32,6 +32,7 @@
           "vp_trk_id_fourteenth_page": "0x6300",
           "vp_trk_id_twentyfourth_page": "0x7300",
           "vp_trk_id_thirtyth_page": "0x7900",
+          "vp_trk_id_thirtyfirst_page": "0x7911",
 
           "vp_chosen_fuel_type_third_page": "0x5210",
           "vp_chosen_fuel_type_forth_page": "0x5310",
@@ -158,6 +159,7 @@
           "vp_current_date_time_footer_twentyeighth_page": "0x9660",
           "vp_current_date_time_footer_twentyninth_page": "0x9720",
           "vp_current_date_time_footer_thirtyth_page": "0x9780",
+          "vp_current_date_time_footer_thirtyfirst_page": "0x9840",
 
           "vp_current_fuel_type_eleventh_page": "0x6050",
           "vp_current_fuel_type_twelvth_page": "0x6150",
@@ -252,8 +254,14 @@
 
           "vp_button_choose_left_trk_double_trk_config": "0x7108",
           "vp_button_choose_right_trk_double_trk_config": "0x7110",
+          "vp_icon_trk_duo_left": "0x7100",
+          "vp_text_trk_duo_left": "0x7102",
+          "vp_icon_trk_duo_right": "0x7104",
+          "vp_text_trk_duo_right": "0x7106",
 
           "vp_button_choose_trk_uno_trk_config": "0x7204",
+          "vp_icon_trk_uno": "0x7200",
+          "vp_text_trk_uno": "0x7202",
 
           "vp_text_pinpad_service_code": "0x7700",
 
@@ -315,6 +323,7 @@
           "page_type_service_code": 28,
           "page_select_used_trk": 29,
           "page_return_money_cancel_transaction": 30,
+          "page_error_transaction_failed": 31,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,

@@ -141,7 +141,7 @@ namespace bridge {
         void handleEnterFuelVolumeOrderPinPad(MessageLayer& core, std::string buffer);
 
         // Хендлер обработки распознания карты.
-        void handleCardResolved(MessageLayer& core);
+        void handleCardResolved(const Message& message, MessageLayer& core);
 
         // Отрисовка страницы выбора ТРК для использования на АЗС.
         void renderTrkSelectionPage(MessageLayer& core);
@@ -208,6 +208,14 @@ namespace bridge {
         void checkTimers(MessageLayer& core);
         void startPageTimer(int timeout_seconds, uint16_t page_id, std::function<void()> on_expire = nullptr);
         void clearTimers();
+
+        // Стартовая страница выбора ТРК по конфигурации (mono/duo/multi).
+        uint16_t getStartPage() const;
+
+        // Рендеринг ТРК на дисплее по конфигурации.
+        void renderMonoDispenser(MessageLayer& core);
+        void renderDuoDispenser(MessageLayer& core);
+        void renderMultiDispenser(MessageLayer& core);
 
         // Заполнение страницы с редактированием типов топлива 1 вариант со строками.
         void fillPageEditingFuelType(std::vector<Product>& products, MessageLayer& core);

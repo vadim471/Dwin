@@ -21,6 +21,7 @@ namespace bridge {
     extern const std::string PAY_CANCEL_RESPONSE_SUCCESS;
     extern const std::string PAY_CONFIRM_RESPONSE_SUCCESS;
     extern const std::string PAY_CARD_RESOLVED;
+    extern const std::string PAY_PIN_ENTERED;
     extern const std::string ARKAIM_REQUEST;
 
     // Path to config file
@@ -52,6 +53,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_BASIC_TOUCH_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON;
     extern const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON;
@@ -64,6 +66,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_SET_USED_TRK_BUTTON;
     extern const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
+    extern const std::string USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
 
     // HTTP GET
     extern const std::string GET_PRODUCTS;

@@ -89,10 +89,16 @@ struct Settings {
 
     // --- Page Uno TRK config
         uint16_t vp_button_choose_trk_uno_trk_config;
+        uint16_t vp_icon_trk_uno;
+        uint16_t vp_text_trk_uno;
 
     // --- Page Duo TRK config
         uint16_t vp_button_choose_left_trk_double_trk_config;
         uint16_t vp_button_choose_right_trk_double_trk_config;
+        uint16_t vp_icon_trk_duo_left;
+        uint16_t vp_text_trk_duo_left;
+        uint16_t vp_icon_trk_duo_right;
+        uint16_t vp_text_trk_duo_right;
 
     // --- Page Select Used TRK
         std::vector<uint16_t> vp_nums_selected_trk;
@@ -193,6 +199,7 @@ struct Settings {
         int page_type_service_code;
         int page_select_used_trk;
         int page_return_money_cancel_transaction;
+        int page_error_transaction_failed;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -282,6 +289,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fourteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfirst_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -407,6 +415,7 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyeighth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyninth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfirst_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -483,8 +492,14 @@ struct Settings {
 
             LOAD_HEX(vp_button_choose_left_trk_double_trk_config);
             LOAD_HEX(vp_button_choose_right_trk_double_trk_config);
+            LOAD_HEX(vp_icon_trk_duo_left);
+            LOAD_HEX(vp_text_trk_duo_left);
+            LOAD_HEX(vp_icon_trk_duo_right);
+            LOAD_HEX(vp_text_trk_duo_right);
 
             LOAD_HEX(vp_button_choose_trk_uno_trk_config);
+            LOAD_HEX(vp_icon_trk_uno);
+            LOAD_HEX(vp_text_trk_uno);
 
 
             s.dwin.vp_text_fuel_price_edit_page.push_back(getHex("vp_text_first_fuel_type_edit_price"));
@@ -561,6 +576,7 @@ struct Settings {
             s.dwin.page_type_service_code              = j["dwin"]["page_type_service_code"];
             s.dwin.page_select_used_trk                = j["dwin"]["page_select_used_trk"];
             s.dwin.page_return_money_cancel_transaction= j["dwin"]["page_return_money_cancel_transaction"];
+            s.dwin.page_error_transaction_failed= j["dwin"]["page_error_transaction_failed"];
 
             s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
             s.dwin.icon_dispenser_idle     = j["dwin"]["icon_dispenser_idle"];

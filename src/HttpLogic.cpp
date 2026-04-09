@@ -199,18 +199,41 @@ namespace bridge {
         } else if (message.type == PAY_TRANSACTION_RESPONSE) {
             handlePaymentResponse(message, core);
         } else if (message.type == PAY_CARD_RESOLVED) {
-            handleCardResolved(core);
+            handleCardResolved(message, core);
         } else if (message.type == PAY_CONFIRM_RESPONSE_SUCCESS) {
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+        } else if (message.type == PAY_CANCEL_RESPONSE_SUCCESS) {
+            // Возврат успешен — через 5с на стартовую страницу
+            clearTimers();
+            startPageTimer(5, getStartPage(), [this, &core]() {
+                m_current_dispenser_id.clear();
+                renderDispenser(core);
+            });
+        } else if (message.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
+            std::string command = m_settings.APIDispenser.close;
+            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+        } else if (message.type == USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON) {
+            m_current_dispenser_id.clear();
+        } else if (message.type == USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON) {
+            Message pin_msg;
+            pin_msg.source = HTTP_LAYER;
+            pin_msg.type = PAY_PIN_ENTERED;
+            pin_msg.payload = message.payload;
+            core.sendToLogicLayer(PIPE_LAYER, pin_msg);
         }
     }
 
-    void HttpLogic::handleCardResolved(MessageLayer& core) {
+    void HttpLogic::handleCardResolved(const Message& message, MessageLayer& core) {
         if (!m_current_dispenser_id.empty()) {
             Dispenser* dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             if (dispenser->status == DISPENSER_NOZZLE_UP) {
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_volume);
+                bool pin_required = !message.payload.empty() && message.payload[0] == 1;
+                if (pin_required) {
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_print_pin);
+                } else {
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_volume);
+                }
             }
         }
     }
@@ -317,7 +340,9 @@ namespace bridge {
                 Product *product = utility::getProductById(m_products, dispenser->product_id);
                 processDispenserNozzleUpAfterUserTouch(core, product);
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
-            } else if (dispenser->status == DISPENSER_FUELLING) {
+            }
+            // TODO реализовать создание еще одного заказа.
+            else if (dispenser->status == DISPENSER_FUELLING) {
                 //TODO ОТКРЫТЬ ЭКРАН НАЛИВА (11) page_fuel_in_progress
             } else if (dispenser->status == DISPENSER_COMPLETE) {
                 //TODO ОТКРЫТЬ ЗАПРАВКА ЗАВЕРШЕНА (12) page_fuel_ended
@@ -423,7 +448,16 @@ namespace bridge {
 
         if (error.code == 400 && error.description.find(LOW_VOLUME) != std::string::npos) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_low_fuel_level);
-            //TODO добавить возврат средств и закрытие заказа
+
+            // Закрытие заказа на Prime
+            std::string command = m_settings.APIDispenser.close;
+            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+
+            // Отправка PAY_CANCEL в ArkaimLogic (пустой payload — возьмёт из m_pending)
+            Message cancel_msg;
+            cancel_msg.source = HTTP_LAYER;
+            cancel_msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
+            core.sendToLogicLayer(PIPE_LAYER, cancel_msg);
         }
 
         if (error.context.find("/order") != std::string::npos) {
@@ -480,6 +514,14 @@ namespace bridge {
 
     void HttpLogic::clearTimers() {
         m_page_timers.clear();
+    }
+
+    uint16_t HttpLogic::getStartPage() const {
+        switch (m_settings.gas_station.amount_trk) {
+            case 1: return m_settings.dwin.page_choose_trk_config_uno_trk;
+            case 2: return m_settings.dwin.page_choose_trk_config_double_trk;
+            default: return m_settings.dwin.page_choose_trk;
+        }
     }
 
     void HttpLogic::handleAmountTRK(int amount) {
@@ -542,6 +584,8 @@ namespace bridge {
     }
 
     void HttpLogic::handlePaginationDispenser(int direction, MessageLayer &core) {
+        if (m_settings.gas_station.amount_trk != 3) return;
+
         if (m_selected_dispensers.empty()) {
             std::cout << "No TRK in map " << std::endl;
             return;
@@ -764,11 +808,12 @@ namespace bridge {
 
             processDispenserNozzleUpAfterUserTouch(core, product);
         } else if (status == DISPENSER_IDLE) {
+
             clearTimers();
 
             if (dispenser->prev_status == DISPENSER_COMPLETE ||
-                dispenser->prev_status == DISPENSER_FUELLING ||
-                dispenser->prev_status == DISPENSER_HALTED) {
+                // dispenser->prev_status == DISPENSER_FUELLING ||
+                //dispenser->prev_status == DISPENSER_HALTED) {
                 // После пролива — "Счастливого пути"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
                 m_current_dispenser_id.clear();
@@ -776,10 +821,10 @@ namespace bridge {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
             }
-            startPageTimer(5, m_settings.dwin.page_choose_trk);
+            startPageTimer(5, getStartPage());
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
-            |//uint8_t page_id = m_settings.dwin.page_fuel_ended;
+            //uint8_t page_id = m_settings.dwin.page_fuel_ended;
             if (!m_new_order_created) {
                // DwinCommands::sendPageToDwin(core, page_id);
                 DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_progress_order_bar_twelvth_page, 100);
@@ -803,11 +848,6 @@ namespace bridge {
             m_orders[device_id].status = status;
 
             if (status == ORDER_INTERRUPTED || status == ORDER_DELIVERED) {
-                if (status == ORDER_INTERRUPTED) {
-                    // TODO добавить таймер на возврат пистолета в налив.
-                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
-                }
-
                 auto& order = m_orders[device_id];
 
                 uint32_t fact_amount_value = 0;
@@ -860,6 +900,10 @@ namespace bridge {
                 msg.resource_id = order.id;
                 msg.payload = serializePaymentRequest(payment);
 
+                if (status == ORDER_INTERRUPTED) {
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
+                }
+
                 core.sendToLogicLayer(PIPE_LAYER, msg);
 
             } else if (status == ORDER_AUTHORIZED) {
@@ -906,12 +950,20 @@ namespace bridge {
     }
 
     void HttpLogic::renderDispenser(MessageLayer &core) {
-        // TODO поддержка экранов с моно/дуо ТРК
         if (m_selected_dispensers.empty()) return;
 
-        //const auto &trk = m_dispensers[m_current_dispenser_index];
-        std::string trk_id = m_selected_dispensers[m_current_dispenser_index];
+        int amount = m_settings.gas_station.amount_trk;
+        if (amount == 1) {
+            renderMonoDispenser(core);
+        } else if (amount == 2) {
+            renderDuoDispenser(core);
+        } else {
+            renderMultiDispenser(core);
+        }
+    }
 
+    void HttpLogic::renderMultiDispenser(MessageLayer &core) {
+        std::string trk_id = m_selected_dispensers[m_current_dispenser_index];
         Dispenser* dispenser = utility::getDispenserById(m_dispensers, trk_id);
 
         int icon_id = utility::getIconForStatus(dispenser->status, m_settings);
@@ -920,11 +972,39 @@ namespace bridge {
         DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_trk, trk_id_number, m_settings.dwin.text_len_trk_id);
     }
 
+    void HttpLogic::renderMonoDispenser(MessageLayer &core) {
+        std::string trk_id = m_selected_dispensers[0];
+        Dispenser* dispenser = utility::getDispenserById(m_dispensers, trk_id);
+
+        int icon_id = utility::getIconForStatus(dispenser->status, m_settings);
+        std::string trk_id_number = utility::extractFirstInt(trk_id);
+        DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_icon_trk_uno, icon_id);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_trk_uno, trk_id_number, m_settings.dwin.text_len_trk_id);
+    }
+
+    void HttpLogic::renderDuoDispenser(MessageLayer &core) {
+        for (int i = 0; i < 2 && i < (int)m_selected_dispensers.size(); ++i) {
+            std::string trk_id = m_selected_dispensers[i];
+            Dispenser* dispenser = utility::getDispenserById(m_dispensers, trk_id);
+
+            int icon_id = utility::getIconForStatus(dispenser->status, m_settings);
+            std::string trk_id_number = utility::extractFirstInt(trk_id);
+
+            if (i == 0) {
+                DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_icon_trk_duo_left, icon_id);
+                DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_trk_duo_left, trk_id_number, m_settings.dwin.text_len_trk_id);
+            } else {
+                DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_icon_trk_duo_right, icon_id);
+                DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_trk_duo_right, trk_id_number, m_settings.dwin.text_len_trk_id);
+            }
+        }
+    }
+
     void HttpLogic::processDispenserIdleAfterUserTouch(MessageLayer &core) {
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
         clearTimers();
         startPageTimer(m_settings.business_logic.sleep_after_chosen_trk_page,
-                       m_settings.dwin.page_choose_trk,
+                       getStartPage(),
                        [this, &core]() {
                            m_current_dispenser_id.clear();
                            renderDispenser(core);
@@ -1418,14 +1498,19 @@ namespace bridge {
             
         } else {
             std::string error_msg = json["message"];
-            
+
             std::cerr << "[HttpLogic] Payment FAILED for order " << order_id
                       << ", message=" << error_msg << std::endl;
-            
-            // TODO: Show error on DWIN
-            // TODO: Cancel order on Prime
-            std::string command = m_settings.APIDispenser.close;
-            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+
+            if (error_msg == "No pinpad") {
+                // Пинпад не подключен — показываем экран ввода PIN на дисплее
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_print_pin);
+            } else {
+                // Остальные ошибки — закрываем заказ и показываем ошибку
+                std::string command = m_settings.APIDispenser.close;
+                PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);
+            }
         }
     }
 }

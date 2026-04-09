@@ -213,6 +213,8 @@ namespace bridge {
                         DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_pinpad_service_code,
                "", m_settings.dwin.text_len_trk_id);
                     }
+                } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
+                    msg.type = USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
                 }
 
                 msg.payload.assign(d_pinpad_buffer.begin(), d_pinpad_buffer.end());
@@ -270,6 +272,7 @@ namespace bridge {
         msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
 
         core.sendToLogicLayer(PIPE_LAYER, msg);
+        core.sendToLogicLayer(HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleBasicTouch(const Message &message, MessageLayer &core) {
@@ -289,6 +292,11 @@ namespace bridge {
 
         if (key_value == 3) {
             msg.type = USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
+        }
+
+        // Кнопка "Назад" после выбора ТРК на экране "Приложите карту". Сбросить выбранную ТРК.
+        if (key_value == 4) {
+            msg.type = USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
         }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.

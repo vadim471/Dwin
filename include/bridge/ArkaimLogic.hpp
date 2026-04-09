@@ -62,6 +62,7 @@ private:
     void onCancelResponse(uint16_t error, itp::frame& response, std::string order_id);
 
     // ---- PIN handling ----
+    void handlePinEntered(const Message& msg);
     void processPinRequired(itp::frame& response, const std::string& order_id);
     void onPinRequest(uint16_t error, itp::frame& response);
     void onPinReady(itp::frame& event);
@@ -105,6 +106,7 @@ private:
     std::vector<uint8_t> m_pin_data;
     uint8_t m_pin_type = 0;
     bool m_waiting_pin = false;
+    bool m_pin_required_on_transaction = false;
 
     // ---- Pending payment (waiting for card) ----
     struct PendingPayment {
