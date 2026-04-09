@@ -143,6 +143,9 @@ namespace bridge {
         // Хендлер обработки распознания карты.
         void handleCardResolved(const Message& message, MessageLayer& core);
 
+        // Хендлер обработки завершения заказа PAY_CONFIRM.
+        void handlePayConfirmOrder(MessageLayer& core);
+
         // Отрисовка страницы выбора ТРК для использования на АЗС.
         void renderTrkSelectionPage(MessageLayer& core);
 

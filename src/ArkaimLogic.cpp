@@ -641,7 +641,7 @@ void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame& response,
             msg.source = PIPE_LAYER;
             msg.type = PAY_CONFIRM_RESPONSE_SUCCESS;
             msg.resource_id = order_id;
-            m_core->sendToLogicLayer(UART_LAYER, msg);
+            //m_core->sendToLogicLayer(UART_LAYER, msg);
             m_core->sendToLogicLayer(HTTP_LAYER, msg);
         }
     }

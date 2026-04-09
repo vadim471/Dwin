@@ -201,8 +201,7 @@ namespace bridge {
         } else if (message.type == PAY_CARD_RESOLVED) {
             handleCardResolved(message, core);
         } else if (message.type == PAY_CONFIRM_RESPONSE_SUCCESS) {
-            std::string command = m_settings.APIDispenser.close;
-            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+            handlePayConfirmOrder(core);
         } else if (message.type == PAY_CANCEL_RESPONSE_SUCCESS) {
             // Возврат успешен — через 5с на стартовую страницу
             clearTimers();
@@ -222,6 +221,13 @@ namespace bridge {
             pin_msg.payload = message.payload;
             core.sendToLogicLayer(PIPE_LAYER, pin_msg);
         }
+    }
+
+    void HttpLogic::handlePayConfirmOrder(MessageLayer& core) {
+        std::string command = m_settings.APIDispenser.close;
+        PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+
+        
     }
 
     void HttpLogic::handleCardResolved(const Message& message, MessageLayer& core) {
@@ -811,9 +817,10 @@ namespace bridge {
 
             clearTimers();
 
-            if (dispenser->prev_status == DISPENSER_COMPLETE ||
+            if (dispenser->prev_status == DISPENSER_COMPLETE)
                 // dispenser->prev_status == DISPENSER_FUELLING ||
                 //dispenser->prev_status == DISPENSER_HALTED) {
+                {
                 // После пролива — "Счастливого пути"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
                 m_current_dispenser_id.clear();

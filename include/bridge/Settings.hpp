@@ -290,6 +290,8 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfirst_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
