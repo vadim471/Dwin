@@ -260,7 +260,7 @@ namespace bridge {
 
         std::vector<std::string> m_selected_dispensers; // ID выбранных ТРК в правильном порядке
 
-        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая все созданные заказы на ААЗС. Dispenser_id - DatabaseOrder. Order хранится фактически налитый
+        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая все созданные заказы на ААЗС. Dispenser_id - DatabaseOrder. Order хранится ЗАКАЗА, не фактический.
 
         // Для пагинации ТРК.
         int m_current_dispenser_index = 0;

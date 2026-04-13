@@ -24,10 +24,6 @@ namespace bridge {
 
 using namespace std::placeholders;
 
-// ============================================================
-//  Construction / Destruction
-// ============================================================
-
 ArkaimLogic::ArkaimLogic(boost::asio::io_service& ios,
                          ArkaimTransportPtr transport)
     : entity(itp::CL2_API_ACTIVE_TERMINAL, itp::CL2_DEV_GENERIC)
@@ -42,10 +38,6 @@ ArkaimLogic::~ArkaimLogic() {
         m_poll_thread.join();
     }
 }
-
-// ============================================================
-//  ILogicHandler: handle()
-// ============================================================
 
 void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
     m_core = &core;
@@ -86,10 +78,6 @@ void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
     }
 }
 
-// ============================================================
-//  startLoop — connect to processing via ITP
-// ============================================================
-
 void ArkaimLogic::startLoop(MessageLayer& core) {
     m_core = &core;
 
@@ -113,7 +101,6 @@ void ArkaimLogic::startLoop(MessageLayer& core) {
         return;
     }
 
-    // 5. Start poll (manager::start, manager.cpp:66)
     m_started = true;
     m_poll_thread = std::thread([this]() {
         while (m_started.load()) {
@@ -188,7 +175,6 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
                   << " type=" << (int)type
                   << " id=\"" << id << "\"" << std::endl;
 
-        // Subscribe to status changes
         {
             std::vector<uint16_t> commands;
             commands.push_back(itp::CL2_CMD_ALL_STATUS_CHANGED);
@@ -206,7 +192,6 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
             }
         }
 
-        // Helper lambda for subscribing to events
         auto listen = [this](uint8_t addr, uint8_t dev_type,
                              const std::vector<uint16_t>& cmds) {
             for (uint16_t cmd : cmds) {
@@ -222,7 +207,6 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
             }
         };
 
-        // Subscribe to contactless reader card-detected events
         if (api & itp::CL2_API_CONTACTLESS_READER) {
             std::vector<uint16_t> commands;
             commands.push_back(itp::CL2_CMD_CRD_CARD_DETECTED);
@@ -235,7 +219,6 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
             }
         }
 
-        // Subscribe to pinpad events
         if (api & itp::CL2_API_PINPAD) {
             std::vector<uint16_t> commands;
             commands.push_back(itp::CL2_CMD_PIN_KEY_PRESSED);
@@ -252,7 +235,6 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
             m_has_pinpad = true;
         }
 
-        // Track controller
         if (api & itp::CL2_API_CONTROLLER) {
             m_controller_address = address;
             m_has_controller = true;
@@ -358,16 +340,15 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
     m_pin_data.clear();
     m_pin_required_on_transaction = false;
 
-    // Проверяем card_data на PinRequiredOnInitializeTransaction
-    try {
-        std::string card_json_str(m_card_data.begin(), m_card_data.end());
-        auto card_json = nlohmann::json::parse(card_json_str);
-        if (card_json.contains("PinRequiredOnInitializeTransaction")) {
-            m_pin_required_on_transaction = card_json.value("PinRequiredOnInitializeTransaction", false);
-            std::cout << "[ArkaimLogic] PIN required on transaction (from card data)" << std::endl;
-        }
-    } catch (...) {
-    }
+    // try {
+    //     std::string card_json_str(m_card_data.begin(), m_card_data.end());
+    //     auto card_json = nlohmann::json::parse(card_json_str);
+    //     if (card_json.contains("PinRequiredOnInitializeTransaction")) {
+    //         m_pin_required_on_transaction = card_json.value("PinRequiredOnInitializeTransaction", false);
+    //         std::cout << "[ArkaimLogic] PIN required on transaction (from card data)" << std::endl;
+    //     }
+    // } catch (...) {
+    // }
 
     std::cout << "[ArkaimLogic] Card resolved:"
               << " reader_addr=" << (int)m_reader_address

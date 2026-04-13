@@ -294,7 +294,7 @@ namespace bridge {
             msg.type = USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
         }
 
-        // Кнопка "Назад" после выбора ТРК на экране "Приложите карту". Сбросить выбранную ТРК.
+        // Кнопка "Назад" после выбора ТРК на экране "Приложите карту". Сбросить выбранную ТРК и вернуться на startPage.
         if (key_value == 4) {
             msg.type = USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
         }

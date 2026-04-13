@@ -83,6 +83,10 @@ namespace bridge {
         double order_volume = 0.0; // Объем на ТРК
         double amount = 0.0; // Текущая сумма
         double volume = 0.0; // Текущий объем
+        uint32_t fact_amount_raw = 0;
+        uint8_t fact_amount_exp = 0;
+        uint32_t fact_volume_raw = 0;
+        uint8_t fact_volume_exp = 0;
         bool round_to_order =false; // Округлить до суммы заказа
 
         DatabaseOrder() = default;
@@ -109,7 +113,7 @@ namespace bridge {
         std::string id;
         std::string status;
         std::string prev_status;
-        Order order;
+        Order order; // Фактически налитый заказ.
         std::string product_id;
 
         Dispenser(const std::string &_id) : id(_id), status(DISPENSER_IDLE) {}

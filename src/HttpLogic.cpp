@@ -155,6 +155,7 @@ namespace bridge {
             m_dwin_button_next_for_start_fuel = true;
             authorizeOnServer(core);
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON) {
+            DwinCommands::sendPageToDwin(core, getStartPage());
             // TODO
         } else if (message.type == USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON) {
             std::string pin_buffer(message.payload.begin(), message.payload.end());
@@ -210,9 +211,13 @@ namespace bridge {
                 renderDispenser(core);
             });
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
+            // fill returning money pages
+            Dispenser* dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+            setCurrentFuelingVolume(core, dispenser->order.volume);
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON) {
+            DwinCommands::sendPageToDwin(core, getStartPage());
             m_current_dispenser_id.clear();
         } else if (message.type == USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON) {
             Message pin_msg;
@@ -227,7 +232,20 @@ namespace bridge {
         std::string command = m_settings.APIDispenser.close;
         PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
 
-        
+
+        if (m_orders.count(m_current_dispenser_id) &&
+            m_orders[m_current_dispenser_id].status == ORDER_INTERRUPTED) {
+            // Частичный пролив — "Возврат средств завершён".
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process_end);
+            clearTimers();
+            startPageTimer(5, getStartPage(), [this, &core]() {
+                m_current_dispenser_id.clear();
+                renderDispenser(core);
+            });
+        } else {
+            // Полный пролив — "Счастливого пути".
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
+        }
     }
 
     void HttpLogic::handleCardResolved(const Message& message, MessageLayer& core) {
@@ -751,6 +769,10 @@ namespace bridge {
             if (m_orders.count(trk_id)) {
                 m_orders[trk_id].amount = std::stod(amount_string);
                 m_orders[trk_id].volume = std::stod(volume_string);
+                m_orders[trk_id].fact_amount_raw = static_cast<uint32_t>(std::stoul(utility::parseStringFromJson(amount["value"])));
+                m_orders[trk_id].fact_amount_exp = static_cast<uint8_t>(utility::parseIntFromJson(amount["exponent"]));
+                m_orders[trk_id].fact_volume_raw = static_cast<uint32_t>(std::stoul(utility::parseStringFromJson(volume["value"])));
+                m_orders[trk_id].fact_volume_exp = static_cast<uint8_t>(utility::parseIntFromJson(volume["exponent"]));
             }
 
             setCurrentFuelingVolume(core, volume_string);
@@ -760,22 +782,20 @@ namespace bridge {
                             core, m_settings.dwin.text_len_order_integer, m_settings.dwin.text_len_order_decimal,
                             amount_string);
 
-            std::string current_volume_order_string;
-            Dispenser *foundTrk = utility::getDispenserById(m_dispensers, trk_id);
+            double current_volume_order = 0.0;
 
-            if (foundTrk != nullptr) {
-                current_volume_order_string = foundTrk->order.volume;
+
+            auto it = m_orders.find(m_current_dispenser_id);
+            if (it != m_orders.end()) {
+                DatabaseOrder& order = it->second;
+                current_volume_order = order.order_volume;
             }
 
             int percent = 0;
 
-            if (!volume_string.empty() && !current_volume_order_string.empty()) {
+            if (!volume_string.empty() && current_volume_order > 0.0) {
                 double current = std::stod(volume_string);
-                double total = std::stod(current_volume_order_string);
-
-                if (total > 0.0) {
-                    percent = static_cast<int>((current / total) * 100.0);
-                }
+                percent = static_cast<int>((current / current_volume_order) * 100.0);
             }
             std::cout << "Percent to bar" << percent << std::endl;
             std::string percent_str = std::to_string(percent);
@@ -817,18 +837,23 @@ namespace bridge {
 
             clearTimers();
 
-            if (dispenser->prev_status == DISPENSER_COMPLETE)
-                // dispenser->prev_status == DISPENSER_FUELLING ||
-                //dispenser->prev_status == DISPENSER_HALTED) {
-                {
-                // После пролива — "Счастливого пути"
+            if (dispenser->prev_status == DISPENSER_COMPLETE ||
+                //dispenser->prev_status == DISPENSER_FUELLING ||
+                dispenser->prev_status == DISPENSER_HALTED) {
+                // После пролива — страницу покажет ORD_DELIVERED/ORD_INTERRUPTED
+                // Здесь только таймер на возврат к стартовой
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
                 m_current_dispenser_id.clear();
-            } else {
+                startPageTimer(5, getStartPage());
+            } else if (dispenser->prev_status != DISPENSER_FUELLING) {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
+                startPageTimer(5, getStartPage(), [this, &core]() {
+                    m_current_dispenser_id.clear();
+                    renderDispenser(core);
+                });
             }
-            startPageTimer(5, getStartPage());
+
         } else if (status == DISPENSER_COMPLETE) {
             getDispenserStatus(core, m_current_dispenser_id);
             //uint8_t page_id = m_settings.dwin.page_fuel_ended;
@@ -848,20 +873,25 @@ namespace bridge {
 
     void HttpLogic::handleDispenserOrderStatus(const json &jArray, MessageLayer &core) {
         try {
+            std::string status = "";
             std::string device_id = jArray["device_id"];
             auto data = jArray["on_dsp_order_changed"];
-            auto status = utility::parseStringFromJson(data["status"]);
-
-            m_orders[device_id].status = status;
+            if (data.contains("status")) {
+                status = utility::parseStringFromJson(data["status"]);
+                m_orders[device_id].status = status;
+            }
 
             if (status == ORDER_INTERRUPTED || status == ORDER_DELIVERED) {
                 auto& order = m_orders[device_id];
 
-                uint32_t fact_amount_value = 0;
-                uint8_t fact_amount_decimal = 0;
-                uint32_t fact_volume_value = 0;
-                uint8_t fact_volume_decimal = 0;
+                // Фактические данные — из последнего display_changed (m_orders)
+                // ORD_INTERRUPTED может не содержать amount/volume в event
+                uint32_t fact_amount_value = order.fact_amount_raw;
+                uint8_t fact_amount_decimal = order.fact_amount_exp;
+                uint32_t fact_volume_value = order.fact_volume_raw;
+                uint8_t fact_volume_decimal = order.fact_volume_exp;
 
+                // Если event всё же содержит данные — обновляем (ORD_DELIVERED обычно содержит)
                 if (data.contains("amount")) {
                     auto amount = data["amount"];
                     fact_amount_value = static_cast<uint32_t>(std::stoul(utility::parseStringFromJson(amount["value"])));
@@ -1105,6 +1135,7 @@ namespace bridge {
                         m_orders[trk_id].order_type     = utility::parseStringFromJson(order["type"]);
                         m_orders[trk_id].order_amount   = utility::parseDoubleFromJson(target_amount["value"], target_amount["exponent"]);
                         m_orders[trk_id].order_value    = utility::parseDoubleFromJson(target_volume["value"], target_volume["exponent"]);
+                        m_orders[trk_id].order_volume    = utility::parseDoubleFromJson(target_volume["value"], target_volume["exponent"]);
                         m_orders[trk_id].order_price    = utility::parseDoubleFromJson(price["value"], price["exponent"]);
                         m_orders[trk_id].complete       = utility::parseBoolFromJson(order["complete"]);
                         m_orders[trk_id].status         = utility::parseStringFromJson(order["status"]);

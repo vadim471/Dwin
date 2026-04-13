@@ -70,7 +70,6 @@ private:
     // ---- Helpers ----
     void tryProcessPendingPayment();
 
-private:
     MessageLayer* m_core = nullptr;
     boost::asio::io_service& m_ios;
     ArkaimTransportPtr m_transport;
