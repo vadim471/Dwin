@@ -105,7 +105,6 @@ private:
     std::vector<uint8_t> m_pin_data;
     uint8_t m_pin_type = 0;
     bool m_waiting_pin = false;
-    bool m_pin_required_on_transaction = false;
 
     // ---- Pending payment (waiting for card) ----
     struct PendingPayment {

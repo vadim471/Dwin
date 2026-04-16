@@ -232,6 +232,10 @@ namespace bridge {
         } else if (vp == m_settings.dwin.vp_set_fuel_price_pinpad) {
             DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_enter_fuel_price,
                textToShow, m_settings.dwin.text_len_order_integer);
+        } else if (vp == m_settings.dwin.vp_set_service_pincode_pinpad) {
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code, std::string(d_pinpad_buffer.length(), '*'), 4);
+        } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode,std::string(d_pinpad_buffer.length(), '*'), 4);
         }
     }
 

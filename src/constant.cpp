@@ -55,6 +55,9 @@ namespace bridge {
     const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON = "CANCEL_TRANSACTION";
     const std::string USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON = "PIN_PAD_ENTER_PIN_CODE";
 
+    // const std::string AUDIO_PLAY_WELCOME = "PLAY_WELCOME";
+    // const std::string AUDIO_PLAY_FUELLING_END = "PLAY_FUELLING_END";
+    // const std::string AUDIO_PLAY_FUELLING_INTERRUPTED = "PLAY_FUELLING_INTERRUPTED";
 
     const std::string HTTP_RESPONSE = "HTTP_RESPONSE";
 
@@ -102,6 +105,7 @@ namespace bridge {
     const std::string DWIN_MESSAGE_TYPE_CHANGE_PAGE = "change_page";
     const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER = "change_number";
     const std::string DWIN_MESSAGE_TYPE_WRITE_VP = "write_vp";
+    const std::string DWIN_MESSAGE_TYPE_PLAY_SOUND = "PLAY_SOUND";
 
     const int FUEL_TYPE_LEN = 6;
     const int TRK_ID_LEN = 6;

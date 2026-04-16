@@ -338,17 +338,7 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
 
     m_card_resolved = true;
     m_pin_data.clear();
-    m_pin_required_on_transaction = false;
 
-    // try {
-    //     std::string card_json_str(m_card_data.begin(), m_card_data.end());
-    //     auto card_json = nlohmann::json::parse(card_json_str);
-    //     if (card_json.contains("PinRequiredOnInitializeTransaction")) {
-    //         m_pin_required_on_transaction = card_json.value("PinRequiredOnInitializeTransaction", false);
-    //         std::cout << "[ArkaimLogic] PIN required on transaction (from card data)" << std::endl;
-    //     }
-    // } catch (...) {
-    // }
 
     std::cout << "[ArkaimLogic] Card resolved:"
               << " reader_addr=" << (int)m_reader_address
@@ -363,13 +353,9 @@ void ArkaimLogic::onCardResolve(itp::root& root, uint16_t error, itp::frame& res
     msg.source = PIPE_LAYER;
     msg.type = PAY_CARD_RESOLVED;
 
-    msg.payload.push_back(m_pin_required_on_transaction ? 1 : 0);
-
     m_core->sendToLogicLayer(HTTP_LAYER, msg);
 
-    if (!m_pin_required_on_transaction) {
-        tryProcessPendingPayment();
-    }
+    tryProcessPendingPayment();
 }
 
 void ArkaimLogic::tryProcessPendingPayment() {
@@ -690,8 +676,8 @@ void ArkaimLogic::processPinRequired(itp::frame& response, const std::string& or
     if (!m_has_pinpad) {
         std::cerr << "[ArkaimLogic] No pinpad available" << std::endl;
         sendPaymentResponse(order_id, false, 0, "No pinpad");
-        m_pending.active = false;
-        m_waiting_pin = false;
+        //m_pending.active = false;
+        //m_waiting_pin = false;
         return;
     }
 

@@ -235,6 +235,9 @@ namespace bridge {
         // Диспетчер ошибок
         void dispatchError(const ErrorEvent& error, MessageLayer& core);
 
+        // Проверка задержки заказа.
+        void checkFuellingProcess(MessageLayer& core);
+
         boost::asio::deadline_timer m_timer;
         boost::asio::deadline_timer m_ui_timer;
         std::atomic<bool> m_waitingResponse;
@@ -295,6 +298,9 @@ namespace bridge {
             std::function<void()> on_expire;
         };
         std::vector<PageTimer> m_page_timers;
+
+        bool m_fuelling_timer = false;
+        std::chrono::steady_clock::time_point m_last_fuelling_sound;
     };
 
     using HttpLogicPtr = std::shared_ptr<HttpLogic>;

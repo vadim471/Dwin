@@ -31,6 +31,7 @@ namespace bridge {
     extern const std::string DWIN_MESSAGE_TYPE_CHANGE_PAGE;
     extern const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
     extern const std::string DWIN_MESSAGE_TYPE_WRITE_VP;
+    extern const std::string DWIN_MESSAGE_TYPE_PLAY_SOUND;
     extern const std::string HTTP_MESSAGE_TYPE_RESPONSE;
     extern const std::string FUEL_VOLUME_ORDER_TYPE;
     extern const std::string CREATE_ORDER;

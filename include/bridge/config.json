@@ -346,10 +346,15 @@
           "text_len_fuel_type": 3,
           "text_len_fuel_price": 5,
           "text_len_percent_progress_bar": 3,
-          "text_len_date_time_footer": 20
+          "text_len_date_time_footer": 20,
+
+          "audio_id_welcome_nozzle_up": 1,
+          "audio_id_fuelling_end": 2,
+          "audio_id_fuelling_interrupted": 3
     },
     "business": {
-          "sleep_after_chosen_trk_page" : 3
+          "sleep_after_chosen_trk_page" : 3,
+          "waiting_dispenser_fuelling" : 10
     },
     "api.dispenser_command": {
           "authorize" : "CMD_AUTHORIZE",

@@ -245,6 +245,7 @@ namespace bridge {
         } else {
             // Полный пролив — "Счастливого пути".
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
+            DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_fuelling_end);
         }
     }
 
@@ -252,12 +253,7 @@ namespace bridge {
         if (!m_current_dispenser_id.empty()) {
             Dispenser* dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             if (dispenser->status == DISPENSER_NOZZLE_UP) {
-                bool pin_required = !message.payload.empty() && message.payload[0] == 1;
-                if (pin_required) {
-                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_print_pin);
-                } else {
-                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_volume);
-                }
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_volume);
             }
         }
     }
@@ -364,6 +360,7 @@ namespace bridge {
                 Product *product = utility::getProductById(m_products, dispenser->product_id);
                 processDispenserNozzleUpAfterUserTouch(core, product);
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
+
             }
             // TODO реализовать создание еще одного заказа.
             else if (dispenser->status == DISPENSER_FUELLING) {
@@ -680,6 +677,15 @@ namespace bridge {
                 if (currentId) {
                     m_lastId = currentId;
                 }
+                // Проверка при залипании заказа. Если время идет, но заказ стоит на месте.
+                // после изменения статуса на fuelling несколько пустых запросов пролетает
+                // и перед завершением прилетает два одинаковых id
+                Dispenser* dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
+                if (dispenser && dispenser->status == DISPENSER_FUELLING && m_lastId == currentId) {
+                    m_fuelling_timer = true;
+                } else {
+                    m_fuelling_timer = false;
+                }
             }
             // Проверка, чтобы при изменении статуса на ТРК, которую на дисплее не трогают, дисплей не изменял состояния.
             std::string trk_id = "";
@@ -712,7 +718,25 @@ namespace bridge {
         }
         setFooterDateTime(core);
         checkTimers(core);
+        checkFuellingProcess(core);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+    void HttpLogic::checkFuellingProcess(MessageLayer &core) {
+        if (!m_fuelling_timer) return;
+
+        auto now = std::chrono::steady_clock::now();
+
+        if (now - m_last_fuelling_sound >= std::chrono::seconds(
+                m_settings.business_logic.waiting_dispenser_fuelling)) {
+
+            m_last_fuelling_sound = now;
+
+            getDispenserStatus(core, m_current_dispenser_id);
+
+            DwinCommands::sendPlaySoundToDwin(
+                core, m_settings.dwin.audio_id_fuelling_interrupted);
+                }
     }
 
     void HttpLogic::handleRandomDispenserStatus(const json &event, MessageLayer &core) {
@@ -732,6 +756,10 @@ namespace bridge {
 
             if (m_selected_dispensers[m_current_dispenser_index] == dispenser_id || m_amount_trk != 3 ) {
                 renderDispenser(core);
+            }
+
+            if (status == DISPENSER_NOZZLE_UP && m_current_dispenser_id.empty()){
+                DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_welcome_nozzle_up);
             }
         } catch (const std::exception &e) {
             std::cerr << "[Logic] Error parsing Random Dispenser Status: " << e.what() << std::endl;
@@ -845,6 +873,7 @@ namespace bridge {
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
                 m_current_dispenser_id.clear();
                 startPageTimer(5, getStartPage());
+
             } else if (dispenser->prev_status != DISPENSER_FUELLING) {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
@@ -1039,6 +1068,7 @@ namespace bridge {
 
     void HttpLogic::processDispenserIdleAfterUserTouch(MessageLayer &core) {
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_nozzle_into_gasoline);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_trk_id_second_page, utility::extractFirstInt(m_current_dispenser_id), m_settings.dwin.text_len_trk_id);
         clearTimers();
         startPageTimer(m_settings.business_logic.sleep_after_chosen_trk_page,
                        getStartPage(),
@@ -1055,7 +1085,7 @@ namespace bridge {
         setProductIdOnDisplay(core, icon_fuel);
         setFuelTypePriceOnDisplay(core, product->price);
         setProductTextOnDisplay(core, utility::extractFirstInt(product->id));
-
+        DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_welcome_nozzle_up);
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
     }
 
@@ -1516,8 +1546,7 @@ namespace bridge {
 
     void HttpLogic::handlePaymentResponse(const Message& msg, MessageLayer& core) {
         std::string order_id = msg.resource_id;
-        
-        // Parse JSON from payload
+
         std::string json_str(msg.payload.begin(), msg.payload.end());
         auto json = nlohmann::json::parse(json_str);
         
@@ -1541,10 +1570,8 @@ namespace bridge {
                       << ", message=" << error_msg << std::endl;
 
             if (error_msg == "No pinpad") {
-                // Пинпад не подключен — показываем экран ввода PIN на дисплее
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_print_pin);
             } else {
-                // Остальные ошибки — закрываем заказ и показываем ошибку
                 std::string command = m_settings.APIDispenser.close;
                 PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);

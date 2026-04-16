@@ -90,5 +90,17 @@ namespace bridge {
             msg.payload = payload;
             core.sendTo(UART_LAYER, msg);
         }
+
+        static void sendPlaySoundToDwin(MessageLayer &core, uint8_t fileName) {
+            Message msg;
+            msg.type = DWIN_MESSAGE_TYPE_PLAY_SOUND;
+
+            std::vector<uint8_t> payload;
+            payload.push_back(fileName & 0xFF);
+
+            msg.payload = payload;
+
+            core.sendTo(UART_LAYER, msg);
+        }
     };
 }

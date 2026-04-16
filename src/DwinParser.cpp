@@ -164,6 +164,24 @@ namespace bridge {
             data.insert(data.end(), msg.payload.begin(), msg.payload.end());
         }
 
+        else if (msg.type == DWIN_MESSAGE_TYPE_PLAY_SOUND) {
+            // if (msg.payload.size() < 2) return raw;
+
+
+            data.push_back(0x5A);
+            data.push_back(0xA5);
+            // Длина: 1(Cmd) + 2(VP) + N(Data)
+            data.push_back(0x05);
+            // Cmd: Write VP
+            data.push_back(0x82);
+            // vp AUDIO
+            data.push_back(0x00);
+            data.push_back(0xA0);
+
+            // address audio
+            data.push_back(msg.payload[0]);
+        }
+
         return raw;
     }
 
