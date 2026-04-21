@@ -41,6 +41,7 @@ namespace bridge {
     const std::string USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON = "BASIC_TOUCH_BEGIN_FUELLING";
     const std::string USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON = "BASIC_TOUCH_CREATE_NEW_ORDER";
     const std::string USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON = "BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON";
+    const std::string USER_TOUCH_BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON = "BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON";
     const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON = "PIN_PAD_ENTER_FUEL_EDITING";
     const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON = "PIN_PAD_ENTER_FUEL_VOLUME";
     const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON = "SERVICE_MENU_LEVEL_GAUGE";
@@ -69,6 +70,7 @@ namespace bridge {
     const std::string DISPENSER_HALTED = "DSP_HALTED";
     const std::string DISPENSER_OFFLINE = "DSP_OFFLINE";
     const std::string DISPENSER_ERROR = "DSP_ERROR";
+    const std::string DISPENSER_LOCKED = "DSP_LOCKED";
 
     const std::string UPPER_VOLUME = "IO_UPPER_VOLUME";
     const std::string LOWER_VOLUME = "IO_LOWER_VOLUME";
@@ -106,6 +108,7 @@ namespace bridge {
     const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER = "change_number";
     const std::string DWIN_MESSAGE_TYPE_WRITE_VP = "write_vp";
     const std::string DWIN_MESSAGE_TYPE_PLAY_SOUND = "PLAY_SOUND";
+    const std::string DWIN_MESSAGE_TYPE_SET_BRIGHTNESS = "SET_BRIGHTNESS";
 
     const int FUEL_TYPE_LEN = 6;
     const int TRK_ID_LEN = 6;

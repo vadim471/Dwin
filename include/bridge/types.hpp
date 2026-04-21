@@ -113,9 +113,10 @@ namespace bridge {
         std::string id;
         std::string status;
         std::string prev_status;
-        Order order; // Фактически налитый заказ.
+        Order order; // Фактический заказ. Текущий налитый в m_orders HttpLogic.
         std::string product_id;
-
+        std::chrono::steady_clock::time_point m_last_volume_change_time; // Время последней информации о проливе.
+        bool is_fuelling_paused; // Отжат ли курок.
         Dispenser(const std::string &_id) : id(_id), status(DISPENSER_IDLE) {}
     };
 

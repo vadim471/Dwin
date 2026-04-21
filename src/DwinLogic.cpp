@@ -187,6 +187,7 @@ namespace bridge {
             // Decline.
         } else if (number == 11) {
             d_pinpad_buffer.clear();
+            clearAllInputPinPad(core);
             // Backspace.
         } else if (number == 12) {
             if (!d_pinpad_buffer.empty()) {
@@ -209,10 +210,10 @@ namespace bridge {
                 } else if (vp == m_settings.dwin.vp_set_service_pincode_pinpad) {
                     if (std::stoi(d_pinpad_buffer) == m_settings.gas_station.service_code) {
                         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_service_menu);
-                    } else {
+                    }
                         DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_pinpad_service_code,
                "", m_settings.dwin.text_len_trk_id);
-                    }
+
                 } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
                     msg.type = USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
                 }
@@ -233,10 +234,21 @@ namespace bridge {
             DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_enter_fuel_price,
                textToShow, m_settings.dwin.text_len_order_integer);
         } else if (vp == m_settings.dwin.vp_set_service_pincode_pinpad) {
-            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code, std::string(d_pinpad_buffer.length(), '*'), 4);
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code, std::string(d_pinpad_buffer.length(), '*'), m_settings.dwin.text_len_trk_id);
         } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
-            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode,std::string(d_pinpad_buffer.length(), '*'), 4);
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode,std::string(d_pinpad_buffer.length(), '*'), m_settings.dwin.text_len_trk_id);
         }
+    }
+
+    void DwinLogic::clearAllInputPinPad(MessageLayer &core) const {
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_enterring_volume_order_pinpad,
+                "", m_settings.dwin.text_len_order_integer);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_enter_fuel_price,
+               "", m_settings.dwin.text_len_order_integer);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
+              "", m_settings.dwin.text_len_trk_id);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
+               "", m_settings.dwin.text_len_trk_id);
     }
 
     void DwinLogic::handleCreateOrder(const Message &message, MessageLayer& core) {
@@ -301,6 +313,13 @@ namespace bridge {
         // Кнопка "Назад" после выбора ТРК на экране "Приложите карту". Сбросить выбранную ТРК и вернуться на startPage.
         if (key_value == 4) {
             msg.type = USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
+        }
+
+        if (key_value == 5) {
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
+              "", m_settings.dwin.text_len_trk_id);
+            d_pinpad_buffer.clear();
+            msg.type = USER_TOUCH_BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON;
         }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.

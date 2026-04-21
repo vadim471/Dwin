@@ -32,6 +32,7 @@ namespace bridge {
     extern const std::string DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
     extern const std::string DWIN_MESSAGE_TYPE_WRITE_VP;
     extern const std::string DWIN_MESSAGE_TYPE_PLAY_SOUND;
+    extern const std::string DWIN_MESSAGE_TYPE_SET_BRIGHTNESS;
     extern const std::string HTTP_MESSAGE_TYPE_RESPONSE;
     extern const std::string FUEL_VOLUME_ORDER_TYPE;
     extern const std::string CREATE_ORDER;
@@ -55,6 +56,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
+    extern const std::string USER_TOUCH_BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON;
     extern const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON;
@@ -90,6 +92,7 @@ namespace bridge {
     extern const std::string DISPENSER_HALTED;
     extern const std::string DISPENSER_OFFLINE;
     extern const std::string DISPENSER_ERROR;
+    extern const std::string DISPENSER_LOCKED;
 
     extern const std::string UPPER_VOLUME;
     extern const std::string LOWER_VOLUME;

@@ -208,6 +208,10 @@ struct Settings {
         int icon_dispenser_idle;
         int icon_dispenser_order_end;
         int icon_dispenser_fueling;
+        int icon_dispenser_error;
+        int icon_dispenser_halted;
+        int icon_dispenser_locked;
+        int icon_dispenser_offline;
 
         int icon_fuel_type_92;
         int icon_fuel_type_95;
@@ -282,7 +286,7 @@ struct Settings {
             s.server.username = j["server"]["username"];
             s.server.password = j["server"]["password"];
 
-            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_second_page"));
+            // s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_second_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_third_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_forth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fifth_page"));
@@ -595,10 +599,14 @@ struct Settings {
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];
             s.dwin.audio_id_fuelling_interrupted       = j["dwin"]["audio_id_fuelling_interrupted"];
 
-            s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
-            s.dwin.icon_dispenser_idle     = j["dwin"]["icon_dispenser_idle"];
-            s.dwin.icon_dispenser_order_end= j["dwin"]["icon_dispenser_order_end"];
-            s.dwin.icon_dispenser_order_end= j["dwin"]["icon_dispenser_fueling"];
+            s.dwin.icon_dispenser_nozzle_up              = j["dwin"]["icon_dispenser_nozzle_up"];
+            s.dwin.icon_dispenser_idle                   = j["dwin"]["icon_dispenser_idle"];
+            s.dwin.icon_dispenser_order_end              = j["dwin"]["icon_dispenser_order_end"];
+            s.dwin.icon_dispenser_fueling                = j["dwin"]["icon_dispenser_fueling"];
+            s.dwin.icon_dispenser_error                  = j["dwin"]["icon_dispenser_error"];
+            s.dwin.icon_dispenser_halted                 = j["dwin"]["icon_dispenser_halted"];
+            s.dwin.icon_dispenser_offline                = j["dwin"]["icon_dispenser_offline"];
+            s.dwin.icon_dispenser_locked                 = j["dwin"]["icon_dispenser_locked"];
 
             s.dwin.icon_fuel_type_92   = j["dwin"]["icon_fuel_type_92"];
             s.dwin.icon_fuel_type_95   = j["dwin"]["icon_fuel_type_95"];

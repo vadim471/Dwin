@@ -116,6 +116,18 @@ namespace bridge {
         if (status == DISPENSER_COMPLETE) {
             return s.dwin.icon_dispenser_order_end;
         }
+        if (status == DISPENSER_ERROR) {
+            return s.dwin.icon_dispenser_error;
+        }
+        if (status == DISPENSER_HALTED) {
+            return s.dwin.icon_dispenser_halted;
+        }
+        if (status == DISPENSER_OFFLINE) {
+            return s.dwin.icon_dispenser_offline;
+        }
+        if (status == DISPENSER_LOCKED) {
+            return s.dwin.icon_dispenser_locked;;
+        }
         return s.dwin.icon_dispenser_idle;
     }
 

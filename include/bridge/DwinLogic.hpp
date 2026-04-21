@@ -62,6 +62,9 @@ namespace bridge {
         // Хендлер обработки отмены заказа.
         void handleCancelTransaction(const Message &message, MessageLayer& core);
 
+        // Хендлер очистки всех инпутов пин-пада.
+        void clearAllInputPinPad(MessageLayer& core) const;
+
         // Строка, содержащая значение, введенное с пинпада.
         std::string d_pinpad_buffer;
     };

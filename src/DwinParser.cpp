@@ -26,7 +26,6 @@ namespace bridge {
         // 1. Дописываем новые данные в конец буфера
         m_buffer.insert(m_buffer.end(), input.data.begin(), input.data.end());
 
-
         // 2. Крутим цикл, пока в буфере есть хотя бы заголовок (3 байта: 5A A5 Len)
         while (m_buffer.size() >= 3) {
 
@@ -180,6 +179,30 @@ namespace bridge {
 
             // address audio
             data.push_back(msg.payload[0]);
+        }
+
+        // --- СЦЕНАРИЙ 5: УПРАВЛЕНИЕ ЯРКОСТЬЮ (ВЫВОД ИЗ СПЯЩЕГО РЕЖИМА) ---
+        else if (msg.type == DWIN_MESSAGE_TYPE_SET_BRIGHTNESS) {
+            // Формат: 5A A5 05 82 00 82 [brightness]
+            // VP 0x0082 - системный регистр управления подсветкой
+            // brightness: 0x00-0x64 (0-100)
+            
+            if (msg.payload.size() < 3) {
+                std::cerr << "[DgusParser] Error: SET_BRIGHTNESS requires 3 bytes (VP + brightness)" << std::endl;
+                return raw;
+            }
+
+            data.push_back(0x5A);
+            data.push_back(0xA5);
+            data.push_back(0x05);  // Длина: Cmd(1) + VP(2) + Data(1) + CRC(1)
+            data.push_back(0x82);  // Cmd: Write VP
+            
+            // VP адрес (из payload)
+            data.push_back(msg.payload[0]);
+            data.push_back(msg.payload[1]);
+            
+            // Значение яркости
+            data.push_back(msg.payload[2]);
         }
 
         return raw;

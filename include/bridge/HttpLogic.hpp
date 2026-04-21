@@ -122,7 +122,7 @@ namespace bridge {
         // Хендлер обработки выбора ТРК для использования на АЗС.
         void handleAcceptSelectedTRK(MessageLayer& core);
 
-        // Хендлер нажатия на ТРК выбора ТРК для использования на АЗС.
+        // Хендлер нажатия на ТРК выбора ТРК для использования на АЗС. Конфигурация настройки, какие ТРК использовать.
         void handleTrkSelectionToggle(MessageLayer& core, uint8_t slot_index);
         
         // Хендлер обработки ответа от Arkaim платежного процессинга
@@ -146,7 +146,7 @@ namespace bridge {
         // Хендлер обработки завершения заказа PAY_CONFIRM.
         void handlePayConfirmOrder(MessageLayer& core);
 
-        // Отрисовка страницы выбора ТРК для использования на АЗС.
+        // Отрисовка страницы выбора ТРК для использования на АЗС. Настройка конфигурации, какие ТРК использовать.
         void renderTrkSelectionPage(MessageLayer& core);
 
         // Заполнение TRK ID на всех страницах интерфейса.
@@ -299,8 +299,7 @@ namespace bridge {
         };
         std::vector<PageTimer> m_page_timers;
 
-        bool m_fuelling_timer = false;
-        std::chrono::steady_clock::time_point m_last_fuelling_sound;
+        m_last_fueling_sound = ;
     };
 
     using HttpLogicPtr = std::shared_ptr<HttpLogic>;

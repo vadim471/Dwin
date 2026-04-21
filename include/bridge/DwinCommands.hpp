@@ -102,5 +102,28 @@ namespace bridge {
 
             core.sendTo(UART_LAYER, msg);
         }
+
+        // Управление подсветкой (вывод из спящего режима)
+        // brightness: 0-100 (0 = выключить, 100 = максимальная яркость)
+        static void sendSetBrightnessToDwin(MessageLayer &core, uint8_t brightness) {
+            Message msg;
+            msg.type = DWIN_MESSAGE_TYPE_SET_BRIGHTNESS;
+
+            std::vector<uint8_t> payload;
+            // VP адрес для управления подсветкой (обычно 0x0000)
+            payload.push_back(0x00);
+            payload.push_back(0x00);
+            // Яркость (0-100)
+            payload.push_back(brightness & 0xFF);
+
+            msg.payload = payload;
+
+            core.sendTo(UART_LAYER, msg);
+        }
+
+        // Быстрый вывод из спящего режима (100% яркость)
+        static void sendWakeUpDwin(MessageLayer &core) {
+            sendSetBrightnessToDwin(core, 100);
+        }
     };
 }
