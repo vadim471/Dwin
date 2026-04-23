@@ -77,7 +77,7 @@ namespace bridge {
         std::string product_id = "";
         std::string product_rating = "";
         std::string order_type = ""; // По объему / полный бак / сумма
-        double order_price = 0.0; // Цена на ТРК
+        double order_price = 0.0; // Цена на ТРК (литр топлива)
         double order_value = 0.0; // Выбранная сумма или объем
         double order_amount = 0.0; // Сумма на ТРК
         double order_volume = 0.0; // Объем на ТРК
@@ -87,7 +87,7 @@ namespace bridge {
         uint8_t fact_amount_exp = 0;
         uint32_t fact_volume_raw = 0;
         uint8_t fact_volume_exp = 0;
-        bool round_to_order =false; // Округлить до суммы заказа
+        bool round_to_order = false; // Округлить до суммы заказа
 
         DatabaseOrder() = default;
 

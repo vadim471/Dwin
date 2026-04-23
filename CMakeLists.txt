@@ -119,9 +119,11 @@ add_executable(dwin_exmpl src/main.cpp
         src/ArkaimTransport.cpp
         src/ArkaimParser.cpp
         src/ArkaimLogic.cpp
+        src/Printer.cpp
         include/bridge/ArkaimTransport.hpp
         include/bridge/ArkaimParser.hpp
         include/bridge/ArkaimLogic.hpp
+        include/bridge/Printer.hpp
         ${ARKAIM_INFRA_SOURCES}
 )
 

@@ -146,11 +146,14 @@ namespace bridge {
         // Хендлер обработки завершения заказа PAY_CONFIRM.
         void handlePayConfirmOrder(MessageLayer& core);
 
+        // Хендлер обработки ввода неверного ПИН-кода.
+        void handleIncorrectPinCode(MessageLayer& core, const std::string& order_id, const std::string& dispenser_id);
+
         // Отрисовка страницы выбора ТРК для использования на АЗС. Настройка конфигурации, какие ТРК использовать.
         void renderTrkSelectionPage(MessageLayer& core);
 
         // Заполнение TRK ID на всех страницах интерфейса.
-        void setTRKIdOnDisplay(MessageLayer& core, std::string trk_id) const;
+        void setTRKIdOnDisplay(MessageLayer& core, const std::string& trk_id) const;
 
         // Заполнение типа топлива на всех страницах интерфейса (Картинки).
         void setProductIdOnDisplay(MessageLayer& core, int value) const;
@@ -299,7 +302,7 @@ namespace bridge {
         };
         std::vector<PageTimer> m_page_timers;
 
-        m_last_fueling_sound = ;
+        std::chrono::steady_clock::time_point m_last_fueling_sound;
     };
 
     using HttpLogicPtr = std::shared_ptr<HttpLogic>;

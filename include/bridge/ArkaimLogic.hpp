@@ -3,6 +3,7 @@
 #include "ILogicHandler.hpp"
 #include "ArkaimTransport.hpp"
 #include "PaymentData.hpp"
+#include "Printer.hpp"
 
 #include <itp/entity.hpp>
 #include <itp/itp.hpp>
@@ -17,6 +18,7 @@
 #include <atomic>
 #include <map>
 #include <mutex>
+#include <memory>
 
 namespace bridge {
 
@@ -70,6 +72,9 @@ private:
     // ---- Helpers ----
     void tryProcessPendingPayment();
 
+    // ---- Printer methods ----
+    void handlePrintReceipt(const Message& msg);
+
     MessageLayer* m_core = nullptr;
     boost::asio::io_service& m_ios;
     ArkaimTransportPtr m_transport;
@@ -90,6 +95,9 @@ private:
     bool m_has_controller = false;
     uint8_t m_pinpad_address = 0;
     bool m_has_pinpad = false;
+    uint8_t m_printer_address = 0;
+    bool m_has_printer = false;
+    std::unique_ptr<Printer> m_printer;
 
     // ---- Card state (from on_card_resolve) ----
     bool m_card_resolved = false;

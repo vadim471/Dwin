@@ -21,7 +21,10 @@ namespace bridge {
     const std::string PAY_CANCEL = "PAY_CANCEL";
     const std::string PAY_CANCEL_RESPONSE_SUCCESS = "PAY_CANCEL_RESPONSE_SUCCESS";
     const std::string PAY_CONFIRM_RESPONSE_SUCCESS = "PAY_CONFIRM_RESPONSE_SUCCESS";
+    const std::string PAY_PRINT_RECEIPT = "PAY_PRINT_RECEIPT";
     const std::string ARKAIM_REQUEST = "ARKAIM_REQUEST";
+    const std::string NO_PINPAD = "No pinpad";
+    const std::string INCORECT_PINCODE = "Неверный ПИН";
 
     const std::string GET_PRODUCTS = "get_products";
     const std::string GET_IO_PARAMETERS = "get_io_parameters";
@@ -116,6 +119,4 @@ namespace bridge {
     const int VP_TEXT_STEP = 4;
 
     const int POCO_ERROR = 599;
-
-
 }

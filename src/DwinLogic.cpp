@@ -216,6 +216,7 @@ namespace bridge {
 
                 } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
                     msg.type = USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
+                    DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode, "", m_settings.dwin.text_len_trk_id);
                 }
 
                 msg.payload.assign(d_pinpad_buffer.begin(), d_pinpad_buffer.end());

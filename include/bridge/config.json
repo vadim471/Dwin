@@ -35,6 +35,7 @@
           "vp_trk_id_twentyseventh_page": "0x7600",
           "vp_trk_id_thirtyth_page": "0x7900",
           "vp_trk_id_thirtyfirst_page": "0x7911",
+          "vp_trk_id_thirtysecond_page": "0x7913",
 
           "vp_chosen_fuel_type_third_page": "0x5210",
           "vp_chosen_fuel_type_forth_page": "0x5310",
@@ -162,6 +163,7 @@
           "vp_current_date_time_footer_twentyninth_page": "0x9720",
           "vp_current_date_time_footer_thirtyth_page": "0x9780",
           "vp_current_date_time_footer_thirtyfirst_page": "0x9840",
+          "vp_current_date_time_footer_thirtysecond_page": "0x9900",
 
           "vp_current_fuel_type_eleventh_page": "0x6050",
           "vp_current_fuel_type_twelvth_page": "0x6150",
@@ -326,6 +328,7 @@
           "page_select_used_trk": 29,
           "page_return_money_cancel_transaction": 30,
           "page_error_transaction_failed": 31,
+          "page_error_incorrect_pincode": 32,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,
@@ -358,7 +361,8 @@
     },
     "business": {
           "sleep_after_chosen_trk_page" : 3,
-          "waiting_dispenser_fuelling" : 10
+          "waiting_dispenser_fuelling" : 10,
+          "show_incorrect_pin_page": 3
     },
     "api.dispenser_command": {
           "authorize" : "CMD_AUTHORIZE",

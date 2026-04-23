@@ -202,6 +202,7 @@ struct Settings {
         int page_select_used_trk;
         int page_return_money_cancel_transaction;
         int page_error_transaction_failed;
+        int page_error_incorrect_pincode;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -238,6 +239,7 @@ struct Settings {
     struct BusinessLogic {
         int sleep_after_chosen_trk_page;
         int waiting_dispenser_fuelling;
+        int show_incorrect_pin_page;
     } business_logic;
 
     struct APIDispenser {
@@ -304,6 +306,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfirst_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtysecond_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -430,6 +433,7 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_twentyninth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfirst_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtysecond_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -594,6 +598,7 @@ struct Settings {
             s.dwin.page_select_used_trk                = j["dwin"]["page_select_used_trk"];
             s.dwin.page_return_money_cancel_transaction= j["dwin"]["page_return_money_cancel_transaction"];
             s.dwin.page_error_transaction_failed       = j["dwin"]["page_error_transaction_failed"];
+            s.dwin.page_error_incorrect_pincode       = j["dwin"]["page_error_incorrect_pincode"];
 
             s.dwin.audio_id_welcome_nozzle_up          = j["dwin"]["audio_id_welcome_nozzle_up"];
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];
@@ -629,6 +634,7 @@ struct Settings {
 
             s.business_logic.sleep_after_chosen_trk_page = j["business"]["sleep_after_chosen_trk_page"];
             s.business_logic.waiting_dispenser_fuelling  = j["business"]["waiting_dispenser_fuelling"];
+            s.business_logic.show_incorrect_pin_page        = j["business"]["show_incorrect_pin_page"];
 
             s.APIDispenser.authorize = j["api.dispenser_command"]["authorize"];
             s.APIDispenser.close = j["api.dispenser_command"]["close"];

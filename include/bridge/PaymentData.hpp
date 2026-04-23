@@ -16,6 +16,8 @@ struct PaymentRequestData {
     uint32_t amount_value = 0;
     uint8_t amount_decimal = 0;
 
+    //std::string dispenser_id = ""; // Необходимо для повторного ввода ПИН-кода. в HttpLogic я достаю из мапы заказов последний по этому айди, чтобы не запрашивать по новой данные заказа.
+
     // Confirm-specific fields (from reference: payment.cpp)
     uint8_t not_complete = 0;       // 0 = full delivery, 1 = partial
     uint32_t fact_volume_value = 0;
@@ -38,6 +40,7 @@ inline Bytes serializePaymentRequest(const PaymentRequestData& request) {
         {"fact_volume_decimal", request.fact_volume_decimal},
         {"fact_amount_value", request.fact_amount_value},
         {"fact_amount_decimal", request.fact_amount_decimal},
+        //{"dispenser_id", request.dispenser_id}
     };
 
     const auto body = json.dump();
@@ -61,6 +64,7 @@ inline bool deserializePaymentRequest(const Bytes& payload, PaymentRequestData& 
         request.fact_volume_decimal = json.value("fact_volume_decimal", uint8_t(0));
         request.fact_amount_value = json.value("fact_amount_value", uint32_t(0));
         request.fact_amount_decimal = json.value("fact_amount_decimal", uint8_t(0));
+        //request.dispenser_id = json.value("dispenser_id", std::string());
         return true;
     } catch (...) {
         return false;

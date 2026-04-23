@@ -73,6 +73,8 @@ void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
         handleCancel(msg);
     } else if (msg.type == PAY_PIN_ENTERED) {
         handlePinEntered(msg);
+    } else if (msg.type == PAY_PRINT_RECEIPT) {
+        handlePrintReceipt(msg);
     } else {
         std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
     }
@@ -246,6 +248,18 @@ void ArkaimLogic::onGetApiList(uint16_t error, itp::frame& response) {
             std::vector<uint16_t> commands;
             commands.push_back(itp::CL2_CMD_BARCODE_SCANNED);
             listen(address, type, commands);
+        }
+
+        if (api & itp::CL2_API_PRINTER) {
+            std::vector<uint16_t> commands;
+            commands.push_back(itp::CL2_CMD_PRT_PRINT_TEXT);
+            commands.push_back(itp::CL2_CMD_PRT_CUT_PAPER);
+            listen(address, type, commands);
+
+            m_printer_address = address;
+            m_has_printer = true;
+            m_printer.reset(new Printer(this->node_, address));
+            std::cout << "[ArkaimLogic] Printer found at addr=" << (int)address << std::endl;
         }
     }
 
@@ -460,6 +474,10 @@ void ArkaimLogic::onTransactionResponse(itp::root& root, uint16_t error,
         m_order_transactions[order_id] = transaction_id;
         sendPaymentResponse(order_id, true, transaction_id, message);
         // m_pending остаётся active — данные нужны для cancel/confirm
+    } else if (code == itp::CL2_PAY_ERR_INVALID_PIN) {
+        std::cerr << "[ArkaimLogic] Transaction FAILED, Incorrect PIN" << (int)code
+                  << " msg=\"" << message << "\"" << std::endl;
+        sendPaymentResponse(order_id, false, 0, message);
     } else {
         std::cerr << "[ArkaimLogic] Transaction FAILED, code=" << (int)code
                   << " msg=\"" << message << "\"" << std::endl;
@@ -675,7 +693,7 @@ void ArkaimLogic::processPinRequired(itp::frame& response, const std::string& or
 
     if (!m_has_pinpad) {
         std::cerr << "[ArkaimLogic] No pinpad available" << std::endl;
-        sendPaymentResponse(order_id, false, 0, "No pinpad");
+        sendPaymentResponse(order_id, false, 0, NO_PINPAD);
         //m_pending.active = false;
         //m_waiting_pin = false;
         return;
@@ -737,6 +755,33 @@ void ArkaimLogic::onPinReady(itp::frame& event) {
     if (m_pending.active) {
         sendTransaction(m_pending.order_id, m_pending.payment);
     }
+}
+
+void ArkaimLogic::handlePrintReceipt(const Message& msg) {
+    if (!m_has_printer) {
+        std::cerr << "[ArkaimLogic] No printer available" << std::endl;
+        return;
+    }
+
+    std::string receipt_text(msg.payload.begin(), msg.payload.end());
+    std::cout << "[ArkaimLogic] Printing receipt for order " << msg.resource_id << std::endl;
+
+    m_printer->printText(receipt_text, [this, msg](bool success, const std::string& error) {
+        if (success) {
+            std::cout << "[ArkaimLogic] Receipt printed successfully" << std::endl;
+            
+            // Отрезать бумагу после печати
+            m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
+                if (cut_success) {
+                    std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
+                } else {
+                    std::cerr << "[ArkaimLogic] Failed to cut paper: " << cut_error << std::endl;
+                }
+            });
+        } else {
+            std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
+        }
+    });
 }
 
 } // namespace bridge
