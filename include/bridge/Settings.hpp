@@ -159,6 +159,7 @@ struct Settings {
 
     // --- Current values ---
         uint16_t vp_chosen_order_volume; // кнопка быстрого выбора количества топлива (не пинпад).
+        uint16_t vp_button_get_balance; // кнопка запроса баланса карты.
 
         uint16_t vp_current_order_amount_integer;
         std::vector<uint16_t> vp_current_fuel_volume_integer;
@@ -458,6 +459,7 @@ struct Settings {
             LOAD_HEX(vp_current_price_per_liter_last_order_decimal);
 
             LOAD_HEX(vp_chosen_order_volume);
+            LOAD_HEX(vp_button_get_balance);
             LOAD_HEX(vp_current_order_amount_integer);
             LOAD_HEX(vp_current_order_amount_decimal);
 

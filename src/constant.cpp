@@ -22,6 +22,7 @@ namespace bridge {
     const std::string PAY_CANCEL_RESPONSE_SUCCESS = "PAY_CANCEL_RESPONSE_SUCCESS";
     const std::string PAY_CONFIRM_RESPONSE_SUCCESS = "PAY_CONFIRM_RESPONSE_SUCCESS";
     const std::string PAY_PRINT_RECEIPT = "PAY_PRINT_RECEIPT";
+    const std::string PAY_GET_BALANCE = "PAY_GET_BALANCE";
     const std::string ARKAIM_REQUEST = "ARKAIM_REQUEST";
     const std::string NO_PINPAD = "No pinpad";
     const std::string INCORECT_PINCODE = "Неверный ПИН";

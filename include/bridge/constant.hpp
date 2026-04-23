@@ -23,6 +23,7 @@ namespace bridge {
     extern const std::string PAY_CARD_RESOLVED;
     extern const std::string PAY_PIN_ENTERED;
     extern const std::string PAY_PRINT_RECEIPT;
+    extern const std::string PAY_GET_BALANCE;
     extern const std::string ARKAIM_REQUEST;
     extern const std::string NO_PINPAD;
     extern const std::string INCORECT_PINCODE;

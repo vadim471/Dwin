@@ -75,6 +75,8 @@ void ArkaimLogic::handle(const Message& msg, MessageLayer& core) {
         handlePinEntered(msg);
     } else if (msg.type == PAY_PRINT_RECEIPT) {
         handlePrintReceipt(msg);
+    } else if (msg.type == PAY_GET_BALANCE) {
+        handleGetBalance(msg);
     } else {
         std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
     }
@@ -764,13 +766,12 @@ void ArkaimLogic::handlePrintReceipt(const Message& msg) {
     }
 
     std::string receipt_text(msg.payload.begin(), msg.payload.end());
-    std::cout << "[ArkaimLogic] Printing receipt for order " << msg.resource_id << std::endl;
+    std::cout << "[ArkaimLogic] Printing" << std::endl;
 
     m_printer->printText(receipt_text, [this, msg](bool success, const std::string& error) {
         if (success) {
             std::cout << "[ArkaimLogic] Receipt printed successfully" << std::endl;
-            
-            // Отрезать бумагу после печати
+
             m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
                 if (cut_success) {
                     std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
@@ -782,6 +783,107 @@ void ArkaimLogic::handlePrintReceipt(const Message& msg) {
             std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
         }
     });
+}
+
+void ArkaimLogic::handleGetBalance(const Message& msg) {
+    if (!m_card_resolved) {
+        std::cerr << "[ArkaimLogic] No card resolved for balance request" << std::endl;
+        return;
+    }
+
+    std::cout << "[ArkaimLogic] Get balance request" << std::endl;
+
+    // дефолтные значения для запроса баланса
+    // В реальном случае можно передать product_id и цену через msg.payload
+    sendGetBalance("ai92", 0, 0);
+}
+
+void ArkaimLogic::sendGetBalance(const std::string& product_id, uint32_t price_value, uint8_t price_decimal) {
+    std::cout << "[ArkaimLogic] Sending GET_BALANCE request" << std::endl;
+
+    itp::frame::uptr request(new itp::frame(itp::CL2_CMD_PAY_GET_INFO));
+    request->write_value(m_reader_address);
+    request->write_value(m_reader_api);
+    request->write_string(m_card_number);
+    request->write_array(m_card_data);
+    request->write_array(m_pin_data);
+    //
+    // // Для DUKPT пин-кода нужен transaction ID, но если пин не передается, все равно пишем 0
+    // if (m_pin_type == itp::CL2_PIN_TYPE_DUKPT || m_pin_data.empty()) {
+    //     request->write_value<uint32_t>(0);
+    // }
+    
+    request->write_string(product_id);
+    request->write_value(price_value);
+    request->write_value(price_decimal);
+
+    itp_error_code_t errc = this->node_.push_request(
+        std::move(request),
+        m_pay_address,
+        ABIND(onGetBalanceResponse, _2, _3)
+    );
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to send get balance request, error=" << errc << std::endl;
+    }
+}
+
+void ArkaimLogic::onGetBalanceResponse(uint16_t error, itp::frame& response) {
+    if (error == itp::CL2_ERR_PAY_PIN_REQUIRED) {
+        // TODO обработка запроса пин-кода для печати баланса
+        std::cout << "[ArkaimLogic] PIN required for balance request" << std::endl;
+        return;
+    }
+
+    if (error) {
+        std::cerr << "[ArkaimLogic] Get balance error=" << error << std::endl;
+        return;
+    }
+
+    itp_error_code_t errc;
+    uint8_t code;
+    std::string receipt;
+    std::string message;
+    int32_t int_code;
+    std::string int_message;
+
+    std::tie(code, errc) = response.read_value<uint8_t>();
+    if (!errc) std::tie(receipt, errc) = response.read_wide_string();
+    if (!errc) std::tie(message, errc) = response.read_string();
+    if (!errc) std::tie(int_code, errc) = response.read_value<int32_t>();
+    if (!errc) std::tie(int_message, errc) = response.read_string();
+
+    if (errc) {
+        std::cerr << "[ArkaimLogic] Failed to parse balance response" << std::endl;
+        return;
+    }
+
+    std::cout << "[ArkaimLogic] Balance response: code=" << (int)code
+              << " message=\"" << message << "\"" << std::endl;
+
+    if (code == itp::CL2_PAY_ERR_NONE) {
+        std::cout << "[ArkaimLogic] Balance request SUCCESS" << std::endl;
+        std::cout << "[ArkaimLogic] Receipt:\n" << receipt << std::endl;
+
+        // Печатаем чек с балансом
+        if (m_has_printer && !receipt.empty()) {
+            m_printer->printText(receipt, [this](bool success, const std::string& error) {
+                if (success) {
+                    std::cout << "[ArkaimLogic] Balance receipt printed" << std::endl;
+                    m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
+                        if (cut_success) {
+                            std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
+                        }
+                    });
+                } else {
+                    std::cerr << "[ArkaimLogic] Failed to print balance receipt: " << error << std::endl;
+                }
+            });
+        }
+    } else {
+        std::cerr << "[ArkaimLogic] Balance request FAILED, code=" << (int)code
+                  << " msg=\"" << message << "\"" << std::endl;
+    }
 }
 
 } // namespace bridge

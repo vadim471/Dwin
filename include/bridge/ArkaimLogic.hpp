@@ -75,6 +75,11 @@ private:
     // ---- Printer methods ----
     void handlePrintReceipt(const Message& msg);
 
+    // ---- Balance methods ----
+    void handleGetBalance(const Message& msg);
+    void sendGetBalance(const std::string& product_id, uint32_t price_value, uint8_t price_decimal);
+    void onGetBalanceResponse(uint16_t error, itp::frame& response);
+
     MessageLayer* m_core = nullptr;
     boost::asio::io_service& m_ios;
     ArkaimTransportPtr m_transport;

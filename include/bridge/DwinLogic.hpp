@@ -62,6 +62,9 @@ namespace bridge {
         // Хендлер обработки отмены заказа.
         void handleCancelTransaction(const Message &message, MessageLayer& core);
 
+        // Хендлер обработки нажатия на кнопку получения баланса карты.
+        void handleGetCardBalance(MessageLayer& core);
+
         // Хендлер очистки всех инпутов пин-пада.
         void clearAllInputPinPad(MessageLayer& core) const;
 

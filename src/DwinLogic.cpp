@@ -42,6 +42,10 @@ namespace bridge {
             handleCreateOrder(message, core);
         }
 
+        if (vp == m_settings.dwin.vp_button_get_balance) {
+            handleGetCardBalance(core);
+        }
+
         // Нажатие на кнопку "стрелки" выбора ТРК.
         if (vp == m_settings.dwin.vp_pagination_trk) {
             handlePaginationButton(message, core, USER_TOUCH_PAGINATION_TRK_BUTTON);
@@ -103,6 +107,14 @@ namespace bridge {
         if (vp == m_settings.dwin.vp_button_cancel_transaction) {
             handleCancelTransaction(message, core);
         }
+    }
+
+    void DwinLogic::handleGetCardBalance(MessageLayer &core) {
+        Message msg;
+        msg.source = UART_LAYER;
+        msg.type = PAY_GET_BALANCE;
+
+        core.sendToLogicLayer(PIPE_LAYER, msg);
     }
 
     void DwinLogic::handleSelectedTRK(const Message &message, MessageLayer &core) {

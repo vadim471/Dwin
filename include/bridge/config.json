@@ -180,6 +180,7 @@
           "vp_current_price_per_liter_last_order_decimal": "0x5138",
 
           "vp_chosen_order_volume": "0x5420",
+          "vp_button_get_balance": "0x5422",
 
           "vp_button_cancel_transaction": "0x5660",
 
