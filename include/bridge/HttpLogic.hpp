@@ -149,6 +149,9 @@ namespace bridge {
         // Хендлер обработки ввода неверного ПИН-кода.
         void handleIncorrectPinCode(MessageLayer& core, const std::string& order_id, const std::string& dispenser_id);
 
+        // Хендлер обработки начала заполнения танкера
+        void processReceptionTanker(MessageLayer& core);
+
         // Отрисовка страницы выбора ТРК для использования на АЗС. Настройка конфигурации, какие ТРК использовать.
         void renderTrkSelectionPage(MessageLayer& core);
 
@@ -174,7 +177,7 @@ namespace bridge {
         void setFuelTypePriceOnDisplay(MessageLayer& core, const std::string &value) const;
 
         // Заполнение значений параметров уровнемера.
-        void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge);
+        void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge, const std::string &type);
 
         // Заполнение текущего объема пролива
         void setCurrentFuelingVolume(MessageLayer& core, const std::string &value);
@@ -182,7 +185,7 @@ namespace bridge {
         static void sendTaskToHttp(MessageLayer& core, std::string id);
 
         // Обработка нажатия на кнопку пагинации страницы уровнемеров.
-        void changeLevelGauge(int direction, MessageLayer& core);
+        void changeLevelGauge(int direction, MessageLayer& core, const std::string &type);
 
         // Обработка нажатия на кнопку пагинации страницы редактирования цены топлива.
         void changeFuelType(int direction, MessageLayer& core);
@@ -261,8 +264,9 @@ namespace bridge {
 
         int m_amount_trk; // Значение конфигурации ТРК. Моно / Дуо / Мульти ТРК.
 
-        // Реальная id ТРК.
-        std::string m_current_dispenser_id;
+        std::string m_current_dispenser_id; // Реальная id ТРК.
+
+        std::string m_current_tanker_id; // Реальная id выбранного уровнемера для наполнения.
 
         std::vector<std::string> m_selected_dispensers; // ID выбранных ТРК в правильном порядке
 

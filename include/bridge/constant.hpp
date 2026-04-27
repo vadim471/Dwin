@@ -53,6 +53,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_VOLUME_BUTTON;
     extern const std::string USER_TOUCH_PAGINATION_TRK_BUTTON;
     extern const std::string USER_TOUCH_PAGINATION_FUEL_BUTTON;
+    extern const std::string USER_TOUCH_PAGINATION_RECEPTION_LEVEL_GAUGE_BUTTON;
     extern const std::string USER_TOUCH_PAGINATION_LEVEL_GAUGE_BUTTON;
     extern const std::string USER_TOUCH_CHOOSE_MULTI_TRK_BUTTON;
     extern const std::string USER_TOUCH_CHOOSE_TRK_BUTTON;
@@ -64,6 +65,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_EDITING_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_FUEL_VOLUME_BUTTON;
     extern const std::string USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON;
+    extern const std::string USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON;
     extern const std::string USER_TOUCH_SERVICE_MENU_CHANGE_FUEL_PRICE_BUTTON;
     extern const std::string USER_TOUCH_AMOUNT_TRK_BUTTON;
     extern const std::string USER_TOUCH_CHOOSE_FUEL_FOR_EDIT_BUTTON;
@@ -74,6 +76,9 @@ namespace bridge {
     extern const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
+    extern const std::string USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
+    extern const std::string USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON;
+    extern const std::string USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;
 
     // HTTP GET
     extern const std::string GET_PRODUCTS;

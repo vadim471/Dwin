@@ -40,14 +40,64 @@ struct Settings {
         uint16_t vp_fuel_volume_pinpad;
         uint16_t vp_enterring_volume_order_pinpad;
 
+    // --- Page Number Document ---
+        uint16_t vp_button_number_document_pinpad;
+        uint16_t vp_text_number_document_pinpad;
+
+    // --- Page PinPad Balance Card
+        uint16_t vp_button_pincode_balance_card_pinpad;
+        uint16_t vp_text_pincode_balance_card_pinpad;
+
     // --- Page PinPad Set Fuel Price
         uint16_t vp_set_fuel_price_pinpad;
         uint16_t vp_text_enter_fuel_price;
 
-    // --- Page Choose Amount TRK
+    // --- Page Choose Amount TRK ---
         uint16_t vp_button_choose_amount_trk;
 
-    // --- Page enter PinCode PinPad
+    // --- Page Fuel Reception ---
+        uint16_t vp_text_reception_gauge_filling_percent;
+        uint16_t vp_text_reception_gauge_id;
+        uint16_t vp_icon_reception_gauge;
+        uint16_t vp_text_upper_level_reception_gauge_integer;
+        uint16_t vp_text_upper_level_reception_gauge_decimal;
+        uint16_t vp_text_upper_volume_reception_gauge_integer;
+        uint16_t vp_text_upper_volume_reception_gauge_decimal;
+        uint16_t vp_text_weight_reception_gauge_integer;
+        uint16_t vp_text_weight_reception_gauge_decimal;
+        uint16_t vp_text_density_reception_gauge_integer;
+        uint16_t vp_text_density_reception_gauge_decimal;
+        uint16_t vp_text_lower_level_reception_gauge_integer;
+        uint16_t vp_text_lower_level_reception_gauge_decimal;
+        uint16_t vp_text_lower_volume_reception_gauge_integer;
+        uint16_t vp_text_lower_volume_reception_gauge_decimal;
+        uint16_t vp_text_total_volume_reception_gauge_integer;
+        uint16_t vp_text_total_volume_reception_gauge_decimal;
+        uint16_t vp_button_finish_reception_fuel;
+
+    // --- Page Choose Fuel Tanker For Reception ---
+        uint16_t vp_text_choose_reception_gauge_filling_percent;
+        uint16_t vp_text_choose_reception_gauge_id;
+        uint16_t vp_icon_choose_reception_gauge;
+        uint16_t vp_text_upper_level_choose_reception_gauge_integer;
+        uint16_t vp_text_upper_level_choose_reception_gauge_decimal;
+        uint16_t vp_text_upper_volume_choose_reception_gauge_integer;
+        uint16_t vp_text_upper_volume_choose_reception_gauge_decimal;
+        uint16_t vp_text_weight_choose_reception_gauge_integer;
+        uint16_t vp_text_weight_choose_reception_gauge_decimal;
+        uint16_t vp_text_density_choose_reception_gauge_integer;
+        uint16_t vp_text_density_choose_reception_gauge_decimal;
+        uint16_t vp_text_lower_level_choose_reception_gauge_integer;
+        uint16_t vp_text_lower_level_choose_reception_gauge_decimal;
+        uint16_t vp_text_lower_volume_choose_reception_gauge_integer;
+        uint16_t vp_text_lower_volume_choose_reception_gauge_decimal;
+        uint16_t vp_text_total_volume_choose_reception_gauge_integer;
+        uint16_t vp_text_total_volume_choose_reception_gauge_decimal;
+        uint16_t vp_button_choose_reception_fuel;
+        uint16_t vp_button_pagination_reception_tanker;
+
+
+    // --- Page enter PinCode PinPad ---
         uint16_t vp_enter_pin_code_pinpad;
         uint16_t vp_text_enter_pincode;
 
@@ -308,6 +358,8 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtysecond_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfifth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyseventh_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -435,6 +487,10 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfirst_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtysecond_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtythird_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfourth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfifth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyseventh_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -476,6 +532,8 @@ struct Settings {
             LOAD_HEX(vp_choose_multi_trk);
             LOAD_HEX(vp_fuel_volume_pinpad);
             LOAD_HEX(vp_enterring_volume_order_pinpad);
+            LOAD_HEX(vp_button_number_document_pinpad);
+            LOAD_HEX(vp_text_number_document_pinpad);
             LOAD_HEX(vp_set_fuel_price_pinpad);
             LOAD_HEX(vp_text_enter_fuel_price);
             LOAD_HEX(vp_enter_pin_code_pinpad);
@@ -505,6 +563,26 @@ struct Settings {
             LOAD_HEX(vp_text_lower_volume_gauge_decimal);
             LOAD_HEX(vp_text_total_volume_gauge_integer);
             LOAD_HEX(vp_text_total_volume_gauge_decimal);
+
+            LOAD_HEX(vp_text_reception_gauge_filling_percent);
+            LOAD_HEX(vp_text_reception_gauge_id);
+            LOAD_HEX(vp_icon_reception_gauge);
+            LOAD_HEX(vp_text_upper_level_reception_gauge_integer);
+            LOAD_HEX(vp_text_upper_level_reception_gauge_decimal);
+            LOAD_HEX(vp_text_upper_volume_reception_gauge_integer);
+            LOAD_HEX(vp_text_upper_volume_reception_gauge_decimal);
+            LOAD_HEX(vp_text_weight_reception_gauge_integer);
+            LOAD_HEX(vp_text_weight_reception_gauge_decimal);
+            LOAD_HEX(vp_text_density_reception_gauge_integer);
+            LOAD_HEX(vp_text_density_reception_gauge_decimal);
+            LOAD_HEX(vp_text_lower_level_reception_gauge_integer);
+            LOAD_HEX(vp_text_lower_level_reception_gauge_decimal);
+            LOAD_HEX(vp_text_lower_volume_reception_gauge_integer);
+            LOAD_HEX(vp_text_lower_volume_reception_gauge_decimal);
+            LOAD_HEX(vp_text_total_volume_reception_gauge_integer);
+            LOAD_HEX(vp_text_total_volume_reception_gauge_decimal);
+            LOAD_HEX(vp_button_finish_reception_fuel);
+
 
 
             LOAD_HEX(vp_button_fuel_edit_price_chosen);

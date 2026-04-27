@@ -477,5 +477,75 @@ namespace bridge {
         }
         return prime_product_id;
     }
+
+    std::string utility::formatDecimalValue(uint32_t value, uint8_t decimal) {
+        if (decimal == 0) {
+            return std::to_string(value);
+        }
+
+        std::string str = std::to_string(value);
+        
+        // Добавляем нули спереди если нужно
+        while (str.length() <= decimal) {
+            str = "0" + str;
+        }
+
+        // Вставляем точку
+        size_t pos = str.length() - decimal;
+        str.insert(pos, ".");
+
+        return str;
+    }
+
+    std::string utility::createReceiptFromTransaction(
+        uint64_t transaction_id,
+        const std::string& product_id,
+        uint32_t price_value, uint8_t price_decimal,
+        uint32_t volume_value, uint8_t volume_decimal,
+        uint32_t amount_value, uint8_t amount_decimal,
+        uint32_t fact_volume_value, uint8_t fact_volume_decimal,
+        uint32_t fact_amount_value, uint8_t fact_amount_decimal,
+        bool not_complete,
+        uint64_t transaction_time
+    ) {
+        std::stringstream receipt;
+
+        receipt << "========================================\n";
+        receipt << "           ЧЕК ТРАНЗАКЦИИ\n";
+        receipt << "========================================\n\n";
+
+        // Дата и время
+        time_t time = static_cast<time_t>(transaction_time / 1000);
+        char time_buf[64];
+        strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&time));
+        receipt << "Дата: " << time_buf << "\n";
+        receipt << "ID транзакции: " << transaction_id << "\n\n";
+
+        // Товар
+        receipt << "Товар: " << product_id << "\n";
+        receipt << "Цена за литр: " << formatDecimalValue(price_value, price_decimal) << " руб.\n\n";
+
+        // Запрошенные данные
+        receipt << "--- Запрошено ---\n";
+        receipt << "Объем: " << formatDecimalValue(volume_value, volume_decimal) << " л.\n";
+        receipt << "Сумма: " << formatDecimalValue(amount_value, amount_decimal) << " руб.\n\n";
+
+        // Фактические данные
+        receipt << "--- Отпущено ---\n";
+        receipt << "Объем: " << formatDecimalValue(fact_volume_value, fact_volume_decimal) << " л.\n";
+        receipt << "Сумма: " << formatDecimalValue(fact_amount_value, fact_amount_decimal) << " руб.\n\n";
+
+        if (not_complete) {
+            receipt << "ВНИМАНИЕ: Неполная отгрузка!\n\n";
+        }
+
+        receipt << "========================================\n";
+        receipt << "        Спасибо за покупку!\n";
+        receipt << "========================================\n";
+
+        return receipt.str();
+    }
+
 }
+
 

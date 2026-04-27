@@ -80,5 +80,21 @@ namespace bridge {
         static std::string primeIdToProcessingId(const std::string& prime_product_id,
                                                   const std::map<std::string, std::string>& prime_standalone,
                                                   const std::map<std::string, std::string>& processing_standalone);
+
+        // Форматирует значение с decimal в строку с точкой
+        static std::string formatDecimalValue(uint32_t value, uint8_t decimal);
+
+        // Создает чек для печати из данных транзакции
+        static std::string createReceiptFromTransaction(
+            uint64_t transaction_id,
+            const std::string& product_id,
+            uint32_t price_value, uint8_t price_decimal,
+            uint32_t volume_value, uint8_t volume_decimal,
+            uint32_t amount_value, uint8_t amount_decimal,
+            uint32_t fact_volume_value, uint8_t fact_volume_decimal,
+            uint32_t fact_amount_value, uint8_t fact_amount_decimal,
+            bool not_complete,
+            uint64_t transaction_time
+        );
     };
 }

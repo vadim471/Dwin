@@ -60,7 +60,7 @@ private:
     // ---- Confirm / Cancel ----
     void handleConfirm(const Message& msg);
     void handleCancel(const Message& msg);
-    void onConfirmResponse(uint16_t error, itp::frame& response, std::string order_id);
+    void onConfirmResponse(uint16_t error, itp::frame& response, std::string order_id, std::string receipt);
     void onCancelResponse(uint16_t error, itp::frame& response, std::string order_id);
 
     // ---- PIN handling ----
@@ -73,7 +73,7 @@ private:
     void tryProcessPendingPayment();
 
     // ---- Printer methods ----
-    void handlePrintReceipt(const Message& msg);
+    void handlePrintReceipt(const std::string receipt_processing);
 
     // ---- Balance methods ----
     void handleGetBalance(const Message& msg);
@@ -118,6 +118,7 @@ private:
     std::vector<uint8_t> m_pin_data;
     uint8_t m_pin_type = 0;
     bool m_waiting_pin = false;
+    bool m_waiting_pin_for_balance = false;
 
     // ---- Pending payment (waiting for card) ----
     struct PendingPayment {

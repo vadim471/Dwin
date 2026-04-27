@@ -40,7 +40,6 @@ inline Bytes serializePaymentRequest(const PaymentRequestData& request) {
         {"fact_volume_decimal", request.fact_volume_decimal},
         {"fact_amount_value", request.fact_amount_value},
         {"fact_amount_decimal", request.fact_amount_decimal},
-        //{"dispenser_id", request.dispenser_id}
     };
 
     const auto body = json.dump();
@@ -64,7 +63,7 @@ inline bool deserializePaymentRequest(const Bytes& payload, PaymentRequestData& 
         request.fact_volume_decimal = json.value("fact_volume_decimal", uint8_t(0));
         request.fact_amount_value = json.value("fact_amount_value", uint32_t(0));
         request.fact_amount_decimal = json.value("fact_amount_decimal", uint8_t(0));
-        //request.dispenser_id = json.value("dispenser_id", std::string());
+
         return true;
     } catch (...) {
         return false;

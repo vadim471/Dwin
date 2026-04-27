@@ -65,6 +65,12 @@ namespace bridge {
         // Хендлер обработки нажатия на кнопку получения баланса карты.
         void handleGetCardBalance(MessageLayer& core);
 
+        // Хендлер обработки нажатия на завершение приема топлива
+        void handleFinishReceptionFuel(MessageLayer& core);
+
+        // Хендлер обработки нажатия на кнопку выбора резервуара для приема топлива.
+        void handleTouchReceptionTanker(MessageLayer& core);
+
         // Хендлер очистки всех инпутов пин-пада.
         void clearAllInputPinPad(MessageLayer& core) const;
 

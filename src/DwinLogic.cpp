@@ -51,6 +51,14 @@ namespace bridge {
             handlePaginationButton(message, core, USER_TOUCH_PAGINATION_TRK_BUTTON);
         }
 
+        if (vp == m_settings.dwin.vp_button_pagination_reception_tanker) {
+            handlePaginationButton(message, core, USER_TOUCH_PAGINATION_RECEPTION_LEVEL_GAUGE_BUTTON);
+        }
+
+        if (vp == m_settings.dwin.vp_button_choose_reception_fuel) {
+            handleTouchReceptionTanker(core);
+        }
+
         // Нажатие на выбранную ТРК при конфигурации мульти ТРК.
         if (vp == m_settings.dwin.vp_choose_multi_trk) {
             handleTouchMultiTRK(core);
@@ -107,6 +115,18 @@ namespace bridge {
         if (vp == m_settings.dwin.vp_button_cancel_transaction) {
             handleCancelTransaction(message, core);
         }
+
+        if (vp == m_settings.dwin.vp_button_finish_reception_fuel) {
+            handleFinishReceptionFuel(core);
+        }
+    }
+
+    void DwinLogic::handleFinishReceptionFuel(MessageLayer &core) {
+        Message msg;
+        msg.source = UART_LAYER;
+        msg.type = USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON;
+
+        core.sendToLogicLayer(HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleGetCardBalance(MessageLayer &core) {
@@ -160,6 +180,8 @@ namespace bridge {
             msg.type = USER_TOUCH_SERVICE_MENU_CHANGE_FUEL_PRICE_BUTTON;
         } else if (value == 4) {
             msg.type = USER_TOUCH_SET_USED_TRK_BUTTON;
+        } else if (value == 5) {
+            msg.type = USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON;
         }
         core.sendToLogicLayer(HTTP_LAYER, msg);
     }
@@ -350,6 +372,11 @@ namespace bridge {
             msg.type = USER_TOUCH_CLOSE_ORDER_BUTTON;
         }
 
+        // Кнопка подтверждения начала приема топлива. Необходима печать чека текущего состояния резервуара.
+        if (key_value == 11) {
+            msg.type = USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
+        }
+
         core.sendToLogicLayer(HTTP_LAYER, msg);
     }
 
@@ -362,6 +389,14 @@ namespace bridge {
 
         int direction = (value == 0x0001) ? 1 : -1;
         msg.payload.push_back(static_cast<uint8_t>(direction));
+
+        core.sendToLogicLayer(HTTP_LAYER, msg);
+    }
+
+    void DwinLogic::handleTouchReceptionTanker(MessageLayer& core) {
+        Message msg;
+        msg.source = UART_LAYER;
+        msg.type = USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;
 
         core.sendToLogicLayer(HTTP_LAYER, msg);
     }
