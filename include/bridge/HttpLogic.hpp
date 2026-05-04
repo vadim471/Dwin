@@ -178,6 +178,7 @@ namespace bridge {
 
         // Заполнение значений параметров уровнемера.
         void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge, const std::string &type);
+        void setReceptionLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge);
 
         // Заполнение текущего объема пролива
         void setCurrentFuelingVolume(MessageLayer& core, const std::string &value);
@@ -277,6 +278,9 @@ namespace bridge {
 
         // Для пагинации уровнемеров.
         int m_current_level_gauge_index = 0;
+        bool m_reception_active = false;
+        std::string m_reception_level_gauge_id;
+        std::string m_reception_document_number;
 
         // Для пагинации типов топлива при выборе для редактирования.
         int m_current_fuel_type_index = 0;

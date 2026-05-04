@@ -353,13 +353,15 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fourteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfifth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfirst_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtysecond_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfifth_page"));
-            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyseventh_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -583,7 +585,25 @@ struct Settings {
             LOAD_HEX(vp_text_total_volume_reception_gauge_decimal);
             LOAD_HEX(vp_button_finish_reception_fuel);
 
-
+            LOAD_HEX(vp_text_choose_reception_gauge_filling_percent);
+            LOAD_HEX(vp_text_choose_reception_gauge_id);
+            LOAD_HEX(vp_icon_choose_reception_gauge);
+            LOAD_HEX(vp_text_upper_level_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_upper_level_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_upper_volume_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_upper_volume_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_weight_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_weight_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_density_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_density_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_lower_level_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_lower_level_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_lower_volume_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_lower_volume_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_text_total_volume_choose_reception_gauge_integer);
+            LOAD_HEX(vp_text_total_volume_choose_reception_gauge_decimal);
+            LOAD_HEX(vp_button_choose_reception_fuel);
+            LOAD_HEX(vp_button_pagination_reception_tanker);
 
             LOAD_HEX(vp_button_fuel_edit_price_chosen);
             LOAD_HEX(vp_editing_fuel_type);

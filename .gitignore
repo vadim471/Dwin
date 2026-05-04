@@ -1,4 +1,9 @@
 include/+infrastructure/
 +infrastructure/
 ./include/+infrastructure
+cmake-build-*/
+.idea/
+*.user
+*.log
+logs/
 

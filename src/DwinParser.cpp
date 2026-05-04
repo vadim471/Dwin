@@ -23,6 +23,16 @@ namespace bridge {
     std::vector<Message> DwinParser::parse(const RawData& input, const std::string& sourceName) {
         std::vector<Message> messages;
 
+        // DEBUG: Логируем все входящие данные
+        if (!input.data.empty()) {
+            std::cout << "[DWIN RX] Received " << input.data.size() << " bytes: ";
+            for (size_t i = 0; i < input.data.size(); ++i) {
+                std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                          << static_cast<int>(input.data[i]) << " ";
+            }
+            std::cout << std::dec << std::endl;
+        }
+
         // 1. Дописываем новые данные в конец буфера
         m_buffer.insert(m_buffer.end(), input.data.begin(), input.data.end());
 
@@ -52,6 +62,10 @@ namespace bridge {
             // m_buffer[3] — это Команда (например, 0x83 - Read Response)
             uint8_t cmd = m_buffer[3];
 
+            // DEBUG: Логируем распознанную команду
+            std::cout << "[DWIN PARSE] CMD=0x" << std::hex << static_cast<int>(cmd) 
+                      << " LEN=" << std::dec << static_cast<int>(len) << std::endl;
+
             Message msg;
             msg.source = sourceName;
 
@@ -59,6 +73,7 @@ namespace bridge {
             // Разбираем по командам (пример)
             if (cmd == 0x83) {
                 msg.type = "vp_data";
+                std::cout << "[DWIN] Touch event detected! VP_DATA" << std::endl;
 
                 //(пропускаем Header(2), Len(1), Cmd(1))
                 if (packetSize > 4) {
@@ -67,8 +82,15 @@ namespace bridge {
             } else if (cmd == 0x82) {
                 if (len == 3 && m_buffer[4] == 0x4F && m_buffer[5] == 0x4B) {
                     msg.type = "write_ack_ok";
+                    std::cout << "[DWIN] Write ACK OK received" << std::endl;
                 } else {
                     msg.type = "write_ack";
+                    std::cout << "[DWIN] Write ACK (echo) received - ";
+                    for (size_t i = 4; i < packetSize && i < m_buffer.size(); ++i) {
+                        std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                                  << static_cast<int>(m_buffer[i]) << " ";
+                    }
+                    std::cout << std::dec << std::endl;
                 }
 
                 if (packetSize > 4) {
@@ -78,7 +100,13 @@ namespace bridge {
             else {
                 msg.type = "unknown_dwin";
                 msg.payload.assign(m_buffer.begin(), m_buffer.begin() + packetSize);
-                std::cout << "Payload" << std::endl;
+                std::cout << "[DWIN] Unknown command 0x" << std::hex << static_cast<int>(cmd) 
+                          << std::dec << " - Full packet: ";
+                for (size_t i = 0; i < packetSize && i < m_buffer.size(); ++i) {
+                    std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                              << static_cast<int>(m_buffer[i]) << " ";
+                }
+                std::cout << std::dec << std::endl;
             }
 
             messages.push_back(msg);
@@ -94,6 +122,9 @@ namespace bridge {
     RawData DwinParser::serialize(const Message& msg) {
         RawData raw;
         std::vector<uint8_t>& data = raw.data;
+
+        // DEBUG: Логируем тип отправляемого сообщения
+        std::cout << "[DWIN TX] Serializing message type: " << msg.type << std::endl;
 
         // --- СЦЕНАРИЙ 1: СМЕНА СТРАНИЦЫ ---
         if (msg.type == DWIN_MESSAGE_TYPE_CHANGE_PAGE) {
@@ -203,6 +234,16 @@ namespace bridge {
             
             // Значение яркости
             data.push_back(msg.payload[2]);
+        }
+
+        // DEBUG: Логируем отправляемые данные
+        if (!data.empty()) {
+            std::cout << "[DWIN TX] Sending " << data.size() << " bytes: ";
+            for (size_t i = 0; i < data.size(); ++i) {
+                std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                          << static_cast<int>(data[i]) << " ";
+            }
+            std::cout << std::dec << std::endl;
         }
 
         return raw;

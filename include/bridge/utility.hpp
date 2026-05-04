@@ -96,5 +96,13 @@ namespace bridge {
             bool not_complete,
             uint64_t transaction_time
         );
+
+        static std::string createReceiptFromLevelGauge(
+            const LevelGauge& level_gauge,
+            const Tanker& tanker,
+            const std::string& product_name,
+            const std::string& document_number,
+            const std::string& operation_title
+        );
     };
 }

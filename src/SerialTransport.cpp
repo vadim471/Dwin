@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "bridge/constant.hpp"
+#include "bridge/Logger.hpp"
 
 //SerialTransport.cpp
 namespace bridge {
@@ -35,12 +36,16 @@ namespace bridge {
 
         boost::system::error_code ec;
 
+        LOG_UART_INFO << "Opening serial port: " << port_name;
         port.open(port_name, ec);
         if (ec) {
+            LOG_UART_ERROR << "Failed to open " << port_name << ": " << ec.message();
             std::cerr << "[UART] Failed to open " << port_name
                       << ": " << ec.message() << std::endl;
             return;
         }
+        
+        LOG_UART_INFO << "Configuring serial port: baudrate=" << baud_rate;
         port.set_option(boost::asio::serial_port_base::baud_rate(baud_rate));
         port.set_option(boost::asio::serial_port_base::character_size(8));
         port.set_option(boost::asio::serial_port_base::parity(
@@ -50,6 +55,7 @@ namespace bridge {
         port.set_option(boost::asio::serial_port_base::flow_control(
         boost::asio::serial_port_base::flow_control::none));
 
+        LOG_UART_INFO << "Serial port " << port_name << " opened successfully";
         doRead();
     }
 
@@ -138,13 +144,14 @@ namespace bridge {
                                  std::size_t bytes_transferred) {
         if (ec) {
             if (ec == boost::asio::error::operation_aborted) {
+                LOG_UART_WARN << "Read operation aborted: " << ec.message();
                 std::cerr << "[UART] read error: " << ec.message() << std::endl;
             }
             return;
         }
 
         if (bytes_transferred > 0 && receive_handler) {
-                // std::cerr << "[UART RX] Received " << bytes_transferred << " bytes." << std::endl;
+            LOG_UART_DEBUG << "Received " << bytes_transferred << " bytes from " << port_name;
             RawData raw_data;
             raw_data.data.assign(read_buffer.data.begin(), read_buffer.data.begin() + bytes_transferred);
 

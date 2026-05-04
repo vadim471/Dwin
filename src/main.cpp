@@ -15,6 +15,7 @@
 #include "bridge/ArkaimParser.hpp"
 #include "bridge/ArkaimLogic.hpp"
 #include "bridge/constant.hpp"
+#include "bridge/Logger.hpp"
 
 #include <itp/named_pipe.hpp>
 
@@ -53,11 +54,17 @@ void sendTextToVp(MessageLayer& core, uint16_t vp, const std::string& text) {
 
 int main() {
     try {
+        // Инициализируем логгер в самом начале
+        initLogger("logs");
+        
+        LOG_SYSTEM_INFO << "=== Application started ===";
+        
         boost::asio::io_service ios;
         auto work = std::make_unique<boost::asio::io_service::work>(ios);
         MessageLayer core;
 
         Settings cfg = Settings::load(CONFIG);
+        LOG_SYSTEM_INFO << "Configuration loaded successfully";
 
         auto dwin_trans = std::make_shared<SerialTransport>(ios, 115200, "/dev/ttyUSB0");
         auto dwin_pars  = std::make_shared<DwinParser>();
@@ -85,21 +92,25 @@ int main() {
 
 
         std::thread ioThread([&ios](){
-            std::cerr << "[IO Thread] Starting ios.run()" << std::endl;
+            LOG_SYSTEM_INFO << "IO Thread starting...";
             ios.run();
-            std::cerr << "[IO Thread] ios.run() finished!" << std::endl;
+            LOG_SYSTEM_INFO << "IO Thread finished";
         });
 
-        std::thread coreThread([&core](){ core.run(); });
+        std::thread coreThread([&core](){ 
+            LOG_SYSTEM_INFO << "Core Thread starting...";
+            core.run(); 
+        });
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         bool keepRunning = true;
         Message pageMsg;
         
         // Start Arkaim integration
-        std::cout << "[MAIN] Starting Arkaim payment processing integration..." << std::endl;
+        LOG_SYSTEM_INFO << "Starting Arkaim payment processing integration...";
         arkaim_logic->startLoop(core);
         
+        LOG_SYSTEM_INFO << "Starting HTTP logic loop...";
         http_logic->startLoop(core);
 
 
@@ -118,6 +129,7 @@ int main() {
                     std::cout << "Type number of page" << std::endl;
                     std::cin >> page_id;
 
+                    LOG_SYSTEM_INFO << "Changing page to: " << page_id;
                     pageMsg.type = DWIN_MESSAGE_TYPE_CHANGE_PAGE;
                     pageMsg.payload = makeIntPayload(page_id);
                     core.sendTo(UART_LAYER, pageMsg);
@@ -133,6 +145,7 @@ int main() {
                     std::cout << "Type data text: " << std::endl;
                     std::cin >> data;
 
+                    LOG_SYSTEM_INFO << "Writing to VP 0x" << std::hex << vp << ": " << data;
                     sendTextToVp(core, vp, data);
 
                     std::cout << "[INFO] Sent text '" << data << "' to VP " << vp << std::endl;
@@ -142,6 +155,7 @@ int main() {
                     break;
                 }
                 case 'q': {
+                    LOG_SYSTEM_INFO << "User requested shutdown";
                     keepRunning = false;
                     break;
                 }
@@ -149,7 +163,7 @@ int main() {
                     break;
             }
         }
-        std::cout << "[MAIN] Stopping systems..." << std::endl;
+        LOG_SYSTEM_INFO << "Stopping systems...";
 
         core.stop();
         work.reset();
@@ -157,9 +171,10 @@ int main() {
         if (coreThread.joinable()) coreThread.join();
         if (ioThread.joinable()) ioThread.join();
 
-        std::cout << "[MAIN] Bye!" << std::endl;
+        LOG_SYSTEM_INFO << "=== Application stopped ===";
 
     } catch (std::exception& e) {
+        LOG_SYSTEM_FATAL << "Fatal Error: " << e.what();
         std::cerr << "Fatal Error: " << e.what() << std::endl;
     }
     return 0;

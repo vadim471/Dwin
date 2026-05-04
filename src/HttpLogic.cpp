@@ -10,6 +10,9 @@
 #include "bridge/DwinCommands.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "bridge/PrimeCommands.hpp"
+#include <algorithm>
+#include <iomanip>
+#include <sstream>
 #include <tuple>
 #include <utility>
 
@@ -137,6 +140,9 @@ namespace bridge {
 
         // Таймер останова налива топлива.
         checkFuellingProcess(core);
+        if (m_reception_active && !m_reception_level_gauge_id.empty()) {
+            getParameters(core, m_reception_level_gauge_id);
+        }
 
         // Перезавод таймера
         scheduleNextTick(core);
@@ -145,6 +151,45 @@ namespace bridge {
     // Обработка входящего от сервера ответа. В паре с Parser.parse
     void HttpLogic::handle(const Message &message, MessageLayer &core) {
         m_waitingResponse.store(false);
+        if (message.type == USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON) {
+            processReceptionTanker(core);
+            return;
+        }
+        if (message.type == USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON) {
+            if (m_reception_active) {
+                const LevelGauge* level_gauge = utility::getLevelGaugeById(m_level_gauge, m_reception_level_gauge_id);
+                const Tanker* tanker = level_gauge != nullptr
+                    ? utility::getTankerByLevelGaugeId(m_tankers, level_gauge->id)
+                    : nullptr;
+
+                if (level_gauge != nullptr && tanker != nullptr) {
+                    std::string product_name;
+                    if (Product* product = utility::getProductById(m_products, tanker->product_id)) {
+                        product_name = !product->title.empty() ? product->title : product->id;
+                    }
+
+                    std::string receipt = utility::createReceiptFromLevelGauge(
+                        *level_gauge,
+                        *tanker,
+                        product_name,
+                        m_reception_document_number,
+                        "АКТ ОКОНЧАНИЯ НАПОЛНЕНИЯ"
+                    );
+
+                    Message print_message;
+                    print_message.source = HTTP_LAYER;
+                    print_message.type = PAY_PRINT_RECEIPT;
+                    print_message.resource_id = tanker->id;
+                    print_message.payload.assign(receipt.begin(), receipt.end());
+                    core.sendToLogicLayer(PIPE_LAYER, print_message);
+                }
+            }
+
+            m_reception_active = false;
+            m_reception_level_gauge_id.clear();
+            m_reception_document_number.clear();
+            return;
+        }
         if (message.type == HTTP_RESPONSE) {
             processHandleHttp(message, core);
         } else if (message.type == USER_TOUCH_VOLUME_BUTTON) {
@@ -224,7 +269,7 @@ namespace bridge {
             Dispenser *dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-            setCurrentFuelingVolume(core, dispenser->order.volume);
+            // setCurrentFuelingVolume(core, dispenser->order.volume);
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON) {
             DwinCommands::sendPageToDwin(core, getStartPage());
             m_current_dispenser_id.clear();
@@ -236,20 +281,70 @@ namespace bridge {
             pin_msg.type = PAY_PIN_ENTERED;
             pin_msg.payload = message.payload;
             core.sendToLogicLayer(PIPE_LAYER, pin_msg);
+        } else if (message.type == USER_TOUCH_PIN_PAD_ENTER_DOCUMENT_NUMBER_BUTTON) {
+            m_reception_document_number.assign(message.payload.begin(), message.payload.end());
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON) {
             DwinCommands::sendPageToDwin(core, getStartPage());
         } else if (message.type == USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON) {
             // TODO вызов состояния выбранного резервуара для печати информации на чек
             processReceptionTanker(core);
-        } else if (message.type == USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON) {
+            } else if (message.type == USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON) {
             // TODO вызов состояния (по идее 1в1 что и accept, сбрасывать текущий резервуар нет смысла, он перезапишется)
         } else if (message.type == USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON) {
-            m_current_tanker_id = m_tankers[m_current_level_gauge_index].id;
+            if (!m_level_gauge.empty()) {
+                const LevelGauge& level_gauge = m_level_gauge[m_current_level_gauge_index];
+                const Tanker* tanker = utility::getTankerByLevelGaugeId(m_tankers, level_gauge.id);
+                if (tanker != nullptr) {
+                    m_current_tanker_id = tanker->id;
+                }
+            }
         }
     }
 
     void HttpLogic::processReceptionTanker(MessageLayer& core) {
-            
+        if (m_reception_document_number.empty()) {
+            std::cerr << "[HttpLogic] Document number is required before starting reception" << std::endl;
+            return;
+        }
+
+        if (m_level_gauge.empty()) {
+            std::cerr << "[HttpLogic] No level gauges available for receipt printing" << std::endl;
+            return;
+        }
+
+        const LevelGauge& level_gauge = m_level_gauge[m_current_level_gauge_index];
+        const Tanker* tanker = utility::getTankerByLevelGaugeId(m_tankers, level_gauge.id);
+        if (tanker == nullptr) {
+            std::cerr << "[HttpLogic] No tanker linked to level gauge " << level_gauge.id << std::endl;
+            return;
+        }
+
+        m_current_tanker_id = tanker->id;
+
+        std::string product_name;
+        if (Product* product = utility::getProductById(m_products, tanker->product_id)) {
+            product_name = !product->title.empty() ? product->title : product->id;
+        }
+
+        std::string receipt = utility::createReceiptFromLevelGauge(
+            level_gauge,
+            *tanker,
+            product_name,
+            m_reception_document_number,
+            "АКТ НАЧАЛА НАПОЛНЕНИЯ"
+        );
+
+        Message print_message;
+        print_message.source = HTTP_LAYER;
+        print_message.type = PAY_PRINT_RECEIPT;
+        print_message.resource_id = tanker->id;
+        print_message.payload.assign(receipt.begin(), receipt.end());
+
+        core.sendToLogicLayer(PIPE_LAYER, print_message);
+        m_reception_active = true;
+        m_reception_level_gauge_id = level_gauge.id;
+        getParameters(core, level_gauge.id);
+        setLevelGaugeParametersOnDisplay(core, level_gauge, USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON);
     }
 
 
@@ -685,6 +780,12 @@ namespace bridge {
             processEvent(jArray, core);
         } else if (jArray.contains("parameters")) {
             processParameters(jArray, url);
+            if (m_reception_active && !m_reception_level_gauge_id.empty()) {
+                LevelGauge* level_gauge = utility::getLevelGaugeById(m_level_gauge, m_reception_level_gauge_id);
+                if (level_gauge != nullptr) {
+                    setLevelGaugeParametersOnDisplay(core, *level_gauge, USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON);
+                }
+            }
         } else if (jArray.contains("products")) {
             processProducts(jArray);
         } else if (jArray.contains("status")) {
@@ -955,16 +1056,24 @@ namespace bridge {
 
                 int order_volume_val = 0, order_volume_exp = 0;
                 int order_amount_val = 0, order_amount_exp = 0;
-                Dispenser *dispenser = utility::getDispenserById(m_dispensers, device_id);
-                if (dispenser) {
-                    std::tie(order_volume_val, order_volume_exp) = utility::formatFloatStringToInt(
-                        dispenser->order.volume);
-                    std::tie(order_amount_val, order_amount_exp) = utility::formatFloatStringToInt(
-                        dispenser->order.amount);
-                }
+                auto format_order_decimal = [](double value) {
+                    std::ostringstream stream;
+                    stream << std::fixed << std::setprecision(2) << value;
+                    std::string formatted = stream.str();
+                    std::replace(formatted.begin(), formatted.end(), '.', ',');
+                    return formatted;
+                };
+                std::tie(order_volume_val, order_volume_exp) = utility::formatFloatStringToInt(
+                    format_order_decimal(order.order_volume));
+                std::tie(order_amount_val, order_amount_exp) = utility::formatFloatStringToInt(
+                    format_order_decimal(order.order_amount));
+
+                std::string product_id_processing = utility::primeIdToProcessingId(
+                            order.product_id, m_settings.gas_station.prime_standalone,
+                            m_settings.gas_station.processing_standalone);
 
                 PaymentRequestData payment;
-                payment.product_id = order.product_id;
+                payment.product_id = product_id_processing;
                 payment.price_value = static_cast<uint32_t>(price_val);
                 payment.price_decimal = static_cast<uint8_t>(price_exp);
                 payment.volume_value = static_cast<uint32_t>(order_volume_val);
@@ -1200,6 +1309,7 @@ namespace bridge {
 
                         setCurrentOrderAmountOnDisplay(core, target_amount_string);
                         setCurrentOrderVolumeOnDisplay(core, target_volume_string);
+                        setCurrentFuelingVolume(core, target_volume_string);
                         std::string product_id_processing = utility::primeIdToProcessingId(
                             product_id, m_settings.gas_station.prime_standalone,
                             m_settings.gas_station.processing_standalone);
@@ -1406,6 +1516,9 @@ namespace bridge {
                 Tanker new_tanker(tanker_id);
 
                 new_tanker.product_id = utility::parseStringFromJson(tanker["product_id"]);
+                if (tanker.contains("title")) {
+                    new_tanker.title = utility::parseStringFromJson(tanker["title"]);
+                }
                 new_tanker.active = utility::parseBoolFromJson(tanker["active"]);
                 new_tanker.filled = utility::parseBoolFromJson(tanker["filled"]);
 
@@ -1520,7 +1633,7 @@ namespace bridge {
                 int filling_percent = utility::ceilStringToInt(level_gauge.filling);
                 std::string percent_str = std::to_string(filling_percent);
 
-                if (type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON) {
+                if (type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON || type == USER_TOUCH_PAGINATION_LEVEL_GAUGE_BUTTON) {
                     DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_level_gauge_id,
                                                      utility::extractFirstInt(product->id),
                                                      m_settings.dwin.text_len_fuel_integer);
@@ -1544,11 +1657,12 @@ namespace bridge {
                                     core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_level);
                     sendFloatToDwin(m_settings.dwin.vp_text_lower_volume_gauge_integer,
                                     m_settings.dwin.vp_text_lower_volume_gauge_decimal,
-                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.upper_volume);
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_volume);
                     sendFloatToDwin(m_settings.dwin.vp_text_total_volume_gauge_integer,
                                     m_settings.dwin.vp_text_total_volume_gauge_decimal,
                                     core, m_settings.dwin.text_len_order_integer, 1, level_gauge.total_volume);
-                } else {
+                }
+                else if (type == USER_TOUCH_PAGINATION_RECEPTION_LEVEL_GAUGE_BUTTON) {
 
                     DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_choose_reception_gauge_id,
                                                      utility::extractFirstInt(product->id),
@@ -1574,13 +1688,44 @@ namespace bridge {
                                     core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_level);
                     sendFloatToDwin(m_settings.dwin.vp_text_lower_volume_choose_reception_gauge_integer,
                                     m_settings.dwin.vp_text_lower_volume_choose_reception_gauge_decimal,
-                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.upper_volume);
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_volume);
                     sendFloatToDwin(m_settings.dwin.vp_text_total_volume_choose_reception_gauge_integer,
                                     m_settings.dwin.vp_text_total_volume_choose_reception_gauge_decimal,
                                     core, m_settings.dwin.text_len_order_integer, 1, level_gauge.total_volume);
                 }
+                else if (type == USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON) {
+                    DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_reception_gauge_id,
+                                                     utility::extractFirstInt(product->id),
+                                                     m_settings.dwin.text_len_fuel_integer);
+                    DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_text_reception_gauge_filling_percent, percent_str,
+                                                                m_settings.dwin.text_len_percent_progress_bar);
+                    DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_icon_reception_gauge, filling_percent);
+
+                    sendFloatToDwin(m_settings.dwin.vp_text_upper_level_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_upper_level_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.upper_level);
+                    sendFloatToDwin(m_settings.dwin.vp_text_upper_volume_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_upper_volume_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.upper_volume);
+                    sendFloatToDwin(m_settings.dwin.vp_text_weight_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_weight_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.weight);
+                    sendFloatToDwin(m_settings.dwin.vp_text_density_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_density_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.density);
+                    sendFloatToDwin(m_settings.dwin.vp_text_lower_level_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_lower_level_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_level);
+                    sendFloatToDwin(m_settings.dwin.vp_text_lower_volume_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_lower_volume_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.lower_volume);
+                    sendFloatToDwin(m_settings.dwin.vp_text_total_volume_reception_gauge_integer,
+                                    m_settings.dwin.vp_text_total_volume_reception_gauge_decimal,
+                                    core, m_settings.dwin.text_len_order_integer, 1, level_gauge.total_volume);
+                }
             }
         }
+    }
 
     void HttpLogic::setCurrentFuelingVolume(MessageLayer &core, const std::string &value) {
         std::string int_part_target_volume, dec_part_target_volume;

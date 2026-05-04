@@ -514,30 +514,24 @@ namespace bridge {
         receipt << "           ЧЕК ТРАНЗАКЦИИ\n";
         receipt << "========================================\n\n";
 
-        // Дата и время
         time_t time = static_cast<time_t>(transaction_time / 1000);
         char time_buf[64];
         strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&time));
         receipt << "Дата: " << time_buf << "\n";
         receipt << "ID транзакции: " << transaction_id << "\n\n";
 
-        // Товар
         receipt << "Товар: " << product_id << "\n";
         receipt << "Цена за литр: " << formatDecimalValue(price_value, price_decimal) << " руб.\n\n";
 
-        // Запрошенные данные
-        receipt << "--- Запрошено ---\n";
-        receipt << "Объем: " << formatDecimalValue(volume_value, volume_decimal) << " л.\n";
-        receipt << "Сумма: " << formatDecimalValue(amount_value, amount_decimal) << " руб.\n\n";
+        if (not_complete) {
+            receipt << "--- Запрошено ---\n";
+            receipt << "Объем: " << formatDecimalValue(volume_value, volume_decimal) << " л.\n";
+            receipt << "Сумма: " << formatDecimalValue(amount_value, amount_decimal) << " руб.\n\n";
+        }
 
-        // Фактические данные
         receipt << "--- Отпущено ---\n";
         receipt << "Объем: " << formatDecimalValue(fact_volume_value, fact_volume_decimal) << " л.\n";
         receipt << "Сумма: " << formatDecimalValue(fact_amount_value, fact_amount_decimal) << " руб.\n\n";
-
-        if (not_complete) {
-            receipt << "ВНИМАНИЕ: Неполная отгрузка!\n\n";
-        }
 
         receipt << "========================================\n";
         receipt << "        Спасибо за покупку!\n";
@@ -546,6 +540,56 @@ namespace bridge {
         return receipt.str();
     }
 
-}
+    std::string utility::createReceiptFromLevelGauge(
+        const LevelGauge& level_gauge,
+        const Tanker& tanker,
+        const std::string& product_name,
+        const std::string& document_number,
+        const std::string& operation_title
+    ) {
+        std::stringstream receipt;
 
+        receipt << "========================================\n";
+        receipt << "      " << operation_title << "\n";
+        receipt << "========================================\n\n";
+
+        receipt << "Дата: " << getCurrentTimeString() << "\n";
+        if (!document_number.empty()) {
+            receipt << "Накладная: " << document_number << "\n";
+        }
+        receipt << "Резервуар ID: " << tanker.id << "\n";
+        if (!tanker.title.empty()) {
+            receipt << "Резервуар: " << tanker.title << "\n";
+        }
+        receipt << "Уровнемер ID: " << level_gauge.id << "\n";
+        if (!product_name.empty()) {
+            receipt << "Товар: " << product_name << "\n";
+        } else if (!tanker.product_id.empty()) {
+            receipt << "Товар ID: " << tanker.product_id << "\n";
+        }
+        receipt << "\n";
+
+        receipt << "--- Состояние резервуара ---\n";
+        receipt << "Активен: " << (tanker.active ? "Да" : "Нет") << "\n";
+        receipt << "Заполнен: " << (tanker.filled ? "Да" : "Нет") << "\n";
+        receipt << "Порог блокировки: " << tanker.lock << " м3\n";
+        receipt << "Минимальный остаток: " << tanker.minimal << " м3\n\n";
+
+        receipt << "--- Показания уровнемера ---\n";
+        receipt << "Объем продукта: " << level_gauge.upper_volume << " м3\n";
+        receipt << "Объем подтоварной жидкости: " << level_gauge.lower_volume << " м3\n";
+        receipt << "Общий объем: " << level_gauge.total_volume << " м3\n";
+        receipt << "Уровень основного поплавка: " << level_gauge.upper_level << " м\n";
+        receipt << "Уровень нижнего поплавка: " << level_gauge.lower_level << " м\n";
+        receipt << "Заполнение: " << level_gauge.filling << " %\n";
+        receipt << "Плотность: " << level_gauge.density << " кг/м3\n";
+        receipt << "Масса: " << level_gauge.weight << " кг\n\n";
+
+        receipt << "========================================\n";
+        receipt << "    Текущее состояние резервуара\n";
+        receipt << "========================================\n";
+
+        return receipt.str();
+    }
+}
 

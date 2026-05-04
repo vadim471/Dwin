@@ -76,6 +76,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_TAP_ON_USED_TRK_BUTTON;
     extern const std::string USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
     extern const std::string USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
+    extern const std::string USER_TOUCH_PIN_PAD_ENTER_DOCUMENT_NUMBER_BUTTON;
     extern const std::string USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
     extern const std::string USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON;
     extern const std::string USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;

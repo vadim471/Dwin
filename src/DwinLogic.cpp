@@ -12,7 +12,9 @@
 #include "bridge/Logger.hpp"
 
 namespace bridge {
-    DwinLogic::DwinLogic(const Settings &settings) : m_settings(settings) {}
+    DwinLogic::DwinLogic(const Settings &settings) : m_settings(settings) {
+        LOG_UART_INFO << "DwinLogic initialized";
+    }
 
 
     void DwinLogic::handle(const Message& message, MessageLayer& core) {
@@ -34,20 +36,29 @@ namespace bridge {
     // Обработка нажатий на дисплей.
     void DwinLogic::handleDwinEvent(const Message &message, MessageLayer &core) {
         // Проверка длины: VP(2) + Count(1) + Data(2 минимум) = 5 байт
-        if (message.payload.size() < 5) return;
+        if (message.payload.size() < 5) {
+            LOG_UART_WARN << "Invalid payload size: " << message.payload.size();
+            return;
+        }
 
         uint16_t vp = (message.payload[0] << 8) | message.payload[1];
+        uint16_t value = (message.payload[3] << 8) | message.payload[4];
+        
+        LOG_UART_INFO << "Touch event: VP=0x" << std::hex << vp << " Value=0x" << value << std::dec;
 
         if (vp == m_settings.dwin.vp_chosen_order_volume) {
+            LOG_UART_INFO << "Order volume chosen";
             handleCreateOrder(message, core);
         }
 
         if (vp == m_settings.dwin.vp_button_get_balance) {
+            LOG_UART_INFO << "Get balance button pressed";
             handleGetCardBalance(core);
         }
 
         // Нажатие на кнопку "стрелки" выбора ТРК.
         if (vp == m_settings.dwin.vp_pagination_trk) {
+            LOG_UART_INFO << "TRK pagination button pressed";
             handlePaginationButton(message, core, USER_TOUCH_PAGINATION_TRK_BUTTON);
         }
 
@@ -73,10 +84,15 @@ namespace bridge {
 
         // Нажатие на кнопки "Назад" или "Отмена" - запрос статуса ТРК.
         if (vp == m_settings.dwin.vp_basic_touch) {
+            LOG_UART_INFO << "Basic touch button pressed, value=" << value;
             handleBasicTouch(message, core);
         }
 
-        if (vp == m_settings.dwin.vp_fuel_volume_pinpad || vp == m_settings.dwin.vp_set_fuel_price_pinpad || vp == m_settings.dwin.vp_enter_pin_code_pinpad || vp == m_settings.dwin.vp_set_service_pincode_pinpad ) {
+        if (vp == m_settings.dwin.vp_fuel_volume_pinpad ||
+            vp == m_settings.dwin.vp_set_fuel_price_pinpad ||
+            vp == m_settings.dwin.vp_enter_pin_code_pinpad ||
+            vp == m_settings.dwin.vp_set_service_pincode_pinpad ||
+            vp == m_settings.dwin.vp_button_number_document_pinpad) {
             handleTouchPinPad(message, core);
         }
 
@@ -251,6 +267,9 @@ namespace bridge {
                 } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
                     msg.type = USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON;
                     DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode, "", m_settings.dwin.text_len_trk_id);
+                } else if (vp == m_settings.dwin.vp_button_number_document_pinpad) {
+                    msg.type = USER_TOUCH_PIN_PAD_ENTER_DOCUMENT_NUMBER_BUTTON;
+                    DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_number_document_pinpad, "", m_settings.dwin.text_len_trk_id);
                 }
 
                 msg.payload.assign(d_pinpad_buffer.begin(), d_pinpad_buffer.end());
@@ -272,6 +291,8 @@ namespace bridge {
             DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code, std::string(d_pinpad_buffer.length(), '*'), m_settings.dwin.text_len_trk_id);
         } else if (vp == m_settings.dwin.vp_enter_pin_code_pinpad) {
             DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode,std::string(d_pinpad_buffer.length(), '*'), m_settings.dwin.text_len_trk_id);
+        } else if (vp == m_settings.dwin.vp_button_number_document_pinpad) {
+            DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_number_document_pinpad, textToShow, m_settings.dwin.text_len_trk_id);
         }
     }
 
@@ -282,7 +303,9 @@ namespace bridge {
                "", m_settings.dwin.text_len_order_integer);
         DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
               "", m_settings.dwin.text_len_trk_id);
-        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_enter_pincode,
+               "", m_settings.dwin.text_len_trk_id);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_number_document_pinpad,
                "", m_settings.dwin.text_len_trk_id);
     }
 

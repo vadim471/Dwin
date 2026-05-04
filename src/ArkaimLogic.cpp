@@ -72,11 +72,10 @@ namespace bridge {
             handleCancel(msg);
         } else if (msg.type == PAY_PIN_ENTERED) {
             handlePinEntered(msg);
-        }
-        // else if (msg.type == PAY_PRINT_RECEIPT) {
-        //     handlePrintReceipt(msg);
-        // }
-        else if (msg.type == PAY_GET_BALANCE) {
+        } else if (msg.type == PAY_PRINT_RECEIPT) {
+            std::string receipt_text(msg.payload.begin(), msg.payload.end());
+            handlePrintReceipt(receipt_text);
+        } else if (msg.type == PAY_GET_BALANCE) {
             handleGetBalance(msg);
         } else {
             std::cout << "[ArkaimLogic] Unknown message type: " << msg.type << std::endl;
