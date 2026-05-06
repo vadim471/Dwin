@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 # ============================================
 # Auto-increment build number
 # ============================================
-if(EXISTS "${CMAKE_SOURCE_DIR}/build_number.txt")
-    file(READ "${CMAKE_SOURCE_DIR}/build_number.txt" BUILD_NUMBER)
+if(EXISTS "${CMAKE_SOURCE_DIR}/config/build_number.txt")
+    file(READ "${CMAKE_SOURCE_DIR}/config/build_number.txt" BUILD_NUMBER)
     string(STRIP "${BUILD_NUMBER}" BUILD_NUMBER)
 else()
     set(BUILD_NUMBER 26)
@@ -15,13 +15,13 @@ endif()
 
 math(EXPR BUILD_NUMBER "${BUILD_NUMBER} + 1")
 
-file(WRITE "${CMAKE_SOURCE_DIR}/build_number.txt" "${BUILD_NUMBER}")
+file(WRITE "${CMAKE_SOURCE_DIR}/config/build_number.txt" "${BUILD_NUMBER}")
 
 set(APP_VERSION_MAJOR 1)
 set(APP_VERSION_MINOR 0)
 
 configure_file(
-    "${CMAKE_SOURCE_DIR}/include/bridge/version.hpp.in"
+    "${CMAKE_SOURCE_DIR}/config/version.hpp.in"
     "${CMAKE_SOURCE_DIR}/include/bridge/version.hpp"
     @ONLY
 )
@@ -114,56 +114,72 @@ set(ARKAIM_INFRA_SOURCES
 )
 
 configure_file(
-        ${CMAKE_SOURCE_DIR}/include/bridge/config.json
+        ${CMAKE_SOURCE_DIR}/config/config.json
         ${CMAKE_BINARY_DIR}/config.json
         COPYONLY
 )
 
 add_executable(dwin_exmpl src/main.cpp
-        include/bridge/ITransport.hpp
-        include/bridge/SerialTransport.hpp
-        include/bridge/types.hpp
-        include/bridge/MessageLayer.hpp
-        src/MessageLayer.cpp
-        src/SerialTransport.cpp
-        src/DwinParser.cpp
-        include/bridge/HttpTransport.hpp
-        include/bridge/IMessageParser.hpp
-        include/bridge/ILogicHandler.hpp
-        include/bridge/DwinLogic.hpp
-        src/DwinLogic.cpp
-        include/bridge/DwinParser.hpp
-        src/utility.cpp
-        include/bridge/utility.hpp
-        src/HttpTransport.cpp
-        include/bridge/HttpParser.hpp
-        include/bridge/HttpLogic.hpp
-        src/HttpParser.cpp
-        src/HttpLogic.cpp
-        include/bridge/config.json
-        include/bridge/Settings.hpp
-        include/bridge/constant.hpp
-        src/constant.cpp
-        include/bridge/DwinCommands.hpp
-        include/bridge/PrimeCommands.hpp
-         include/bridge/Logger.hpp
-         src/Logger.cpp
-         include/bridge/PaymentData.hpp
+        # Core
+        include/bridge/core/types.hpp
+        include/bridge/core/MessageLayer.hpp
+        include/bridge/core/constant.hpp
+        include/bridge/core/Settings.hpp
+        include/bridge/core/Logger.hpp
+        include/bridge/core/utility.hpp
+        src/core/MessageLayer.cpp
+        src/core/constant.cpp
+        src/core/Logger.cpp
+        src/core/utility.cpp
+        
+        # Transport
+        include/bridge/transport/ITransport.hpp
+        include/bridge/transport/SerialTransport.hpp
+        include/bridge/transport/HttpTransport.hpp
+        include/bridge/transport/ArkaimTransport.hpp
+        src/transport/SerialTransport.cpp
+        src/transport/HttpTransport.cpp
+        src/transport/ArkaimTransport.cpp
+        
+        # Parser
+        include/bridge/parser/IMessageParser.hpp
+        include/bridge/parser/DwinParser.hpp
+        include/bridge/parser/HttpParser.hpp
+        include/bridge/parser/ArkaimParser.hpp
+        src/parser/DwinParser.cpp
+        src/parser/HttpParser.cpp
+        src/parser/ArkaimParser.cpp
+        
+        # Logic
+        include/bridge/logic/ILogicHandler.hpp
+        include/bridge/logic/DwinLogic.hpp
+        include/bridge/logic/HttpLogic.hpp
+        include/bridge/logic/ArkaimLogic.hpp
+        src/logic/DwinLogic.cpp
+        src/logic/HttpLogic.cpp
+        src/logic/ArkaimLogic.cpp
+        
+        # Database
+        include/bridge/database/Database.hpp
+        include/bridge/database/Transaction.hpp
+        include/bridge/database/MetrologicalRecord.hpp
+        src/database/Database.cpp
+        src/database/Transaction.cpp
+        src/database/MetrologicalRecord.cpp
+        
+        # DWIN
+        include/bridge/dwin/DwinCommands.hpp
+        include/bridge/dwin/PrimeCommands.hpp
+        
+        # Payment
+        include/bridge/payment/PaymentData.hpp
+        include/bridge/payment/Printer.hpp
+        src/payment/Printer.cpp
+        
+        # Other
         src/debug_print.cpp
-        src/ArkaimTransport.cpp
-        src/ArkaimParser.cpp
-        src/ArkaimLogic.cpp
-        src/Printer.cpp
-        include/bridge/ArkaimTransport.hpp
-        include/bridge/ArkaimParser.hpp
-        include/bridge/ArkaimLogic.hpp
-        include/bridge/Printer.hpp
-        include/bridge/Database.hpp
-        src/Database.cpp
-        include/bridge/Transaction.hpp
-        src/Transaction.cpp
-        include/bridge/MetrologicalRecord.hpp
-        src/MetrologicalRecord.cpp
+        include/bridge/json.hpp
+        
         ${ARKAIM_INFRA_SOURCES}
 )
 

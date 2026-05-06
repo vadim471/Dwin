@@ -1,26 +1,28 @@
-#include "bridge/SerialTransport.hpp"
-#include "bridge/MessageLayer.hpp"
-#include "bridge/DwinParser.hpp"
+#include "bridge/transport/SerialTransport.hpp"
+#include "bridge/core/MessageLayer.hpp"
+#include "bridge/parser/DwinParser.hpp"
 #include <thread>
 #include <vector>
 #include <boost/asio.hpp>
 #include <boost/make_unique.hpp>
 #include <iostream>
 
-#include "bridge/DwinLogic.hpp"
-#include "bridge/HttpLogic.hpp"
-#include "bridge/HttpParser.hpp"
-#include "bridge/HttpTransport.hpp"
-#include "bridge/ArkaimTransport.hpp"
-#include "bridge/ArkaimParser.hpp"
-#include "bridge/ArkaimLogic.hpp"
-#include "bridge/constant.hpp"
-#include "bridge/Logger.hpp"
-#include "bridge/Database.hpp"
-#include "bridge/Transaction.hpp"
-#include "bridge/MetrologicalRecord.hpp"
+#include "bridge/logic/DwinLogic.hpp"
+#include "bridge/logic/HttpLogic.hpp"
+#include "bridge/parser/HttpParser.hpp"
+#include "bridge/transport/HttpTransport.hpp"
+#include "bridge/transport/ArkaimTransport.hpp"
+#include "bridge/parser/ArkaimParser.hpp"
+#include "bridge/logic/ArkaimLogic.hpp"
+#include "bridge/core/constant.hpp"
+#include "bridge/core/Logger.hpp"
+#include "bridge/database/Database.hpp"
+#include "bridge/database/Transaction.hpp"
+#include "bridge/database/MetrologicalRecord.hpp"
 
 #include <itp/named_pipe.hpp>
+
+#include "bridge/core/Settings.hpp"
 
 using namespace bridge;
 
