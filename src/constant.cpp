@@ -4,6 +4,7 @@
 
 #include <string>
 #include "bridge/constant.hpp"
+#include "bridge/version.hpp"
 
 namespace bridge {
 
@@ -109,6 +110,9 @@ namespace bridge {
     const std::string ORDER_FAILED = "ORD_FAILED";
 
     const std::string LOW_VOLUME = "Product level too low";
+
+    // Версия приложения генерируется автоматически из version.hpp
+    const std::string APP_VERSION = APP_VERSION_STRING;
 
     const std::string FUEL_VOLUME_ORDER_TYPE = "OTP_VOLUME";
     const std::string CREATE_ORDER = "create_order";

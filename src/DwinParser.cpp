@@ -23,9 +23,8 @@ namespace bridge {
     std::vector<Message> DwinParser::parse(const RawData& input, const std::string& sourceName) {
         std::vector<Message> messages;
 
-        // DEBUG: Логируем все входящие данные
         if (!input.data.empty()) {
-            std::cout << "[DWIN RX] Received " << input.data.size() << " bytes: ";
+            //std::cout << "[DWIN RX] Received " << input.data.size() << " bytes: ";
             for (size_t i = 0; i < input.data.size(); ++i) {
                 std::cout << std::hex << std::setw(2) << std::setfill('0') 
                           << static_cast<int>(input.data[i]) << " ";
@@ -73,7 +72,6 @@ namespace bridge {
             // Разбираем по командам (пример)
             if (cmd == 0x83) {
                 msg.type = "vp_data";
-                std::cout << "[DWIN] Touch event detected! VP_DATA" << std::endl;
 
                 //(пропускаем Header(2), Len(1), Cmd(1))
                 if (packetSize > 4) {
@@ -82,7 +80,6 @@ namespace bridge {
             } else if (cmd == 0x82) {
                 if (len == 3 && m_buffer[4] == 0x4F && m_buffer[5] == 0x4B) {
                     msg.type = "write_ack_ok";
-                    std::cout << "[DWIN] Write ACK OK received" << std::endl;
                 } else {
                     msg.type = "write_ack";
                     std::cout << "[DWIN] Write ACK (echo) received - ";
@@ -106,7 +103,6 @@ namespace bridge {
                     std::cout << std::hex << std::setw(2) << std::setfill('0') 
                               << static_cast<int>(m_buffer[i]) << " ";
                 }
-                std::cout << std::dec << std::endl;
             }
 
             messages.push_back(msg);
@@ -122,9 +118,6 @@ namespace bridge {
     RawData DwinParser::serialize(const Message& msg) {
         RawData raw;
         std::vector<uint8_t>& data = raw.data;
-
-        // DEBUG: Логируем тип отправляемого сообщения
-        std::cout << "[DWIN TX] Serializing message type: " << msg.type << std::endl;
 
         // --- СЦЕНАРИЙ 1: СМЕНА СТРАНИЦЫ ---
         if (msg.type == DWIN_MESSAGE_TYPE_CHANGE_PAGE) {
@@ -212,7 +205,7 @@ namespace bridge {
             data.push_back(msg.payload[0]);
         }
 
-        // --- СЦЕНАРИЙ 5: УПРАВЛЕНИЕ ЯРКОСТЬЮ (ВЫВОД ИЗ СПЯЩЕГО РЕЖИМА) ---
+        // --- СЦЕНАРИЙ 4: УПРАВЛЕНИЕ ЯРКОСТЬЮ (ВЫВОД ИЗ СПЯЩЕГО РЕЖИМА) ---
         else if (msg.type == DWIN_MESSAGE_TYPE_SET_BRIGHTNESS) {
             // Формат: 5A A5 05 82 00 82 [brightness]
             // VP 0x0082 - системный регистр управления подсветкой
@@ -235,15 +228,12 @@ namespace bridge {
             // Значение яркости
             data.push_back(msg.payload[2]);
         }
-
-        // DEBUG: Логируем отправляемые данные
+        
         if (!data.empty()) {
-            std::cout << "[DWIN TX] Sending " << data.size() << " bytes: ";
             for (size_t i = 0; i < data.size(); ++i) {
                 std::cout << std::hex << std::setw(2) << std::setfill('0') 
                           << static_cast<int>(data[i]) << " ";
             }
-            std::cout << std::dec << std::endl;
         }
 
         return raw;

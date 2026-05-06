@@ -18,6 +18,12 @@ namespace bridge {
 
 
     void DwinLogic::handle(const Message& message, MessageLayer& core) {
+        // Отправить ID и версию один раз при первом сообщении
+        if (!m_id_version_sent) {
+            sendStandaloneIdAndVersion(core);
+            m_id_version_sent = true;
+        }
+
         if (message.type == "vp_data") {
             handleDwinEvent(message, core);
         }
@@ -422,5 +428,25 @@ namespace bridge {
         msg.type = USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;
 
         core.sendToLogicLayer(HTTP_LAYER, msg);
+    }
+
+    void DwinLogic::sendStandaloneIdAndVersion(MessageLayer& core) {
+        LOG_UART_INFO << "Sending Standalone ID and Version to all pages";
+
+        const std::string& standalone_id = m_settings.gas_station.standalone_id;
+        
+        // Отправить ID терминала на все страницы
+        for (uint16_t vp : m_settings.dwin.vp_text_standalone_id_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, standalone_id, 20);
+        }
+
+        // Отправить версию программы на все страницы
+        for (uint16_t vp : m_settings.dwin.vp_text_standalone_version_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, APP_VERSION, 30);
+        }
+
+        LOG_UART_INFO << "Standalone ID: " << standalone_id << ", Version: " << APP_VERSION;
     }
 }

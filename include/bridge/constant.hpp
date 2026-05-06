@@ -132,6 +132,9 @@ namespace bridge {
 
     extern const std::string LOW_VOLUME;
 
+    // Application version
+    extern const std::string APP_VERSION;
+
     // Error codes
     extern const int POCO_ERROR;
 }

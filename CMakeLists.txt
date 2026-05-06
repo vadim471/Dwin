@@ -3,6 +3,38 @@ project(dwin_exmpl)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# ============================================
+# Auto-increment build number
+# ============================================
+if(EXISTS "${CMAKE_SOURCE_DIR}/build_number.txt")
+    file(READ "${CMAKE_SOURCE_DIR}/build_number.txt" BUILD_NUMBER)
+    string(STRIP "${BUILD_NUMBER}" BUILD_NUMBER)
+else()
+    set(BUILD_NUMBER 26)
+endif()
+
+math(EXPR BUILD_NUMBER "${BUILD_NUMBER} + 1")
+
+file(WRITE "${CMAKE_SOURCE_DIR}/build_number.txt" "${BUILD_NUMBER}")
+
+set(APP_VERSION_MAJOR 1)
+set(APP_VERSION_MINOR 0)
+
+configure_file(
+    "${CMAKE_SOURCE_DIR}/include/bridge/version.hpp.in"
+    "${CMAKE_SOURCE_DIR}/include/bridge/version.hpp"
+    @ONLY
+)
+
+message(STATUS "===========================================")
+message(STATUS "Build number: ${BUILD_NUMBER}")
+message(STATUS "Version: ${APP_VERSION_MAJOR}.${APP_VERSION_MINOR}.${BUILD_NUMBER}")
+message(STATUS "===========================================")
+
+# ============================================
+# End of version configuration
+# ============================================
+
 set(ARKAIM_INFRASTRUCTURE_DIR "" CACHE PATH "Path to forstandalone/+infrastructure used by terminal")
 
 if(NOT ARKAIM_INFRASTRUCTURE_DIR OR NOT EXISTS "${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp")
@@ -36,10 +68,12 @@ find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
 find_package(Threads REQUIRED)
 find_package(OpenSSL)
 find_package(Poco REQUIRED COMPONENTS Net Crypto Util Foundation)
+find_package(SQLite3 REQUIRED)
 
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${SQLite3_INCLUDE_DIRS})
 include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/c/include)
 include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/include)
 include_directories(${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/include)
@@ -124,6 +158,12 @@ add_executable(dwin_exmpl src/main.cpp
         include/bridge/ArkaimParser.hpp
         include/bridge/ArkaimLogic.hpp
         include/bridge/Printer.hpp
+        include/bridge/Database.hpp
+        src/Database.cpp
+        include/bridge/Transaction.hpp
+        src/Transaction.cpp
+        include/bridge/MetrologicalRecord.hpp
+        src/MetrologicalRecord.cpp
         ${ARKAIM_INFRA_SOURCES}
 )
 
@@ -166,5 +206,6 @@ target_link_libraries(dwin_exmpl
         Poco::Crypto
         Poco::Util
         Poco::Foundation
+        SQLite::SQLite3
 )
 

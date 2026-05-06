@@ -94,6 +94,7 @@ namespace bridge {
 
         // После считывания конфига количества ТРК.
         DwinCommands::sendPageToDwin(core, getStartPage());
+        setStandaloneIdAndVersion(core);
     }
 
     void HttpLogic::scheduleNextTick(MessageLayer &core) {
@@ -1811,6 +1812,20 @@ namespace bridge {
                     }
                 }
             }
+        }
+    }
+
+    void HttpLogic::setStandaloneIdAndVersion(MessageLayer& core) {
+        const std::string& standalone_id = m_settings.gas_station.standalone_id;
+
+        for (uint16_t vp : m_settings.dwin.vp_text_standalone_id_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, standalone_id, m_settings.dwin.text_len_standalone_id);
+        }
+
+        for (uint16_t vp : m_settings.dwin.vp_text_standalone_version_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, APP_VERSION, m_settings.dwin.text_len_standalone_version);
         }
     }
 }

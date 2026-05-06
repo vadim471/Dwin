@@ -176,6 +176,8 @@ namespace bridge {
         // Вывод текущей цены топлива выбранного вида топлива на всех страницах.
         void setFuelTypePriceOnDisplay(MessageLayer& core, const std::string &value) const;
 
+        void setStandaloneIdAndVersion(MessageLayer& core);
+
         // Заполнение значений параметров уровнемера.
         void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge, const std::string &type);
         void setReceptionLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge);

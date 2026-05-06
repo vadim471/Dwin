@@ -74,6 +74,9 @@ namespace bridge {
         // Хендлер очистки всех инпутов пин-пада.
         void clearAllInputPinPad(MessageLayer& core) const;
 
+        // Отправка ID терминала и версии на все страницы (один раз при инициализации)
+        void sendStandaloneIdAndVersion(MessageLayer& core);
+
         // Строка, содержащая значение, введенное с пинпада.
         std::string d_pinpad_buffer;
     };

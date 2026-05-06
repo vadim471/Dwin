@@ -195,6 +195,12 @@ struct Settings {
     // --- Current date time ---
         std::vector<uint16_t> vp_current_date_time_pages;
 
+    // --- Standalone ID ---
+        std::vector<uint16_t> vp_text_standalone_id_pages;
+
+    // --- Standalone Version ---
+        std::vector<uint16_t> vp_text_standalone_version_pages;
+
     // --- Last order (page 2) ---
         uint16_t vp_volume_last_order_integer;
         uint16_t vp_price_last_order_integer;
@@ -280,6 +286,8 @@ struct Settings {
         int text_len_date_time_footer;
         int text_len_fuel_price;
         int text_len_fuel_integer;
+        int text_len_standalone_version;
+        int text_len_standalone_id;
 
     // --- Audio ID ---
         int audio_id_welcome_nozzle_up;
@@ -305,6 +313,7 @@ struct Settings {
         std::vector<std::string> used_trks;
         std::map<std::string, std::string> prime_standalone;
         std::map<std::string, std::string> processing_standalone;
+        std::string standalone_id; // ID терминала
     } gas_station;
 
     struct Pipe {
@@ -493,6 +502,82 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfourth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfifth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyseventh_page"));
+
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_first_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_second_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_third_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_forth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fifth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_sixth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_seventh_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_eighth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_ninth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_tenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_eleventh_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twelvth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fourteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fifteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_sixteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_seventeenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_eightteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_ninteenth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyoneth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentytwoth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentythreeth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyfourth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyfifth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentysixth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyseventh_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyeighth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_twentyninth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyfirst_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtysecond_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtythird_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyfourth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyfifth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtysixth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyseventh_page"));
+
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_first_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_second_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_third_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_forth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fifth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_sixth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_seventh_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_eighth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_ninth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_tenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_eleventh_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twelvth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fourteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fifteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_sixteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_seventeenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_eightteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_ninteenth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyoneth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentytwoth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentythreeth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyfourth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyfifth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentysixth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyseventh_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyeighth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_twentyninth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyfirst_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtysecond_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtythird_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyfourth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyfifth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtysixth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyseventh_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -723,6 +808,8 @@ struct Settings {
             s.dwin.text_len_order_decimal = j["dwin"]["text_len_order_decimal"];
             s.dwin.text_len_order_integer = j["dwin"]["text_len_order_integer"];
             s.dwin.text_len_fuel_type = j["dwin"]["text_len_fuel_type"];
+            s.dwin.text_len_standalone_version = j["dwin"]["text_len_standalone_version"];
+            s.dwin.text_len_standalone_id = j["dwin"]["text_len_standalone_id"];
             s.dwin.text_len_percent_progress_bar = j["dwin"]["text_len_percent_progress_bar"];
             s.dwin.text_len_date_time_footer = j["dwin"]["text_len_date_time_footer"];
             s.dwin.text_len_fuel_price = j["dwin"]["text_len_fuel_price"];
@@ -772,6 +859,8 @@ struct Settings {
                         s.gas_station.processing_standalone[fuel_id.key()] = fuel_id.value().get<std::string>();
                     }
                 }
+
+                s.gas_station.standalone_id = gas_station_node.value("standalone_ID", "");
             }
 
         } catch (const std::exception& e) {
