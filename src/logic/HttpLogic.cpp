@@ -157,38 +157,7 @@ namespace bridge {
             return;
         }
         if (message.type == USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON) {
-            if (m_reception_active) {
-                const LevelGauge* level_gauge = utility::getLevelGaugeById(m_level_gauge, m_reception_level_gauge_id);
-                const Tanker* tanker = level_gauge != nullptr
-                    ? utility::getTankerByLevelGaugeId(m_tankers, level_gauge->id)
-                    : nullptr;
-
-                if (level_gauge != nullptr && tanker != nullptr) {
-                    std::string product_name;
-                    if (Product* product = utility::getProductById(m_products, tanker->product_id)) {
-                        product_name = !product->title.empty() ? product->title : product->id;
-                    }
-
-                    std::string receipt = utility::createReceiptFromLevelGauge(
-                        *level_gauge,
-                        *tanker,
-                        product_name,
-                        m_reception_document_number,
-                        "АКТ ОКОНЧАНИЯ НАПОЛНЕНИЯ"
-                    );
-
-                    Message print_message;
-                    print_message.source = HTTP_LAYER;
-                    print_message.type = PAY_PRINT_RECEIPT;
-                    print_message.resource_id = tanker->id;
-                    print_message.payload.assign(receipt.begin(), receipt.end());
-                    core.sendToLogicLayer(PIPE_LAYER, print_message);
-                }
-            }
-
-            m_reception_active = false;
-            m_reception_level_gauge_id.clear();
-            m_reception_document_number.clear();
+            handleFinishReceptionFuel(core);
             return;
         }
         if (message.type == HTTP_RESPONSE) {
@@ -314,7 +283,40 @@ namespace bridge {
     }
 
     void HttpLogic::handleFinishReceptionFuel(MessageLayer& core) {
+        if (m_reception_active) {
+            const LevelGauge* level_gauge = utility::getLevelGaugeById(m_level_gauge, m_reception_level_gauge_id);
+            const Tanker* tanker = level_gauge != nullptr
+                ? utility::getTankerByLevelGaugeId(m_tankers, level_gauge->id)
+                : nullptr;
 
+            if (level_gauge != nullptr && tanker != nullptr) {
+                std::string product_name;
+                if (Product* product = utility::getProductById(m_products, tanker->product_id)) {
+                    product_name = !product->title.empty() ? product->title : product->id;
+                }
+
+                std::string receipt = utility::createSecondReceiptFromLevelGauge(
+                    product_name,
+                    *tanker,
+                    *level_gauge,
+                    m_reception_initial_level_gauge,
+                    m_reception_document_number,
+                    m_reception_start_time,
+                    utility::getCurrentTimeString()
+                );
+
+                Message print_message;
+                print_message.source = HTTP_LAYER;
+                print_message.type = PAY_PRINT_RECEIPT;
+                print_message.resource_id = tanker->id;
+                print_message.payload.assign(receipt.begin(), receipt.end());
+                core.sendToLogicLayer(PIPE_LAYER, print_message);
+            }
+        }
+
+        m_reception_active = false;
+        m_reception_level_gauge_id.clear();
+        m_reception_document_number.clear();
     }
 
     void HttpLogic::processReceptionTanker(MessageLayer& core) {
@@ -342,12 +344,15 @@ namespace bridge {
             product_name = !product->title.empty() ? product->title : product->id;
         }
 
-        std::string receipt = utility::createReceiptFromLevelGauge(
+        // Сохраняем начальное состояние уровнемера и время начала приемки для вывода их в чек окончания
+        m_reception_initial_level_gauge = level_gauge;
+        m_reception_start_time = utility::getCurrentTimeString();
+
+        std::string receipt = utility::createFirstReceiptFromLevelGauge(
             level_gauge,
             *tanker,
             product_name,
-            m_reception_document_number,
-            "АКТ НАЧАЛА НАПОЛНЕНИЯ"
+            m_reception_start_time
         );
 
         Message print_message;

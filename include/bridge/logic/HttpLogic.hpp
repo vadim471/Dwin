@@ -284,6 +284,8 @@ namespace bridge {
         bool m_reception_active = false;
         std::string m_reception_level_gauge_id;
         std::string m_reception_document_number;
+        LevelGauge m_reception_initial_level_gauge; // Для сохранения начального состояния уровнемера при приеме топлива.
+        std::string m_reception_start_time;
 
         // Для пагинации типов топлива при выборе для редактирования.
         int m_current_fuel_type_index = 0;

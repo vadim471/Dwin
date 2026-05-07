@@ -301,7 +301,7 @@ namespace bridge {
         std::tm* local_time = std::localtime(&now);
 
         char buffer[32];
-        std::strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", local_time);
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d  %H:%M:%S", local_time);
 
         return std::string(buffer);
     }
@@ -540,53 +540,134 @@ namespace bridge {
         return receipt.str();
     }
 
-    std::string utility::createReceiptFromLevelGauge(
+    std::string utility::createSecondReceiptFromLevelGauge(
+        const std::string& product_name,
+        const Tanker& tanker,
+        const LevelGauge& level_gauge_current,
+        const LevelGauge& level_gauge_initial,
+        const std::string& document_number,
+        const std::string& time_beginning,
+        const std::string& time_ending
+        ) {
+        std::stringstream receipt;
+
+
+        receipt << "      " << getCurrentTimeString() << "\n";
+        receipt << "========================================\n\n";
+        receipt << "      " << TITLE_ENDING_RECEPTION_FUEL << "\n\n";
+        receipt << "========================================\n\n";
+
+        if (!product_name.empty()) {
+            receipt << "Топливо" << "\n" << product_name << "\n";
+        } else if (!tanker.product_id.empty()) {
+            receipt << "Топливо ID" << "\n" << tanker.product_id << "\n";
+        }
+
+        receipt << "Уровнемер" << "\n" << level_gauge_current.id << "\n";
+
+        receipt << "Номер накладной" << "\n" << document_number << "\n";
+
+        receipt << "Фактически принято" << "\n" << document_number << "\n";
+
+        receipt << "Начало приема топлива" << "\n" << time_beginning << "\n";
+
+        receipt << "Окончание приема топлива" << "\n" << time_ending << "\n";
+
+        receipt << "========================================\n\n";
+        receipt << TITLE_ENDING_BEFORE_RECEPTION_FUEL << "\n";
+        receipt << "========================================\n\n";
+
+        receipt << "Уровень основного поплавка" << "\n" << level_gauge_initial.upper_level << " (м)\n";
+
+        receipt << "Уровень нижнего поплавка: " << "\n" << level_gauge_initial.lower_level << " (м)\n";
+
+        receipt << "Объем основного продукта" << "\n" << level_gauge_initial.upper_volume << " (м3)\n";
+
+        receipt << "Объем подтоварной жидкости" << "\n" << level_gauge_initial.lower_volume << " (м3)\n";
+
+        receipt << "Общий объем" << "\n" << level_gauge_initial.total_volume << " (м3)\n";
+
+        receipt << "Средняя температура" << "\n" << 0 << " (С)\n";
+
+        receipt << "Масса" << "\n" << level_gauge_initial.weight << " (кг)\n";
+
+        receipt << "Плотность" << "\n" << level_gauge_initial.density << " (кг/м3)\n";
+
+        receipt << "Заполнение" << "\n" << level_gauge_initial.filling << " (%)\n";
+
+        receipt << "========================================\n\n";
+        receipt << TITLE_ENDING_AFTER_RECEPTION_FUEL << "\n";
+        receipt << "========================================\n\n";
+
+        receipt << "Уровень основного поплавка" << "\n" << level_gauge_current.upper_level << " (м)\n";
+
+        receipt << "Уровень нижнего поплавка: " << "\n" << level_gauge_current.lower_level << " (м)\n";
+
+        receipt << "Объем основного продукта" << "\n" << level_gauge_current.upper_volume << " (м3)\n";
+
+        receipt << "Объем подтоварной жидкости" << "\n" << level_gauge_current.lower_volume << " (м3)\n";
+
+        receipt << "Общий объем" << "\n" << level_gauge_current.total_volume << " (м3)\n";
+
+        receipt << "Средняя температура" << "\n" << 0 << " (С)\n";
+
+        receipt << "Масса" << "\n" << level_gauge_current.weight << " (кг)\n";
+
+        receipt << "Плотность" << "\n" << level_gauge_current.density << " (кг/м3)\n";
+
+        receipt << "Заполнение" << "\n" << level_gauge_current.filling << " (%)\n";
+
+        receipt << "========================================\n";
+
+        return receipt.str();
+    }
+
+    std::string utility::createFirstReceiptFromLevelGauge(
         const LevelGauge& level_gauge,
         const Tanker& tanker,
         const std::string& product_name,
-        const std::string& document_number,
-        const std::string& operation_title
+        const std::string& time
     ) {
         std::stringstream receipt;
 
-        receipt << "========================================\n";
-        receipt << "      " << operation_title << "\n";
+        receipt << "      " << time << "\n";
+        receipt << "========================================\n\n";
+        receipt << "      " << TITLE_BEGINNING_RECEPTION_FUEL << "\n\n";
         receipt << "========================================\n\n";
 
-        receipt << "Дата: " << getCurrentTimeString() << "\n";
-        if (!document_number.empty()) {
-            receipt << "Накладная: " << document_number << "\n";
-        }
-        receipt << "Резервуар ID: " << tanker.id << "\n";
-        if (!tanker.title.empty()) {
-            receipt << "Резервуар: " << tanker.title << "\n";
-        }
-        receipt << "Уровнемер ID: " << level_gauge.id << "\n";
+
         if (!product_name.empty()) {
-            receipt << "Товар: " << product_name << "\n";
+            receipt << "Топливо" << "\n" << product_name << "\n";
         } else if (!tanker.product_id.empty()) {
-            receipt << "Товар ID: " << tanker.product_id << "\n";
+            receipt << "Топливо ID" << "\n" << tanker.product_id << "\n";
         }
-        receipt << "\n";
+        // if (!document_number.empty()) {
+        //     receipt << "Накладная" << document_number << "\n";
+        // }
+        // receipt << "Резервуар ID: " << tanker.id << "\n";
+        // if (!tanker.title.empty()) {
+        //     receipt << "Резервуар: " << tanker.title << "\n";
+        // }
+        receipt << "Уровнемер" << "\n" << level_gauge.id << "\n";
 
-        receipt << "--- Состояние резервуара ---\n";
-        receipt << "Активен: " << (tanker.active ? "Да" : "Нет") << "\n";
-        receipt << "Заполнен: " << (tanker.filled ? "Да" : "Нет") << "\n";
-        receipt << "Порог блокировки: " << tanker.lock << " м3\n";
-        receipt << "Минимальный остаток: " << tanker.minimal << " м3\n\n";
+        receipt << "Уровень основного поплавка" << "\n" << level_gauge.upper_level << " (м)\n";
 
-        receipt << "--- Показания уровнемера ---\n";
-        receipt << "Объем продукта: " << level_gauge.upper_volume << " м3\n";
-        receipt << "Объем подтоварной жидкости: " << level_gauge.lower_volume << " м3\n";
-        receipt << "Общий объем: " << level_gauge.total_volume << " м3\n";
-        receipt << "Уровень основного поплавка: " << level_gauge.upper_level << " м\n";
-        receipt << "Уровень нижнего поплавка: " << level_gauge.lower_level << " м\n";
-        receipt << "Заполнение: " << level_gauge.filling << " %\n";
-        receipt << "Плотность: " << level_gauge.density << " кг/м3\n";
-        receipt << "Масса: " << level_gauge.weight << " кг\n\n";
+        receipt << "Уровень нижнего поплавка: " << "\n" << level_gauge.lower_level << " (м)\n";
 
-        receipt << "========================================\n";
-        receipt << "    Текущее состояние резервуара\n";
+        receipt << "Объем основного продукта" << "\n" << level_gauge.upper_volume << " (м3)\n";
+
+        receipt << "Объем подтоварной жидкости" << "\n" << level_gauge.lower_volume << " (м3)\n";
+
+        receipt << "Общий объем" << "\n" << level_gauge.total_volume << " (м3)\n";
+
+        receipt << "Средняя температура" << "\n" << 0 << " (С)\n";
+
+        receipt << "Масса" << "\n" << level_gauge.weight << " (кг)\n";
+
+        receipt << "Плотность" << "\n" << level_gauge.density << " (кг/м3)\n";
+
+        receipt << "Заполнение" << "\n" << level_gauge.filling << " (%)\n";
+
         receipt << "========================================\n";
 
         return receipt.str();

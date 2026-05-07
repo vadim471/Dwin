@@ -97,12 +97,21 @@ namespace bridge {
             uint64_t transaction_time
         );
 
-        static std::string createReceiptFromLevelGauge(
+        static std::string createFirstReceiptFromLevelGauge(
             const LevelGauge& level_gauge,
             const Tanker& tanker,
             const std::string& product_name,
-            const std::string& document_number,
-            const std::string& operation_title
+            const std::string& time
         );
+
+        static std::string createSecondReceiptFromLevelGauge(
+            const std::string& product_name,
+            const Tanker& tanker,
+            const LevelGauge& level_gauge_current,
+            const LevelGauge& level_gauge_initial,
+            const std::string& document_number,
+            const std::string& time_beginning,
+            const std::string& time_ending
+            );
     };
 }

@@ -26,6 +26,10 @@ namespace bridge {
     extern const std::string ARKAIM_REQUEST;
     extern const std::string NO_PINPAD;
     extern const std::string INCORECT_PINCODE;
+    extern const std::string TITLE_BEGINNING_RECEPTION_FUEL;
+    extern const std::string TITLE_ENDING_RECEPTION_FUEL;
+    extern const std::string TITLE_ENDING_BEFORE_RECEPTION_FUEL;
+    extern const std::string TITLE_ENDING_AFTER_RECEPTION_FUEL;
 
     // Path to config file
     extern const std::string CONFIG;
