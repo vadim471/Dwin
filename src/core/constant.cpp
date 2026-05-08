@@ -25,6 +25,8 @@ namespace bridge {
     const std::string PAY_PRINT_RECEIPT = "PAY_PRINT_RECEIPT";
     const std::string PAY_GET_BALANCE = "PAY_GET_BALANCE";
     const std::string ARKAIM_REQUEST = "ARKAIM_REQUEST";
+    const std::string PRINT_DEBIT_RECEIPT = "PRINT_DEBIT_RECEIPT";
+    const std::string PRINT_REFUND_RECEIPT = "PRINT_REFUND_RECEIPT";
     const std::string NO_PINPAD = "No pinpad";
     const std::string INCORECT_PINCODE = "Неверный ПИН";
     const std::string TITLE_BEGINNING_RECEPTION_FUEL = "ТЕКУЩИЕ ПОКАЗАНИЯ УРОВНЕМЕРА";
@@ -124,6 +126,8 @@ namespace bridge {
     const std::string DWIN_MESSAGE_TYPE_WRITE_VP = "write_vp";
     const std::string DWIN_MESSAGE_TYPE_PLAY_SOUND = "PLAY_SOUND";
     const std::string DWIN_MESSAGE_TYPE_SET_BRIGHTNESS = "SET_BRIGHTNESS";
+
+    const std::string APP_VERSION = APP_VERSION_STRING;
 
     const int FUEL_TYPE_LEN = 6;
     const int TRK_ID_LEN = 6;

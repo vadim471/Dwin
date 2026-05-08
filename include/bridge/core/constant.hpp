@@ -24,6 +24,8 @@ namespace bridge {
     extern const std::string PAY_PRINT_RECEIPT;
     extern const std::string PAY_GET_BALANCE;
     extern const std::string ARKAIM_REQUEST;
+    extern const std::string PRINT_DEBIT_RECEIPT;
+    extern const std::string PRINT_REFUND_RECEIPT;
     extern const std::string NO_PINPAD;
     extern const std::string INCORECT_PINCODE;
     extern const std::string TITLE_BEGINNING_RECEPTION_FUEL;

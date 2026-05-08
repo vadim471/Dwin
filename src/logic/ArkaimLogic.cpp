@@ -77,6 +77,10 @@ namespace bridge {
         } else if (msg.type == PAY_PRINT_RECEIPT) {
             std::string receipt_text(msg.payload.begin(), msg.payload.end());
             handlePrintReceipt(receipt_text);
+        } else if (msg.type == PRINT_DEBIT_RECEIPT) {
+            handlePrintDebitReceipt(msg);
+        } else if (msg.type == PRINT_REFUND_RECEIPT) {
+            handlePrintRefundReceipt(msg);
         } else if (msg.type == PAY_GET_BALANCE) {
             handleGetBalance(msg);
         } else {
@@ -528,17 +532,17 @@ namespace bridge {
                 << " for order " << order_id << std::endl;
 
         // Создаем чек для печати
-        std::string receipt = utility::createReceiptFromTransaction(
-            transaction_id,
-            payment.product_id,
-            payment.price_value, payment.price_decimal,
-            payment.volume_value, payment.volume_decimal,
-            payment.amount_value, payment.amount_decimal,
-            payment.fact_volume_value, payment.fact_volume_decimal,
-            payment.fact_amount_value, payment.fact_amount_decimal,
-            payment.not_complete != 0,
-            m_pending.transaction_time
-        );
+        // std::string receipt = utility::createReceiptFromTransaction(
+        //     transaction_id,
+        //     payment.product_id,
+        //     payment.price_value, payment.price_decimal,
+        //     payment.volume_value, payment.volume_decimal,
+        //     payment.amount_value, payment.amount_decimal,
+        //     payment.fact_volume_value, payment.fact_volume_decimal,
+        //     payment.fact_amount_value, payment.fact_amount_decimal,
+        //     payment.not_complete != 0,
+        //     m_pending.transaction_time
+        // );
 
         itp::frame::uptr request = boost::make_unique<itp::frame>(itp::CL2_CMD_PAY_CONFIRM);
         request->write_value(m_reader_address);
@@ -561,7 +565,7 @@ namespace bridge {
         request->write_value(payment.fact_amount_decimal);
 
         std::string captured_order_id = order_id;
-        std::string captured_receipt = receipt;
+        std::string captured_receipt = "receipt";
         itp_error_code_t errc = this->node_.push_request(
             std::move(request),
             m_pay_address,
@@ -639,24 +643,25 @@ namespace bridge {
         } else {
             std::cout << "[ArkaimLogic] Confirm SUCCESS for order " << order_id << std::endl;
 
-            // Печатаем чек
-            if (m_has_printer && !receipt.empty()) {
-                std::cout << "[ArkaimLogic] Printing receipt for confirmed transaction" << std::endl;
-                m_printer->printText(receipt, [this](bool success, const std::string& error) {
-                    if (success) {
-                        std::cout << "[ArkaimLogic] Receipt printed successfully" << std::endl;
-                        m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
-                            if (cut_success) {
-                                std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
-                            } else {
-                                std::cerr << "[ArkaimLogic] Failed to cut paper: " << cut_error << std::endl;
-                            }
-                        });
-                    } else {
-                        std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
-                    }
-                });
-            }
+            // Печать чека транзакции отключена - печатается только чек дебета в начале
+            // и чек возврата при прерывании
+            // if (m_has_printer && !receipt.empty()) {
+            //     std::cout << "[ArkaimLogic] Printing receipt for confirmed transaction" << std::endl;
+            //     m_printer->printText(receipt, [this](bool success, const std::string& error) {
+            //         if (success) {
+            //             std::cout << "[ArkaimLogic] Receipt printed successfully" << std::endl;
+            //             m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
+            //                 if (cut_success) {
+            //                     std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
+            //                 } else {
+            //                     std::cerr << "[ArkaimLogic] Failed to cut paper: " << cut_error << std::endl;
+            //                 }
+            //             });
+            //         } else {
+            //             std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
+            //         }
+            //     });
+            // }
 
             if (m_core) {
                 Message msg;
@@ -821,6 +826,75 @@ namespace bridge {
                 std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
             }
         });
+    }
+
+    void ArkaimLogic::handlePrintDebitReceipt(const Message& msg) {
+        if (!m_has_printer) {
+            std::cerr << "[ArkaimLogic] No printer available for debit receipt" << std::endl;
+            return;
+        }
+
+        ReceiptData receipt;
+        if (!deserializeReceiptData(msg.payload, receipt)) {
+            std::cerr << "[ArkaimLogic] Failed to deserialize debit receipt data" << std::endl;
+            return;
+        }
+
+        // Заполняем номер карты и transaction_id
+        receipt.card_number = m_card_number;
+        
+        // Получаем transaction_id из маппинга order -> transaction
+        auto it = m_order_transactions.find(msg.resource_id);
+        if (it != m_order_transactions.end()) {
+            receipt.transaction_id = it->second;
+        }
+
+        std::string receipt_text = utility::createDebitReceipt(
+            receipt.address,
+            receipt.card_number,
+            receipt.product_name,
+            receipt.volume_liters,
+            receipt.price_per_liter,
+            receipt.transaction_id
+        );
+
+        std::cout << "[ArkaimLogic] Printing debit receipt for order " << msg.resource_id << std::endl;
+        handlePrintReceipt(receipt_text);
+    }
+
+    void ArkaimLogic::handlePrintRefundReceipt(const Message& msg) {
+        if (!m_has_printer) {
+            std::cerr << "[ArkaimLogic] No printer available for refund receipt" << std::endl;
+            return;
+        }
+
+        ReceiptData receipt;
+        if (!deserializeReceiptData(msg.payload, receipt)) {
+            std::cerr << "[ArkaimLogic] Failed to deserialize refund receipt data" << std::endl;
+            return;
+        }
+
+        // Заполняем номер карты и transaction_id
+        receipt.card_number = m_card_number;
+        
+        // Получаем transaction_id из маппинга order -> transaction
+        auto it = m_order_transactions.find(msg.resource_id);
+        if (it != m_order_transactions.end()) {
+            receipt.transaction_id = it->second;
+        }
+
+        std::string receipt_text = utility::createRefundReceipt(
+            receipt.address,
+            receipt.card_number,
+            receipt.product_name,
+            receipt.ordered_volume_liters,
+            receipt.volume_liters,
+            receipt.price_per_liter,
+            receipt.transaction_id
+        );
+
+        std::cout << "[ArkaimLogic] Printing refund receipt for order " << msg.resource_id << std::endl;
+        handlePrintReceipt(receipt_text);
     }
 
     void ArkaimLogic::handleGetBalance(const Message &msg) {

@@ -7,6 +7,7 @@
 #include "ILogicHandler.hpp"
 #include "bridge/core/Settings.hpp"
 #include "bridge/core/types.hpp"
+#include <itp/logger.hpp>
 
 namespace bridge {
     class DwinLogic : public ILogicHandler {
@@ -16,6 +17,10 @@ namespace bridge {
 
         // ILogicHandler
         void handle(const Message& message, MessageLayer& core) override;
+
+        // Инициализация ITP Logger
+        void setItpLogger(itp::logger::ptr logger) { m_itp_logger = logger; }
+
     private:
 
         void handleDwinEvent(const Message& message, MessageLayer& core);
@@ -78,6 +83,9 @@ namespace bridge {
 
         // Строка, содержащая значение, введенное с пинпада.
         std::string d_pinpad_buffer;
+
+        // ITP Logger для удаленного логирования
+        itp::logger::ptr m_itp_logger;
     };
 
     using DwinLogicPtr = std::shared_ptr<DwinLogic>;

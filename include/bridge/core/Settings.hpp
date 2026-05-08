@@ -314,6 +314,7 @@ struct Settings {
         std::map<std::string, std::string> prime_standalone;
         std::map<std::string, std::string> processing_standalone;
         std::string standalone_id; // ID терминала
+        std::string standalone_address; // Адрес АЗС
     } gas_station;
 
     struct Pipe {
@@ -861,6 +862,7 @@ struct Settings {
                 }
 
                 s.gas_station.standalone_id = gas_station_node.value("standalone_ID", "");
+                s.gas_station.standalone_address = gas_station_node.value("standalone_address", "");
             }
 
         } catch (const std::exception& e) {

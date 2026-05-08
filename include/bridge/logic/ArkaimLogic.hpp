@@ -40,6 +40,9 @@ public:
     // itp::entity
     uint32_t status() const override;
 
+    // Получить указатель на itp::root для инициализации логгеров
+    itp::root* getItpRoot() { return &node_; }
+
 private:
     // ---- Connection flow (mirrors manager.cpp) ----
     void onConnect(uint16_t error);
@@ -76,6 +79,8 @@ private:
 
     // ---- Printer methods ----
     void handlePrintReceipt(const std::string receipt_processing);
+    void handlePrintDebitReceipt(const Message& msg);
+    void handlePrintRefundReceipt(const Message& msg);
 
     // ---- Balance methods ----
     void handleGetBalance(const Message& msg);

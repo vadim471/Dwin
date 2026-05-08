@@ -113,5 +113,29 @@ namespace bridge {
             const std::string& time_beginning,
             const std::string& time_ending
             );
+
+        // Создает чек дебета при начале заправки
+        static std::string createDebitReceipt(
+            const std::string& address,
+            const std::string& card_number,
+            const std::string& product_name,
+            double volume_liters,
+            double price_per_liter,
+            uint64_t transaction_id
+        );
+
+        // Создает чек возврата при прерывании/отмене заказа
+        static std::string createRefundReceipt(
+            const std::string& address,
+            const std::string& card_number,
+            const std::string& product_name,
+            double ordered_volume_liters,
+            double actual_volume_liters,
+            double price_per_liter,
+            uint64_t transaction_id
+        );
+
+        static double calculateFuelLiters(const std::string& before,
+                           const std::string& after);
     };
 }

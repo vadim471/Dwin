@@ -479,8 +479,8 @@
           "text_len_fuel_price": 5,
           "text_len_percent_progress_bar": 3,
           "text_len_date_time_footer": 20,
-          "text_len_standalone_version": 30,
-          "text_len_standalone_id": 10,
+          "text_len_standalone_version": 25,
+          "text_len_standalone_id": 6,
 
           "audio_id_welcome_nozzle_up": 1,
           "audio_id_fuelling_end": 2,

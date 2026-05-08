@@ -15,6 +15,7 @@
 #include "bridge/json.hpp"
 #include "ILogicHandler.hpp"
 #include "bridge/core/Settings.hpp"
+#include <itp/logger.hpp>
 
 //HttpLogic.hpp
 namespace bridge {
@@ -33,6 +34,9 @@ namespace bridge {
         static void getDispenserStatus(MessageLayer &core, const std::string &trk_id);
         static void getTankers(MessageLayer& core);
         void startPolling(MessageLayer& core) const;
+
+        // Инициализация ITP Logger
+        void setItpLogger(itp::logger::ptr logger) { m_itp_logger = logger; }
 
     private:
         void processEvent(const json& jArray, MessageLayer& core);
@@ -284,7 +288,19 @@ namespace bridge {
         bool m_reception_active = false;
         std::string m_reception_level_gauge_id;
         std::string m_reception_document_number;
-        LevelGauge m_reception_initial_level_gauge; // Для сохранения начального состояния уровнемера при приеме топлива.
+        
+        // Начальное состояние уровнемера при приемке топлива
+        struct InitialLevelGaugeState {
+            std::string upper_level;
+            std::string lower_level;
+            std::string upper_volume;
+            std::string lower_volume;
+            std::string total_volume;
+            std::string filling;
+            std::string density;
+            std::string weight;
+        } m_reception_initial_state;
+        
         std::string m_reception_start_time;
 
         // Для пагинации типов топлива при выборе для редактирования.
@@ -316,6 +332,9 @@ namespace bridge {
         std::vector<PageTimer> m_page_timers;
 
         std::chrono::steady_clock::time_point m_last_fueling_sound;
+
+        // ITP Logger для удаленного логирования
+        itp::logger::ptr m_itp_logger;
     };
 
     using HttpLogicPtr = std::shared_ptr<HttpLogic>;

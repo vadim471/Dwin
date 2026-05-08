@@ -21,6 +21,7 @@
 #include "bridge/database/MetrologicalRecord.hpp"
 
 #include <itp/named_pipe.hpp>
+#include <itp/logger.hpp>
 
 #include "bridge/core/Settings.hpp"
 
@@ -104,6 +105,12 @@ int main() {
         auto arkaim_logic = std::make_shared<ArkaimLogic>(ios, arkaim_trans);
         core.registerLogic(PIPE_LAYER, arkaim_logic);
 
+        // Создаем ITP Logger для удаленного логирования (кроме ArkaimLogic)
+        auto itp_logger_instance = std::make_shared<itp::logger>();
+        
+        // Инициализируем ITP Logger после старта ArkaimLogic, чтобы использовать его itp::root
+        // Пока оставляем nullptr, инициализация будет после startLoop
+
 
         std::thread ioThread([&ios](){
             LOG_SYSTEM_INFO << "IO Thread starting...";
@@ -123,6 +130,13 @@ int main() {
         // Start Arkaim integration
         LOG_SYSTEM_INFO << "Starting Arkaim payment processing integration...";
         arkaim_logic->startLoop(core);
+        
+        // Инициализируем ITP Logger для HttpLogic и DwinLogic после старта Arkaim
+        // Используем itp::root из ArkaimLogic для отправки логов на удаленный сервер
+        itp_logger_instance->start(arkaim_logic->getItpRoot(), true);
+        http_logic->setItpLogger(itp_logger_instance);
+        dwin_logic->setItpLogger(itp_logger_instance);
+        LOG_SYSTEM_INFO << "ITP Logger initialized for HttpLogic and DwinLogic";
         
         LOG_SYSTEM_INFO << "Starting HTTP logic loop...";
         http_logic->startLoop(core);

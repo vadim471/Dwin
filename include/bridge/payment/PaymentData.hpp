@@ -70,4 +70,51 @@ inline bool deserializePaymentRequest(const Bytes& payload, PaymentRequestData& 
     }
 }
 
+struct ReceiptData {
+    std::string address;
+    std::string card_number;
+    std::string product_name;
+    double volume_liters = 0.0;
+    double price_per_liter = 0.0;
+    uint64_t transaction_id = 0;
+    double ordered_volume_liters = 0.0;  // Для чека возврата
+    bool is_refund = false;
+};
+
+inline Bytes serializeReceiptData(const ReceiptData& receipt) {
+    nlohmann::json json = {
+        {"address", receipt.address},
+        {"card_number", receipt.card_number},
+        {"product_name", receipt.product_name},
+        {"volume_liters", receipt.volume_liters},
+        {"price_per_liter", receipt.price_per_liter},
+        {"transaction_id", receipt.transaction_id},
+        {"ordered_volume_liters", receipt.ordered_volume_liters},
+        {"is_refund", receipt.is_refund}
+    };
+
+    const auto body = json.dump();
+    return Bytes(body.begin(), body.end());
+}
+
+inline bool deserializeReceiptData(const Bytes& payload, ReceiptData& receipt) {
+    try {
+        const std::string body(payload.begin(), payload.end());
+        const auto json = nlohmann::json::parse(body);
+
+        receipt.address = json.value("address", std::string());
+        receipt.card_number = json.value("card_number", std::string());
+        receipt.product_name = json.value("product_name", std::string());
+        receipt.volume_liters = json.value("volume_liters", 0.0);
+        receipt.price_per_liter = json.value("price_per_liter", 0.0);
+        receipt.transaction_id = json.value("transaction_id", uint64_t(0));
+        receipt.ordered_volume_liters = json.value("ordered_volume_liters", 0.0);
+        receipt.is_refund = json.value("is_refund", false);
+
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 } // namespace bridge

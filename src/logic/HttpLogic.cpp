@@ -10,6 +10,7 @@
 #include "bridge/dwin/DwinCommands.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "bridge/dwin/PrimeCommands.hpp"
+#include "bridge/payment/PaymentData.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -81,6 +82,10 @@ namespace bridge {
     }
 
     void HttpLogic::startLoop(MessageLayer &core) {
+        if (m_itp_logger) {
+            m_itp_logger->trace(1, "HttpLogic", "Starting HTTP logic loop");
+        }
+        
         getDevices(core);
         scheduleNextTick(core);
         getProducts(core);
@@ -94,7 +99,11 @@ namespace bridge {
 
         // После считывания конфига количества ТРК.
         DwinCommands::sendPageToDwin(core, getStartPage());
-        setStandaloneIdAndVersion(core);
+        //setStandaloneIdAndVersion(core);
+        
+        if (m_itp_logger) {
+            m_itp_logger->trace(1, "HttpLogic", "HTTP logic loop started successfully");
+        }
     }
 
     void HttpLogic::scheduleNextTick(MessageLayer &core) {
@@ -186,9 +195,34 @@ namespace bridge {
         if (message.type == USER_TOUCH_BASIC_TOUCH_BUTTON) {
             handleBasicTouch(core);
             return;
-        } else if (message.type == USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON) {
+        } if (message.type == USER_TOUCH_BASIC_TOUCH_BEGIN_FUELLING_BUTTON) {
             m_dwin_button_next_for_start_fuel = true;
             authorizeOnServer(core);
+            
+            // Печать чека дебета при начале заправки
+            if (!m_current_dispenser_id.empty() && m_orders.count(m_current_dispenser_id) > 0) {
+                auto& order = m_orders[m_current_dispenser_id];
+                Product* product = utility::getProductById(m_products, order.product_id);
+                
+                if (product) {
+                    ReceiptData receipt;
+                    receipt.address = m_settings.gas_station.standalone_address;
+                    receipt.card_number = "";  // Будет заполнено в ArkaimLogic
+                    receipt.product_name = product->title;
+                    receipt.volume_liters = order.order_volume;
+                    receipt.price_per_liter = order.order_price;
+                    receipt.transaction_id = 0;  // Будет заполнено в ArkaimLogic
+                    receipt.is_refund = false;
+                    
+                    Message msg;
+                    msg.source = HTTP_LAYER;
+                    msg.type = PRINT_DEBIT_RECEIPT;
+                    msg.resource_id = order.id;
+                    msg.payload = serializeReceiptData(receipt);
+                    
+                    core.sendToLogicLayer(PIPE_LAYER, msg);
+                }
+            }
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_CREATE_NEW_ORDER_BUTTON) {
             DwinCommands::sendPageToDwin(core, getStartPage());
             // TODO
@@ -250,6 +284,32 @@ namespace bridge {
             Dispenser *dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+            
+            // Печать чека возврата при отмене транзакции
+            if (!m_current_dispenser_id.empty() && m_orders.count(m_current_dispenser_id) > 0) {
+                auto& order = m_orders[m_current_dispenser_id];
+                Product* product = utility::getProductById(m_products, order.product_id);
+                
+                if (product) {
+                    ReceiptData receipt;
+                    receipt.address = m_settings.gas_station.standalone_address;
+                    receipt.card_number = "";  // Будет заполнено в ArkaimLogic
+                    receipt.product_name = product->title;
+                    receipt.volume_liters = order.volume;
+                    receipt.ordered_volume_liters = order.order_volume;
+                    receipt.price_per_liter = order.order_price;
+                    receipt.transaction_id = 0;  // Будет заполнено в ArkaimLogic
+                    receipt.is_refund = true;
+                    
+                    Message refund_msg;
+                    refund_msg.source = HTTP_LAYER;
+                    refund_msg.type = PRINT_REFUND_RECEIPT;
+                    refund_msg.resource_id = order.id;
+                    refund_msg.payload = serializeReceiptData(receipt);
+                    
+                    core.sendToLogicLayer(PIPE_LAYER, refund_msg);
+                }
+            }
             // setCurrentFuelingVolume(core, dispenser->order.volume);
         } else if (message.type == USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON) {
             DwinCommands::sendPageToDwin(core, getStartPage());
@@ -295,11 +355,28 @@ namespace bridge {
                     product_name = !product->title.empty() ? product->title : product->id;
                 }
 
+                if (m_itp_logger) {
+                    m_itp_logger->trace(1, "HttpLogic", "Finishing fuel reception for tanker: ", tanker->id, 
+                                       " level gauge: ", level_gauge->id, " document: ", m_reception_document_number);
+                }
+
+                // Создаем временный объект LevelGauge с начальными данными
+                LevelGauge initial_gauge(level_gauge->id);
+                initial_gauge.upper_level = m_reception_initial_state.upper_level;
+                initial_gauge.lower_level = m_reception_initial_state.lower_level;
+                initial_gauge.upper_volume = m_reception_initial_state.upper_volume;
+                initial_gauge.lower_volume = m_reception_initial_state.lower_volume;
+                initial_gauge.total_volume = m_reception_initial_state.total_volume;
+                initial_gauge.filling = m_reception_initial_state.filling;
+                initial_gauge.density = m_reception_initial_state.density;
+                initial_gauge.weight = m_reception_initial_state.weight;
+
+
                 std::string receipt = utility::createSecondReceiptFromLevelGauge(
                     product_name,
                     *tanker,
                     *level_gauge,
-                    m_reception_initial_level_gauge,
+                    initial_gauge,
                     m_reception_document_number,
                     m_reception_start_time,
                     utility::getCurrentTimeString()
@@ -313,7 +390,6 @@ namespace bridge {
                 core.sendToLogicLayer(PIPE_LAYER, print_message);
             }
         }
-
         m_reception_active = false;
         m_reception_level_gauge_id.clear();
         m_reception_document_number.clear();
@@ -344,8 +420,15 @@ namespace bridge {
             product_name = !product->title.empty() ? product->title : product->id;
         }
 
-        // Сохраняем начальное состояние уровнемера и время начала приемки для вывода их в чек окончания
-        m_reception_initial_level_gauge = level_gauge;
+        // Сохраняем начальное состояние уровнемера и время начала приемки
+        m_reception_initial_state.upper_level = level_gauge.upper_level;
+        m_reception_initial_state.lower_level = level_gauge.lower_level;
+        m_reception_initial_state.upper_volume = level_gauge.upper_volume;
+        m_reception_initial_state.lower_volume = level_gauge.lower_volume;
+        m_reception_initial_state.total_volume = level_gauge.total_volume;
+        m_reception_initial_state.filling = level_gauge.filling;
+        m_reception_initial_state.density = level_gauge.density;
+        m_reception_initial_state.weight = level_gauge.weight;
         m_reception_start_time = utility::getCurrentTimeString();
 
         std::string receipt = utility::createFirstReceiptFromLevelGauge(
@@ -742,6 +825,11 @@ namespace bridge {
 
         std::string json_string = json_object.dump();
 
+        if (m_itp_logger) {
+            m_itp_logger->trace(1, "HttpLogic", "Creating order for dispenser: ", m_current_dispenser_id, 
+                               " volume: ", value, " price: ", price);
+        }
+
         Message request;
         request.resource_id = m_current_dispenser_id;
         request.type = CREATE_ORDER;
@@ -1115,6 +1203,32 @@ namespace bridge {
 
                 if (status == ORDER_INTERRUPTED) {
                     DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
+                    
+                    // Печать чека возврата при прерывании заказа
+                    Product* product = utility::getProductById(m_products, order.product_id);
+                    if (product) {
+                        double actual_volume = utility::formatDecimalValue(fact_volume_value, fact_volume_decimal) != "0" 
+                            ? std::stod(utility::formatDecimalValue(fact_volume_value, fact_volume_decimal))
+                            : order.volume;
+                        
+                        ReceiptData receipt;
+                        receipt.address = m_settings.gas_station.standalone_address;
+                        receipt.card_number = "";  // Будет заполнено в ArkaimLogic
+                        receipt.product_name = product->title;
+                        receipt.volume_liters = actual_volume;
+                        receipt.ordered_volume_liters = order.order_volume;
+                        receipt.price_per_liter = order.order_price;
+                        receipt.transaction_id = 0;  // Будет заполнено в ArkaimLogic
+                        receipt.is_refund = true;
+                        
+                        Message refund_msg;
+                        refund_msg.source = HTTP_LAYER;
+                        refund_msg.type = PRINT_REFUND_RECEIPT;
+                        refund_msg.resource_id = order.id;
+                        refund_msg.payload = serializeReceiptData(receipt);
+                        
+                        core.sendToLogicLayer(PIPE_LAYER, refund_msg);
+                    }
                 }
 
                 core.sendToLogicLayer(PIPE_LAYER, msg);

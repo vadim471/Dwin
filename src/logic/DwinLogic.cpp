@@ -49,11 +49,17 @@ namespace bridge {
 
         if (vp == m_settings.dwin.vp_chosen_order_volume) {
             LOG_UART_INFO << "Order volume chosen";
+            if (m_itp_logger) {
+                m_itp_logger->trace(1, "DwinLogic", "Order volume chosen");
+            }
             handleCreateOrder(message, core);
         }
 
         if (vp == m_settings.dwin.vp_button_get_balance) {
             LOG_UART_INFO << "Get balance button pressed";
+            if (m_itp_logger) {
+                m_itp_logger->trace(1, "DwinLogic", "Get balance button pressed");
+            }
             handleGetCardBalance(core);
         }
 
@@ -68,6 +74,9 @@ namespace bridge {
         }
 
         if (vp == m_settings.dwin.vp_button_choose_reception_fuel) {
+            if (m_itp_logger) {
+                m_itp_logger->trace(1, "DwinLogic", "Reception fuel button pressed");
+            }
             handleTouchReceptionTanker(core);
         }
 
@@ -134,6 +143,9 @@ namespace bridge {
         }
 
         if (vp == m_settings.dwin.vp_button_finish_reception_fuel) {
+            if (m_itp_logger) {
+                m_itp_logger->trace(1, "DwinLogic", "Finish reception fuel button pressed");
+            }
             handleFinishReceptionFuel(core);
         }
     }

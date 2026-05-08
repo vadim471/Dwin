@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <ios>
 #include <string>
+#include <ctime>
 #include "bridge/core/types.hpp"
 #include <algorithm>
 
@@ -301,7 +302,7 @@ namespace bridge {
         std::tm* local_time = std::localtime(&now);
 
         char buffer[32];
-        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d  %H:%M:%S", local_time);
+        std::strftime(buffer, sizeof(buffer), "%Y.%m.%d %H:%M:%S", local_time);
 
         return std::string(buffer);
     }
@@ -497,6 +498,16 @@ namespace bridge {
         return str;
     }
 
+    double utility::calculateFuelLiters(const std::string& before,
+                           const std::string& after)
+    {
+        double beforeValue = std::stod(before);
+        double afterValue  = std::stod(after);
+
+        // 1 м3 = 1000 литров
+        return (afterValue - beforeValue) * 1000.0;
+    }
+
     std::string utility::createReceiptFromTransaction(
         uint64_t transaction_id,
         const std::string& product_id,
@@ -567,7 +578,7 @@ namespace bridge {
 
         receipt << "Номер накладной" << "\n" << document_number << "\n";
 
-        receipt << "Фактически принято" << "\n" << document_number << "\n";
+        receipt << "Фактически принято" << "\n" << calculateFuelLiters(level_gauge_initial.total_volume, level_gauge_current.total_volume) << "\n";
 
         receipt << "Начало приема топлива" << "\n" << time_beginning << "\n";
 
@@ -641,13 +652,7 @@ namespace bridge {
         } else if (!tanker.product_id.empty()) {
             receipt << "Топливо ID" << "\n" << tanker.product_id << "\n";
         }
-        // if (!document_number.empty()) {
-        //     receipt << "Накладная" << document_number << "\n";
-        // }
-        // receipt << "Резервуар ID: " << tanker.id << "\n";
-        // if (!tanker.title.empty()) {
-        //     receipt << "Резервуар: " << tanker.title << "\n";
-        // }
+
         receipt << "Уровнемер" << "\n" << level_gauge.id << "\n";
 
         receipt << "Уровень основного поплавка" << "\n" << level_gauge.upper_level << " (м)\n";
@@ -667,6 +672,77 @@ namespace bridge {
         receipt << "Плотность" << "\n" << level_gauge.density << " (кг/м3)\n";
 
         receipt << "Заполнение" << "\n" << level_gauge.filling << " (%)\n";
+
+        receipt << "========================================\n";
+
+        return receipt.str();
+    }
+
+    std::string utility::createDebitReceipt(
+        const std::string& address,
+        const std::string& card_number,
+        const std::string& product_name,
+        double volume_liters,
+        double price_per_liter,
+        uint64_t transaction_id
+    ) {
+        std::stringstream receipt;
+
+        receipt << "========================================\n";
+        receipt << "              ЧЕК ДЕБЕТА\n";
+        receipt << "========================================\n\n";
+
+        receipt << "АДРЕС:\n" << address << "\n\n";
+
+        receipt << "Номер карты: " << card_number << "\n";
+        receipt << "Операция: ДЕБЕТ\n\n";
+
+        receipt << "Продукт: " << product_name << "\n";
+        receipt << "Количество литров: " << std::fixed << std::setprecision(2) << volume_liters << " л.\n";
+        receipt << "Цена за литр: " << std::fixed << std::setprecision(2) << price_per_liter << " руб.\n";
+        receipt << "Номер транзакции: " << transaction_id << "\n\n";
+
+        time_t now = std::time(nullptr);
+        char time_buf[64];
+        strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&now));
+        receipt << "ДАТА: " << time_buf << "\n\n";
+
+        receipt << "========================================\n";
+
+        return receipt.str();
+    }
+
+    std::string utility::createRefundReceipt(
+        const std::string& address,
+        const std::string& card_number,
+        const std::string& product_name,
+        double ordered_volume_liters,
+        double actual_volume_liters,
+        double price_per_liter,
+        uint64_t transaction_id
+    ) {
+        std::stringstream receipt;
+
+        double refund_volume = ordered_volume_liters - actual_volume_liters;
+
+        receipt << "========================================\n";
+        receipt << "             ЧЕК ВОЗВРАТА\n";
+        receipt << "========================================\n\n";
+
+        receipt << "АДРЕС:\n" << address << "\n\n";
+
+        receipt << "Номер карты: " << card_number << "\n";
+        receipt << "Операция: ВОЗВРАТ\n\n";
+
+        receipt << "Продукт: " << product_name << "\n";
+        receipt << "Количество литров: " << std::fixed << std::setprecision(2) << refund_volume << " л.\n";
+        receipt << "Цена за литр: " << std::fixed << std::setprecision(2) << price_per_liter << " руб.\n";
+        receipt << "Номер транзакции: " << transaction_id << "\n\n";
+
+        time_t now = std::time(nullptr);
+        char time_buf[64];
+        strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&now));
+        receipt << "ДАТА: " << time_buf << "\n\n";
 
         receipt << "========================================\n";
 
