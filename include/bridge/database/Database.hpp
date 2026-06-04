@@ -16,32 +16,23 @@ public:
     Database(const Database&) = delete;
     Database& operator=(const Database&) = delete;
 
-    // Разрешить перемещение
     Database(Database&& other) noexcept;
     Database& operator=(Database&& other) noexcept;
 
-    // Выполнить SQL запрос без возврата данных
     void execute(const std::string& sql);
 
-    // Подготовить statement
     sqlite3_stmt* prepare(const std::string& sql);
 
-    // Завершить statement
     void finalize(sqlite3_stmt* stmt);
 
-    // Начать транзакцию
     void beginTransaction();
 
-    // Зафиксировать транзакцию
     void commit();
 
-    // Откатить транзакцию
     void rollback();
 
-    // Получить последний ID вставленной записи
     int64_t getLastInsertId() const;
 
-    // Проверить существование таблицы
     bool tableExists(const std::string& tableName);
 
 private:

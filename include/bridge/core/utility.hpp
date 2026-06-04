@@ -22,6 +22,25 @@ namespace bridge {
         static bool parseBoolFromJson(const json& node);
         static double parseDoubleFromJson(const std::string& value_str, int exponent);
 
+        // Возвращает строку формата 2026-05-08T12:14:06 из секунд от 1 Января 1970.
+        static std::string getTimeStringForBos(uint64_t time);
+
+        // Для парсинга чека. Из баланса извлекает сокращения сут. мес. и тд.
+        static std::string formatLimitType(const std::string& type);
+
+        // Возвращает баланс карты от процессинга optima-pc.
+        static ParsedReceipt parseTerminalBalanceReceipt(const std::string& receipt_text);
+
+        // Возвращает receipt для BOS. Использовать и для обычного чека.
+        static std::string getFormattedReceiptForBos(const std::string& address,
+        const std::string& card_number,
+        const std::string& operation,
+        const std::string& product_name,
+        double volume_liters,
+        double price_per_liter,
+        uint64_t transaction_id,
+        uint64_t receipt_time);
+
         // Возвращает icon id dwin соответствующее статусу.
         static int getIconForStatus(const std::string& status, const Settings& s);
 
@@ -33,6 +52,12 @@ namespace bridge {
 
         // Возвращает Dispenser из std::vector по string id.
         static Dispenser* getDispenserById(std::vector<Dispenser>& dispensers, const std::string& id);
+
+        // Возвращает строку из структуры
+        //  {
+        //    "value": "289630",
+        //    "exponent": 3
+        //  }
         static std::string getFormattedStringFromJson(std::string valueStr, int exponent);
 
         // Извлекает первое встреченное число из строки. Минус не переваривает.
@@ -45,10 +70,13 @@ namespace bridge {
         static Product* getProductById(std::vector<Product>& products, const std::string& id);
 
         // Возвращает LevelGauge из std::vector по string id.
-        static LevelGauge *getLevelGaugeById(std::vector<LevelGauge> &gauges, const std::string &id);
+        static LevelGauge* getLevelGaugeById(std::vector<LevelGauge> &gauges, const std::string &id);
 
         // Возвращает Tanker из std::vector по id привязанного LevelGauge.
         static const Tanker* getTankerByLevelGaugeId(const std::vector<Tanker>& tankers, const std::string& gauge_id);
+
+        // Возвращает LevelGauge из std::vector по product id.
+        static std::string getLevelGaugeIdByProductId(const std::vector<Tanker>& tankers, const std::string& product_id);
 
         // Возвращает std::string для вывода времени в Footer.
         static const std::string getCurrentTimeString();
@@ -112,29 +140,37 @@ namespace bridge {
             const std::string& document_number,
             const std::string& time_beginning,
             const std::string& time_ending
-            );
+        );
 
         // Создает чек дебета при начале заправки
         static std::string createDebitReceipt(
             const std::string& address,
             const std::string& card_number,
             const std::string& product_name,
-            double volume_liters,
+            std::string& wallet_type,
+            double refund_volume,
             double price_per_liter,
-            uint64_t transaction_id
+            uint64_t transaction_id,
+
+            std::string* balance_before,
+            std::string* balance_after,
+            std::string* limit_info
         );
 
-        // Создает чек возврата при прерывании/отмене заказа
+        // Создает чек возврата при прерывании/отмене заказа.
         static std::string createRefundReceipt(
             const std::string& address,
             const std::string& card_number,
             const std::string& product_name,
-            double ordered_volume_liters,
-            double actual_volume_liters,
-            double price_per_liter,
-            uint64_t transaction_id
+            std::string& wallet_type,
+            double refund_volume,
+
+            std::string* balance_before,
+            std::string* balance_after,
+            std::string* limit_info
         );
 
+        // Считает количество литров при возврате.
         static double calculateFuelLiters(const std::string& before,
                            const std::string& after);
     };

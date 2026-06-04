@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "bridge/logic/HttpLogic.hpp"
+#include "bridge/logic/PrimeLogic.hpp"
 
 //MessageLayer.cpp
 namespace bridge {
@@ -29,7 +29,7 @@ namespace bridge {
         m_channels[channel_name] = {transport, parser};
 
         transport->setReceiveHandler(
-            [this, channel_name, parser](const RawData &raw_data, const std::string & /*unused_src*/) {
+            [this, channel_name, parser](const RawData &raw_data) {
                 auto message = parser->parse(raw_data, channel_name);
 
                 if (!message.empty()) {

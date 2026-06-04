@@ -45,6 +45,9 @@ struct TransactionData {
     std::string secureDataHash;
     std::string secureDataHashSalt;
     
+    // Флаг отправки на сервер
+    bool sent_to_server = false;
+    
     // Метка времени создания записи
     std::string createdAt;
 };
@@ -65,6 +68,10 @@ public:
     
     // Получить транзакции по RRN
     std::vector<TransactionData> getByRRN(const std::string& rrn);
+
+    std::vector<TransactionData> getUnsent();
+
+    void markAsSent(int64_t id);
 
     void update(const TransactionData& transaction);
 

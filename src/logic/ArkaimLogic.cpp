@@ -68,7 +68,8 @@ namespace bridge {
             }
 
             tryProcessPendingPayment();
-        } else if (msg.type == PAY_CONFIRM) {
+        }
+        else if (msg.type == PAY_CONFIRM) {
             handleConfirm(msg);
         } else if (msg.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
             handleCancel(msg);
@@ -198,7 +199,7 @@ namespace bridge {
                     if (itp::root::handler_proxy_t *proxy =
                             this->node_.create_handler_proxy(address, itp::CL2_CMD_ALL_STATUS_CHANGED)) {
                         proxy->connect(ABIND(onDeviceStatus, _1, address, type), this);
-                    }
+                            }
                 }
             }
 
@@ -213,7 +214,7 @@ namespace bridge {
                                   itp::tools::get_device_name(dev_type),
                                   (itp::cl2_command_t) cmd))) {
                         this->node_.create_handler_proxy(addr, cmd);
-                    }
+                                  }
                 }
             };
 
@@ -226,7 +227,7 @@ namespace bridge {
                         this->node_.create_handler_proxy(address, itp::CL2_CMD_CRD_CARD_DETECTED)) {
                     proxy->connect(ABIND(onCardDetected, _1), this);
                     std::cout << "[ArkaimLogic] Listening for card on device addr=" << (int) address << std::endl;
-                }
+                        }
             }
 
             if (api & itp::CL2_API_PINPAD) {
@@ -239,7 +240,7 @@ namespace bridge {
                         this->node_.create_handler_proxy(address, itp::CL2_CMD_PIN_COMPLETE)) {
                     proxy->connect(ABIND(onPinReady, _1), this);
                     std::cout << "[ArkaimLogic] Listening for PIN on device addr=" << (int) address << std::endl;
-                }
+                        }
 
                 m_pinpad_address = address;
                 m_has_pinpad = true;
@@ -293,7 +294,6 @@ namespace bridge {
         std::cout << "[ArkaimLogic] Device status: addr=" << (int) address
                 << " status=0x" << std::hex << dev_status << std::dec << std::endl;
     }
-
 
     void ArkaimLogic::onCardDetected(itp::frame &event) {
         event.prepare_to_read();
@@ -375,7 +375,7 @@ namespace bridge {
         msg.source = PIPE_LAYER;
         msg.type = PAY_CARD_RESOLVED;
 
-        m_core->sendToLogicLayer(HTTP_LAYER, msg);
+        m_core->sendToLogicLayer(PRIME_HTTP_LAYER, msg);
 
         tryProcessPendingPayment();
     }
@@ -426,7 +426,7 @@ namespace bridge {
                                             itp::frame &response, std::string order_id) {
         if (error == itp::CL2_ERR_PAY_PIN_REQUIRED) {
             std::cout << "[ArkaimLogic] PIN required for order " << order_id << std::endl;
-            processPinRequired(response, order_id);
+            processPinRequired(response, &order_id, GET_PAYMENT_TYPE);
             return;
         }
 
@@ -501,6 +501,11 @@ namespace bridge {
         nlohmann::json json;
         json["success"] = success;
         json["transaction_id"] = transaction_id;
+        json["card_number"] = m_card_number;
+        //json["wallet_type"] = m_parsed_additional_card_info.wallet_type;
+        //json["balance"] = m_parsed_additional_card_info.balance_before;
+        //json["limit"] = m_parsed_additional_card_info.limit_info;
+        
         json["message"] = message;
 
         std::string body = json.dump();
@@ -511,7 +516,7 @@ namespace bridge {
         msg.resource_id = order_id;
         msg.payload.assign(body.begin(), body.end());
 
-        m_core->sendToLogicLayer(HTTP_LAYER, msg);
+        m_core->sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void ArkaimLogic::handleConfirm(const Message &msg) {
@@ -530,19 +535,6 @@ namespace bridge {
 
         std::cout << "[ArkaimLogic] Confirming transaction " << transaction_id
                 << " for order " << order_id << std::endl;
-
-        // Создаем чек для печати
-        // std::string receipt = utility::createReceiptFromTransaction(
-        //     transaction_id,
-        //     payment.product_id,
-        //     payment.price_value, payment.price_decimal,
-        //     payment.volume_value, payment.volume_decimal,
-        //     payment.amount_value, payment.amount_decimal,
-        //     payment.fact_volume_value, payment.fact_volume_decimal,
-        //     payment.fact_amount_value, payment.fact_amount_decimal,
-        //     payment.not_complete != 0,
-        //     m_pending.transaction_time
-        // );
 
         itp::frame::uptr request = boost::make_unique<itp::frame>(itp::CL2_CMD_PAY_CONFIRM);
         request->write_value(m_reader_address);
@@ -565,12 +557,12 @@ namespace bridge {
         request->write_value(payment.fact_amount_decimal);
 
         std::string captured_order_id = order_id;
-        std::string captured_receipt = "receipt";
+
         itp_error_code_t errc = this->node_.push_request(
             std::move(request),
             m_pay_address,
-            [this, captured_order_id, captured_receipt](itp::root &, uint16_t err, itp::frame &resp) {
-                this->onConfirmResponse(err, resp, captured_order_id, captured_receipt);
+            [this, captured_order_id](itp::root &, uint16_t err, itp::frame &resp) {
+                this->onConfirmResponse(err, resp, captured_order_id);
             }
         );
 
@@ -636,45 +628,26 @@ namespace bridge {
     }
 
     void ArkaimLogic::onConfirmResponse(uint16_t error, itp::frame &response,
-                                        std::string order_id, std::string receipt) {
+                                        std::string order_id) {
         if (error) {
             std::cerr << "[ArkaimLogic] Confirm error=" << error
                     << " for order " << order_id << std::endl;
         } else {
             std::cout << "[ArkaimLogic] Confirm SUCCESS for order " << order_id << std::endl;
 
-            // Печать чека транзакции отключена - печатается только чек дебета в начале
-            // и чек возврата при прерывании
-            // if (m_has_printer && !receipt.empty()) {
-            //     std::cout << "[ArkaimLogic] Printing receipt for confirmed transaction" << std::endl;
-            //     m_printer->printText(receipt, [this](bool success, const std::string& error) {
-            //         if (success) {
-            //             std::cout << "[ArkaimLogic] Receipt printed successfully" << std::endl;
-            //             m_printer->cutPaper(true, [](bool cut_success, const std::string& cut_error) {
-            //                 if (cut_success) {
-            //                     std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
-            //                 } else {
-            //                     std::cerr << "[ArkaimLogic] Failed to cut paper: " << cut_error << std::endl;
-            //                 }
-            //             });
-            //         } else {
-            //             std::cerr << "[ArkaimLogic] Failed to print receipt: " << error << std::endl;
-            //         }
-            //     });
-            // }
-
             if (m_core) {
                 Message msg;
                 msg.source = PIPE_LAYER;
                 msg.type = PAY_CONFIRM_RESPONSE_SUCCESS;
                 msg.resource_id = order_id;
-                m_core->sendToLogicLayer(HTTP_LAYER, msg);
+                m_core->sendToLogicLayer(PRIME_HTTP_LAYER, msg);
             }
         }
 
         m_card_resolved = false;
         m_card_number.clear();
         m_card_data.clear();
+        //m_parsed_additional_card_info = {};
         m_pin_data.clear();
         m_pending.active = false;
         m_order_transactions.erase(order_id);
@@ -695,13 +668,14 @@ namespace bridge {
             msg.type = PAY_CANCEL_RESPONSE_SUCCESS;
             msg.resource_id = order_id;
             m_core->sendToLogicLayer(UART_LAYER, msg);
-            m_core->sendToLogicLayer(HTTP_LAYER, msg);
+            m_core->sendToLogicLayer(PRIME_HTTP_LAYER, msg);
         }
 
 
         m_card_resolved = false;
         m_card_number.clear();
         m_card_data.clear();
+        //m_parsed_additional_card_info = {};
         m_pin_data.clear();
         m_pending.active = false;
         m_order_transactions.erase(order_id);
@@ -713,35 +687,44 @@ namespace bridge {
         
         if (m_waiting_pin_for_balance) {
             m_waiting_pin_for_balance = false;
-            sendGetBalance("fuel", 0, 0);
+            sendGetBalance("ai92", 0, 0);
         } else {
             m_waiting_pin = false;
             tryProcessPendingPayment();
         }
     }
 
-    void ArkaimLogic::processPinRequired(itp::frame &response, const std::string &order_id) {
+    void ArkaimLogic::processPinRequired(itp::frame &response, const std::string* order_id,
+        const std::string &type_pin_required) {
+
         itp_error_code_t errc;
         uint8_t type;
 
         std::tie(type, errc) = response.read_value<uint8_t>();
         if (errc) {
             std::cerr << "[ArkaimLogic] Failed to read PIN type" << std::endl;
-            sendPaymentResponse(order_id, false, 0, "PIN type read error");
-            m_pending.active = false;
+            if (type_pin_required == GET_BALANCE_TYPE) {
+                sendGetBalanceResponse("PIN type read error", false);
+            } else if (type_pin_required == GET_PAYMENT_TYPE) {
+                sendPaymentResponse(*order_id, false, 0, "PIN type read error");
+                m_pending.active = false;
+            }
             return;
         }
 
         m_pin_type = type;
-        m_waiting_pin = true;
 
         std::cout << "[ArkaimLogic] PIN required, type=" << (int) type << std::endl;
 
         if (!m_has_pinpad) {
             std::cerr << "[ArkaimLogic] No pinpad available" << std::endl;
-            sendPaymentResponse(order_id, false, 0, NO_PINPAD);
-            //m_pending.active = false;
-            //m_waiting_pin = false;
+            if (type_pin_required == GET_BALANCE_TYPE) {
+                m_waiting_pin_for_balance = true;
+                sendGetBalanceResponse(NO_PINPAD, false);
+            } else if (type_pin_required == GET_PAYMENT_TYPE) {
+                m_waiting_pin = true;
+                sendPaymentResponse(*order_id, false, 0, NO_PINPAD);
+            }
             return;
         }
 
@@ -762,9 +745,10 @@ namespace bridge {
 
         if (errc) {
             std::cerr << "[ArkaimLogic] Failed to request PIN, error=" << errc << std::endl;
-            sendPaymentResponse(order_id, false, 0, "PIN request error");
+            sendPaymentResponse(*order_id, false, 0, "PIN request error");
             m_pending.active = false;
             m_waiting_pin = false;
+            m_waiting_pin_for_balance = false;
         }
     }
 
@@ -849,17 +833,17 @@ namespace bridge {
             receipt.transaction_id = it->second;
         }
 
-        std::string receipt_text = utility::createDebitReceipt(
-            receipt.address,
-            receipt.card_number,
-            receipt.product_name,
-            receipt.volume_liters,
-            receipt.price_per_liter,
-            receipt.transaction_id
-        );
+        // std::string receipt_text = utility::createDebitReceipt(
+        //     receipt.address,
+        //     receipt.card_number,
+        //     receipt.product_name,
+        //     receipt.volume_liters,
+        //     receipt.price_per_liter,
+        //     receipt.transaction_id
+        // );
 
         std::cout << "[ArkaimLogic] Printing debit receipt for order " << msg.resource_id << std::endl;
-        handlePrintReceipt(receipt_text);
+        //handlePrintReceipt(receipt_text);
     }
 
     void ArkaimLogic::handlePrintRefundReceipt(const Message& msg) {
@@ -883,18 +867,18 @@ namespace bridge {
             receipt.transaction_id = it->second;
         }
 
-        std::string receipt_text = utility::createRefundReceipt(
-            receipt.address,
-            receipt.card_number,
-            receipt.product_name,
-            receipt.ordered_volume_liters,
-            receipt.volume_liters,
-            receipt.price_per_liter,
-            receipt.transaction_id
-        );
+        // std::string receipt_text = utility::createRefundReceipt(
+        //     receipt.address,
+        //     receipt.card_number,
+        //     receipt.product_name,
+        //     receipt.ordered_volume_liters,
+        //     receipt.volume_liters,
+        //     receipt.price_per_liter,
+        //     receipt.transaction_id
+        // );
 
         std::cout << "[ArkaimLogic] Printing refund receipt for order " << msg.resource_id << std::endl;
-        handlePrintReceipt(receipt_text);
+        //handlePrintReceipt(receipt_text);
     }
 
     void ArkaimLogic::handleGetBalance(const Message &msg) {
@@ -940,52 +924,27 @@ namespace bridge {
         }
     }
 
+    void ArkaimLogic::sendGetBalanceResponse(const std::string &message , bool success) {
+        if (!m_core) return;
+
+        nlohmann::json json;
+        json["success"] = success;
+        json["message"] = message;
+
+        std::string body = json.dump();
+
+        Message message_get_balance;
+        message_get_balance.source = PIPE_LAYER;
+        message_get_balance.type = ON_GET_BALANCE_RESPONSE;
+        message_get_balance.payload.assign(body.begin(), body.end());
+
+        m_core->sendToLogicLayer(PRIME_HTTP_LAYER, message_get_balance);
+    }
+
     void ArkaimLogic::onGetBalanceResponse(uint16_t error, itp::frame &response) {
         if (error == itp::CL2_ERR_PAY_PIN_REQUIRED) {
             std::cout << "[ArkaimLogic] PIN required for balance request" << std::endl;
-            
-            itp_error_code_t errc;
-            uint8_t type;
-
-            std::tie(type, errc) = response.read_value<uint8_t>();
-            if (errc) {
-                std::cerr << "[ArkaimLogic] Failed to read PIN type for balance" << std::endl;
-                return;
-            }
-
-            m_pin_type = type;
-            m_waiting_pin = true;
-            m_waiting_pin_for_balance = true;
-
-            std::cout << "[ArkaimLogic] PIN required for balance, type=" << (int)type << std::endl;
-
-            if (!m_has_pinpad) {
-                std::cerr << "[ArkaimLogic] No pinpad available for balance request" << std::endl;
-                DwinCommands::sendPageToDwin(*m_core, 14);
-                m_waiting_pin_for_balance = false;
-                return;
-            }
-
-            uint16_t pin_cmd = (type == itp::CL2_PIN_TYPE_PLAIN)
-                             ? itp::CL2_CMD_PIN_GET_PLAIN
-                             : itp::CL2_CMD_PIN_GET_DUKPT;
-
-            itp::frame::uptr request(new itp::frame(pin_cmd));
-            errc = request->write_value<uint16_t>(30);
-
-            if (!errc) {
-                errc = this->node_.push_request(
-                    std::move(request),
-                    m_pinpad_address,
-                    ABIND(onPinRequest, _2, _3)
-                );
-            }
-
-            if (errc) {
-                std::cerr << "[ArkaimLogic] Failed to request PIN for balance, error=" << errc << std::endl;
-                m_waiting_pin = false;
-                m_waiting_pin_for_balance = false;
-            }
+            processPinRequired(response, nullptr, GET_BALANCE_TYPE);
             return;
         }
 
@@ -1015,31 +974,24 @@ namespace bridge {
         std::cout << "[ArkaimLogic] Balance response: code=" << (int) code
                 << " message=\"" << message << "\"" << std::endl;
 
+        //m_parsed_additional_card_info = utility::parseTerminalBalanceReceipt(receipt);
+        
         if (code == itp::CL2_PAY_ERR_NONE) {
             std::cout << "[ArkaimLogic] Balance request SUCCESS" << std::endl;
             std::cout << "[ArkaimLogic] Receipt:\n" << receipt << std::endl;
 
-            // Печатаем чек с балансом
-            if (m_has_printer && !receipt.empty()) {
-                m_printer->printText(receipt, [this](bool success, const std::string &error) {
-                    if (success) {
-                        std::cout << "[ArkaimLogic] Balance receipt printed" << std::endl;
-                        m_printer->cutPaper(true, [](bool cut_success, const std::string &cut_error) {
-                            if (cut_success) {
-                                std::cout << "[ArkaimLogic] Paper cut successfully" << std::endl;
-                            }
-                        });
-                    } else {
-                        std::cerr << "[ArkaimLogic] Failed to print balance receipt: " << error << std::endl;
-                    }
-                });
-            }
-        } else {
+            sendGetBalanceResponse(receipt, true);
+        } else if (code == itp::CL2_PAY_ERR_INVALID_PIN) {
+            std::cerr << "[ArkaimLogic] Transaction FAILED, Incorrect PIN" << (int) code
+                    << " msg=\"" << message << "\"" << std::endl;
+            sendGetBalanceResponse(INCORECT_PINCODE, false);
+        }
+        else {
             std::cerr << "[ArkaimLogic] Balance request FAILED, code=" << (int) code
                     << " msg=\"" << message << "\"" << std::endl;
         }
-    }
 
+    }
 } // namespace bridge
 
 #undef ABIND

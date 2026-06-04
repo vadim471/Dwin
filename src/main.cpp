@@ -8,8 +8,8 @@
 #include <iostream>
 
 #include "bridge/logic/DwinLogic.hpp"
-#include "bridge/logic/HttpLogic.hpp"
-#include "bridge/parser/HttpParser.hpp"
+#include "bridge/logic/PrimeLogic.hpp"
+#include "bridge/parser/PrimeParser.hpp"
 #include "bridge/transport/HttpTransport.hpp"
 #include "bridge/transport/ArkaimTransport.hpp"
 #include "bridge/parser/ArkaimParser.hpp"
@@ -19,11 +19,17 @@
 #include "bridge/database/Database.hpp"
 #include "bridge/database/Transaction.hpp"
 #include "bridge/database/MetrologicalRecord.hpp"
+#include "bridge/database/BosRepository.hpp"
+#include <Poco/Net/SSLManager.h>
 
 #include <itp/named_pipe.hpp>
 #include <itp/logger.hpp>
 
 #include "bridge/core/Settings.hpp"
+#include "bridge/httpAuth/BasicAuthenticator.hpp"
+#include "bridge/httpAuth/DigestAuthenticator.hpp"
+#include "bridge/logic/BosLogic.hpp"
+#include "bridge/parser/BosParser.hpp"
 
 using namespace bridge;
 
@@ -38,22 +44,17 @@ void sendTextToVp(MessageLayer& core, uint16_t vp, const std::string& text) {
     Message msg;
     msg.type = DWIN_MESSAGE_TYPE_WRITE_VP;
 
-    // 1. Кладем адрес VP (2 байта: старший, затем младший)
     msg.payload.push_back((vp >> 8) & 0xFF);
     msg.payload.push_back(vp & 0xFF);
 
-    // 2. Записываем сам текст
     for (char c : text) {
         msg.payload.push_back(static_cast<uint8_t>(c));
     }
 
-    // 3. Добиваем нулем до четного числа байт в payload.
-    // Если этого не сделать, DWIN может "проглотить" или исказить последний символ.
     if (msg.payload.size() % 2 != 0) {
         msg.payload.push_back(0x00);
     }
 
-    // 4. Отправляем в UART
     core.sendTo(UART_LAYER, msg);
 }
 
@@ -62,15 +63,18 @@ int main() {
     try {
         initLogger("logs");
         
-        LOG_SYSTEM_INFO << "=== Application started ===";
+        LOG_SYSTEM_INFO << "Application started";
+        Poco::Net::initializeSSL();
 
-        auto db = std::make_shared<Database>("application.db");
+        // INIT DB
+        auto db = std::make_shared<Database>("Standalone.db");
         auto transactionRepo = std::make_shared<TransactionRepository>(db);
         auto metrologicalRepo = std::make_shared<MetrologicalRecordRepository>(db);
-        
-        // Создаем таблицы, если они не существуют
+        auto bosRepo = std::make_shared<BosRepository>(db);
+
         transactionRepo->createTable();
         metrologicalRepo->createTable();
+        bosRepo->createTable();
         
         LOG_SYSTEM_INFO << "Database initialized successfully";
         
@@ -81,64 +85,68 @@ int main() {
         Settings cfg = Settings::load(CONFIG);
         LOG_SYSTEM_INFO << "Configuration loaded successfully";
 
-        auto dwin_trans = std::make_shared<SerialTransport>(ios, 115200, "/dev/ttyUSB0");
+        auto dwin_trans = std::make_shared<SerialTransport>(ios, cfg);
         auto dwin_pars  = std::make_shared<DwinParser>();
 
-        auto http_trans = std::make_shared<HttpTransport>("10.9.7.228", 12080, "user", "cloud");
-        auto http_pars  = std::make_shared<HttpParser>(cfg);
+        auto digest_authenticator = std::make_shared<DigestAuthenticator>(cfg);
+        auto basic_authenticator = std::make_shared<BasicAuthenticator>(cfg);
 
-        // Arkaim payment processing integration
-        // Pipe will be opened by ArkaimLogic::startLoop() via entity::open_pipe()
+        auto http_trans_prime = std::make_shared<HttpTransport>(PRIME_HTTP_LAYER, cfg.server_prime.ip, cfg.server_prime.port, false, digest_authenticator);
+        auto http_trans_bos = std::make_shared<HttpTransport>(BOS_HTTP_LAYER, cfg.server_bos.ip, cfg.server_bos.port, true, basic_authenticator);
+
+        auto http_pars_prime = std::make_shared<PrimeParser>();
+        auto http_pars_bos = std::make_shared<BosParser>();
+
+
         auto arkaim_trans = std::make_shared<ArkaimTransport>(itp::named_pipe::uptr());
         auto arkaim_pars  = std::make_shared<ArkaimParser>();
 
         core.registerChannel(UART_LAYER, dwin_trans, dwin_pars);
-        core.registerChannel(HTTP_LAYER, http_trans, http_pars);
+        core.registerChannel(PRIME_HTTP_LAYER, http_trans_prime, http_pars_prime);
+        core.registerChannel(BOS_HTTP_LAYER, http_trans_bos, http_pars_bos);
         core.registerChannel(PIPE_LAYER, arkaim_trans, arkaim_pars);
 
         auto dwin_logic = std::make_shared<DwinLogic>(cfg);
         core.registerLogic(UART_LAYER, dwin_logic);
 
-        auto http_logic = std::make_shared<HttpLogic>(cfg, ios);
-        core.registerLogic(HTTP_LAYER, http_logic);
+        auto http_logic = std::make_shared<PrimeLogic>(cfg, ios);
+        core.registerLogic(PRIME_HTTP_LAYER, http_logic);
+
+        auto bos_logic = std::make_shared<BosLogic>(cfg);
+        core.registerLogic(BOS_HTTP_LAYER, bos_logic);
 
         auto arkaim_logic = std::make_shared<ArkaimLogic>(ios, arkaim_trans);
         core.registerLogic(PIPE_LAYER, arkaim_logic);
 
-        // Создаем ITP Logger для удаленного логирования (кроме ArkaimLogic)
+        // ITP Logger для удаленного логирования (кроме ArkaimLogic)
         auto itp_logger_instance = std::make_shared<itp::logger>();
-        
-        // Инициализируем ITP Logger после старта ArkaimLogic, чтобы использовать его itp::root
-        // Пока оставляем nullptr, инициализация будет после startLoop
-
 
         std::thread ioThread([&ios](){
-            LOG_SYSTEM_INFO << "IO Thread starting...";
+            LOG_SYSTEM_INFO << "IO Thread starting";
             ios.run();
             LOG_SYSTEM_INFO << "IO Thread finished";
         });
 
         std::thread coreThread([&core](){ 
-            LOG_SYSTEM_INFO << "Core Thread starting...";
+            LOG_SYSTEM_INFO << "Core Thread starting";
             core.run(); 
         });
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         bool keepRunning = true;
         Message pageMsg;
-        
-        // Start Arkaim integration
-        LOG_SYSTEM_INFO << "Starting Arkaim payment processing integration...";
+
+        LOG_SYSTEM_INFO << "Starting Arkaim payment processing";
         arkaim_logic->startLoop(core);
-        
-        // Инициализируем ITP Logger для HttpLogic и DwinLogic после старта Arkaim
-        // Используем itp::root из ArkaimLogic для отправки логов на удаленный сервер
+
         itp_logger_instance->start(arkaim_logic->getItpRoot(), true);
         http_logic->setItpLogger(itp_logger_instance);
+        // Устанавливаем BosRepository в HttpLogic
+        //http_logic->setBosRepository(bosRepo);
         dwin_logic->setItpLogger(itp_logger_instance);
         LOG_SYSTEM_INFO << "ITP Logger initialized for HttpLogic and DwinLogic";
         
-        LOG_SYSTEM_INFO << "Starting HTTP logic loop...";
+        LOG_SYSTEM_INFO << "Starting HTTP logic loop";
         http_logic->startLoop(core);
 
 

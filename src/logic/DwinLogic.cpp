@@ -16,6 +16,65 @@ namespace bridge {
         LOG_UART_INFO << "DwinLogic initialized";
     }
 
+    void DwinLogic::setCurrentOrderVolumeOnDisplay(MessageLayer &core, const std::string &value) const {
+        std::string int_part_target_volume, dec_part_target_volume;
+        std::tie(int_part_target_volume, dec_part_target_volume) = utility::splitFloatString(value, 2);
+
+        for (uint16_t vp: m_settings.dwin.vp_current_order_volume_integer_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        int_part_target_volume, m_settings.dwin.text_len_order_integer);
+        }
+
+        for (uint16_t vp: m_settings.dwin.vp_current_order_volume_decimal_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
+        }
+    }
+
+    void DwinLogic::setCurrentOrderAmountOnDisplay(MessageLayer &core, const std::string &value) const {
+        std::string int_part_target_amount, dec_part_target_amount;
+        std::tie(int_part_target_amount, dec_part_target_amount) = utility::splitFloatString(value, 2);
+
+        for (uint16_t vp: m_settings.dwin.vp_current_order_amount_integer_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        int_part_target_amount, m_settings.dwin.text_len_order_integer);
+        }
+
+        for (uint16_t vp: m_settings.dwin.vp_current_order_amount_decimal_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        dec_part_target_amount, m_settings.dwin.text_len_order_decimal);
+        }
+    }
+
+    void DwinLogic::setCurrentFuellingVolume(MessageLayer &core, const std::string &value) {
+        std::string int_part_target_volume, dec_part_target_volume;
+        std::tie(int_part_target_volume, dec_part_target_volume) = utility::splitFloatString(value, 2);
+
+        for (uint16_t vp: m_settings.dwin.vp_current_fuel_volume_integer) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        int_part_target_volume, m_settings.dwin.text_len_order_integer);
+        }
+
+        for (uint16_t vp: m_settings.dwin.vp_current_fuel_volume_decimal) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
+        }
+    }
+
+    void DwinLogic::setCurrentFuellingAmount(MessageLayer &core, const std::string &value) {
+        std::string int_part_target_volume, dec_part_target_volume;
+        std::tie(int_part_target_volume, dec_part_target_volume) = utility::splitFloatString(value, 2);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_current_order_amount_integer,
+                                                        int_part_target_volume, m_settings.dwin.text_len_order_integer);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_current_order_amount_decimal,
+                                                        dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
+    }
 
     void DwinLogic::handle(const Message& message, MessageLayer& core) {
         // Отправить ID и версию один раз при первом сообщении
@@ -32,6 +91,35 @@ namespace bridge {
         else if (message.type == PAY_CONFIRM_RESPONSE_SUCCESS) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
         }
+        else if (message.type == UPDATE_CURRENT_ORDER_AMOUNT) {
+            std::string str(message.payload.begin(), message.payload.end());
+            setCurrentOrderAmountOnDisplay(core, str);
+        }
+        else if (message.type == UPDATE_CURRENT_ORDER_VOLUME) {
+            std::string str(message.payload.begin(), message.payload.end());
+            setCurrentOrderVolumeOnDisplay(core, str);
+        }
+        else if (message.type == UPDATE_CURRENT_FUELLING_VOLUME) {
+            std::string str(message.payload.begin(), message.payload.end());
+            setCurrentFuellingVolume(core, str);
+        } else if (message.type == UPDATE_CURRENT_FUELLING_AMOUNT) {
+            std::string str(message.payload.begin(), message.payload.end());
+            setCurrentFuellingAmount(core, str);
+        } else if (message.type == CLEAR_CURRENT_ORDER_AMOUNT_AND_VOLUME) {
+            clearInputAmountAndVolumeText(core);
+        } else if (message.type == ON_GET_BALANCE_RESPONSE) {
+            handleGetBalanceResponse(message, core);
+        }
+    }
+
+    void DwinLogic::handleGetBalanceResponse(const Message &message, MessageLayer& core) const {
+        std::string receipt = std::string(message.payload.begin(), message.payload.end());
+        ParsedReceipt parsed_receipt = utility::parseTerminalBalanceReceipt(receipt);
+
+        DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
+            m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
+        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_card_balance_number, parsed_receipt.card_number, m_settings.dwin.text_len_card_number);
+        DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
     }
 
     // Обработка нажатий на дисплей.
@@ -134,10 +222,6 @@ namespace bridge {
             handleSelectedTRK(message, core);
         }
 
-        if (vp == m_settings.dwin.vp_back_button_service_menu) {
-
-        }
-
         if (vp == m_settings.dwin.vp_button_cancel_transaction) {
             handleCancelTransaction(message, core);
         }
@@ -155,7 +239,7 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON;
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleGetCardBalance(MessageLayer &core) {
@@ -164,6 +248,7 @@ namespace bridge {
         msg.type = PAY_GET_BALANCE;
 
         core.sendToLogicLayer(PIPE_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleSelectedTRK(const Message &message, MessageLayer &core) {
@@ -174,7 +259,7 @@ namespace bridge {
 
         msg.payload.push_back(static_cast<uint8_t>(value));
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleFuelTypeEditing(MessageLayer& core) {
@@ -182,7 +267,7 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_CHOOSE_FUEL_FOR_EDIT_BUTTON;
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleAmountTRK(const Message &message, MessageLayer &core) {
@@ -194,7 +279,7 @@ namespace bridge {
 
         msg.payload.push_back(static_cast<uint8_t>(value));
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleServiceMenu(const Message &message, MessageLayer &core) {
@@ -212,7 +297,12 @@ namespace bridge {
         } else if (value == 5) {
             msg.type = USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON;
         }
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
+    }
+
+    void DwinLogic::clearInputAmountAndVolumeText(MessageLayer &core) {
+        setCurrentOrderVolumeOnDisplay(core, "0,00");
+        setCurrentOrderAmountOnDisplay(core, "0,00");
     }
 
     void DwinLogic::handleTouchPinPad(const Message &message, MessageLayer& core) {
@@ -287,7 +377,7 @@ namespace bridge {
 
                 msg.payload.assign(d_pinpad_buffer.begin(), d_pinpad_buffer.end());
                 d_pinpad_buffer.clear();
-                core.sendToLogicLayer(HTTP_LAYER, msg);
+                core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
             }
             return;
         }
@@ -330,7 +420,7 @@ namespace bridge {
         msg.payload.push_back(message.payload[3]);
         msg.payload.push_back(message.payload[4]);
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleTouchMultiTRK(MessageLayer &core) {
@@ -338,7 +428,7 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_CHOOSE_MULTI_TRK_BUTTON;
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleTouchTRK(const Message &message, MessageLayer& core) {
@@ -350,7 +440,7 @@ namespace bridge {
 
         msg.payload.push_back(static_cast<uint8_t>(key_value));
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleCancelTransaction(const Message &message, MessageLayer& core) {
@@ -359,7 +449,7 @@ namespace bridge {
         msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
 
         core.sendToLogicLayer(PIPE_LAYER, msg);
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleBasicTouch(const Message &message, MessageLayer &core) {
@@ -386,11 +476,17 @@ namespace bridge {
             msg.type = USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON;
         }
 
+        // Кнопка отмены входа в сервисное меню. Необходимо для корректного отображения конфигурации ТРК (моно дуо мульти).
         if (key_value == 5) {
             DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_text_pinpad_service_code,
               "", m_settings.dwin.text_len_trk_id);
             d_pinpad_buffer.clear();
             msg.type = USER_TOUCH_BASIC_TOUCH_DECLINE_ENTER_SERVICE_CODE_BUTTON;
+        }
+
+        // Кнопка отмены транзакции при вводе пин-кода. Кейс - приложили карту, создали заказ, нажали с пин-кода назад.
+        if (key_value == 6) {
+            msg.type = USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN;
         }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.
@@ -413,7 +509,7 @@ namespace bridge {
             msg.type = USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
         }
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handlePaginationButton(const Message &message, MessageLayer& core, const std::string message_type) {
@@ -426,7 +522,7 @@ namespace bridge {
         int direction = (value == 0x0001) ? 1 : -1;
         msg.payload.push_back(static_cast<uint8_t>(direction));
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::handleTouchReceptionTanker(MessageLayer& core) {
@@ -434,7 +530,7 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;
 
-        core.sendToLogicLayer(HTTP_LAYER, msg);
+        core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
     void DwinLogic::sendStandaloneIdAndVersion(MessageLayer& core) {
@@ -455,5 +551,19 @@ namespace bridge {
         }
 
         LOG_UART_INFO << "Standalone ID: " << standalone_id << ", Version: " << APP_VERSION;
+    }
+
+    void DwinLogic::setStandaloneIdAndVersion(MessageLayer &core) const {
+        const std::string &standalone_id = m_settings.gas_station.standalone_id;
+
+        for (uint16_t vp: m_settings.dwin.vp_text_standalone_id_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, standalone_id, m_settings.dwin.text_len_standalone_id);
+        }
+
+        for (uint16_t vp: m_settings.dwin.vp_text_standalone_version_pages) {
+            if (vp == 0) continue;
+            DwinCommands::sendTextToDwin(core, vp, APP_VERSION, m_settings.dwin.text_len_standalone_version);
+        }
     }
 }

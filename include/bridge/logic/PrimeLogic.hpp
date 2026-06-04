@@ -6,6 +6,7 @@
 #include <functional>
 #include <mutex>
 #include <queue>
+#include <set>
 #include <unordered_set>
 
 #include <boost/asio/deadline_timer.hpp>
@@ -17,13 +18,16 @@
 #include "bridge/core/Settings.hpp"
 #include <itp/logger.hpp>
 
+#include "bridge/bos/SalesData.hpp"
+
+
 //HttpLogic.hpp
 namespace bridge {
     using json = nlohmann::json;
 
-    class HttpLogic : public std::enable_shared_from_this<HttpLogic>, public ILogicHandler {
+    class PrimeLogic : public std::enable_shared_from_this<PrimeLogic>, public ILogicHandler {
     public:
-        HttpLogic(const Settings& settings, boost::asio::io_service& io_service);
+        PrimeLogic(const Settings& settings, boost::asio::io_service& io_service);
 
         void startLoop(MessageLayer& core);
         void handle(const Message& msg, MessageLayer& core) override;
@@ -38,13 +42,17 @@ namespace bridge {
         // Инициализация ITP Logger
         void setItpLogger(itp::logger::ptr logger) { m_itp_logger = logger; }
 
+        // Установка репозитория Bos для записи raw JSON
+        // void setBosRepository(std::shared_ptr<BosRepository> repo) { m_bos_repo = repo; }
+
+
     private:
         void processEvent(const json& jArray, MessageLayer& core);
 
         // Для первой загрузки. Узнать количество ТРК и их статусы.
         void processDevices(const json& jArray, MessageLayer& core);
 
-        void processParameters(const json& jArray, std::string url);
+        void processParameters(const json& jArray, std::string url, MessageLayer& core);
 
         // Парсинг состояния одной ТРК.
         void processDispenserStatus(const json& jArray, MessageLayer& core, const std::string& url);
@@ -81,6 +89,13 @@ namespace bridge {
         // Дейстивия после завершения заказа выбранной ТРК.
         void processChosenDispenserComplete(MessageLayer &core);
 
+        // Для завершения заказа. Каждый луп проверяется, есть ли в списке ТРК с
+        // завершенным заказом, чтобы оновить последние значения и отправить актуальную информацию.
+        void processOrderFinalization(const std::string& device_id, MessageLayer& core);
+
+        // Печать чека Дебета
+        void printDebetReceipt(MessageLayer& core);
+
         // Хендлер обработки статуса выбранной ТРК.
         void handleDispenserStatus(const json& jArray, MessageLayer& core);
 
@@ -92,13 +107,13 @@ namespace bridge {
         void handleDispenserOrderCreated(const json& jArray, MessageLayer& core);
 
         // Хендлер обработки изменения заказа на ТРК. ТРК выбрана.
-        void handleDispenserOrderStatus(const json& jArray, MessageLayer& core) ;
+        void handleDispenserOrderStatus(const json& jArray, MessageLayer& core, std::set<std::string>& completed_dispensers) ;
 
         // Хендлер обработки статуса невыбранной ТРК. Для страницы выбора ТРК.
         void handleRandomDispenserStatus(const json& event, MessageLayer& core);
 
         // Хендлер обработки статуса заказа невыбранной ТРК. Изменить состояние заказа в Map.
-        void handleRandomDispenserOrderStatus(const json& event, MessageLayer& core);
+        void handleRandomDispenserOrderStatus(const json& event);
 
         // Хендлер обработки выбора количества ТРК.
         void handleAmountTRK(int amount);
@@ -119,10 +134,10 @@ namespace bridge {
         void handleCreateOrder(MessageLayer& core, uint16_t volume, int exponent);
 
         // Хендлер обработки нажатий кнопки Basic Touch.
-        void handleBasicTouch(MessageLayer& core) const;
+        void handleBasicTouch(MessageLayer& core);
 
         // Хендлер обработки выбора ТРК для использования на АЗС.
-        void handleAcceptSelectedTRK(MessageLayer& core);
+        void handleAcceptSelectedTRK();
 
         // Хендлер нажатия на ТРК выбора ТРК для использования на АЗС. Конфигурация настройки, какие ТРК использовать.
         void handleTrkSelectionToggle(MessageLayer& core, uint8_t slot_index);
@@ -143,16 +158,28 @@ namespace bridge {
         void handleEnterFuelVolumeOrderPinPad(MessageLayer& core, std::string buffer);
 
         // Хендлер обработки распознания карты.
-        void handleCardResolved(const Message& message, MessageLayer& core);
+        void handleCardResolved(MessageLayer& core);
 
         // Хендлер обработки завершения заказа PAY_CONFIRM.
         void handlePayConfirmOrder(MessageLayer& core);
 
+        // Хендлер обработки баланса карты.
+        void handleGetBalanceCard(MessageLayer& core, const Message& message);
+
         // Хендлер обработки ввода неверного ПИН-кода.
         void handleIncorrectPinCode(MessageLayer& core, const std::string& order_id, const std::string& dispenser_id);
 
+        // Хендлер обработки отмены транзакции сразу после оплаты
+        void handleImmediatlyCancelTransaction(MessageLayer& core);
+
         // Хендлер обработки завершения приема топлива сервисного меню.
         void handleFinishReceptionFuel(MessageLayer& core);
+
+        // Хендлер обработки нажатия создания нового заказа при проливе предыдущего.
+        void handleCreateNewOrder(MessageLayer& core);
+
+        // Хендлер обработки отмены ввода пин-кода после создания заказа.
+        void handleCancelEnterPin(MessageLayer& core);
 
         // Хендлер обработки начала заполнения танкера
         void processReceptionTanker(MessageLayer& core);
@@ -169,26 +196,15 @@ namespace bridge {
         // Заполнение типа топлива на всех страницах интерфейса (Текст).
         void setProductTextOnDisplay(MessageLayer& core, const std::string& text) const;
 
-        // Вывод текущей суммы заказа на всех страницах интерфейса.
-        void setCurrentOrderAmountOnDisplay(MessageLayer& core, const std::string &value) const;
-
-        // Вывод текущего объема заказа на всех страницах интерфейса
-        void setCurrentOrderVolumeOnDisplay(MessageLayer& core, const std::string &value) const;
-
         // Вывод текущего времени в Footer.
         void setFooterDateTime(MessageLayer& core);
 
         // Вывод текущей цены топлива выбранного вида топлива на всех страницах.
         void setFuelTypePriceOnDisplay(MessageLayer& core, const std::string &value) const;
 
-        void setStandaloneIdAndVersion(MessageLayer& core);
-
         // Заполнение значений параметров уровнемера.
         void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge, const std::string &type);
         void setReceptionLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge);
-
-        // Заполнение текущего объема пролива
-        void setCurrentFuelingVolume(MessageLayer& core, const std::string &value);
 
         static void sendTaskToHttp(MessageLayer& core, std::string id);
 
@@ -278,29 +294,22 @@ namespace bridge {
 
         std::vector<std::string> m_selected_dispensers; // ID выбранных ТРК в правильном порядке
 
-        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая все созданные заказы на ААЗС. Dispenser_id - DatabaseOrder. Order хранится ЗАКАЗА, не фактический.
+        std::unordered_map<std::string, DatabaseOrder> m_orders; // Мапа, хранящая созданные заказы на ААЗС. Dispenser_id - DatabaseOrder. Order хранится ЗАКАЗА, не фактический.
+
+        std::unordered_map<std::string, SalesData> m_pending_info_sales; // Мапа для хранения промежуточного состояния SalesData. Пока запрос пройдет все стадии, информация будет наполняться.
+
+        std::unordered_map<std::string, std::queue<PendingGaugeTask>> m_pending_level_gauge_orders; // Мапа, хранящая заказы, ждущие информацию об уровнемере
 
         // Для пагинации ТРК.
         int m_current_dispenser_index = 0;
 
         // Для пагинации уровнемеров.
         int m_current_level_gauge_index = 0;
+
         bool m_reception_active = false;
         std::string m_reception_level_gauge_id;
         std::string m_reception_document_number;
-        
-        // Начальное состояние уровнемера при приемке топлива
-        struct InitialLevelGaugeState {
-            std::string upper_level;
-            std::string lower_level;
-            std::string upper_volume;
-            std::string lower_volume;
-            std::string total_volume;
-            std::string filling;
-            std::string density;
-            std::string weight;
-        } m_reception_initial_state;
-        
+        LevelGauge m_reception_initial_state;
         std::string m_reception_start_time;
 
         // Для пагинации типов топлива при выборе для редактирования.
@@ -310,7 +319,7 @@ namespace bridge {
         int m_amount_trk_png = 1;
 
         // Флаг, указывающий, нажали ли на создание нового заказа во время пролива. Чтобы после завершения предыдущего не перелистывало на страницу завершения заказа.
-        bool m_new_order_created = false;
+        //bool m_new_order_created = false;
 
         // Id созданного заказа на Prime.
         int m_current_order_task = 0;
@@ -335,7 +344,10 @@ namespace bridge {
 
         // ITP Logger для удаленного логирования
         itp::logger::ptr m_itp_logger;
+
+        ParsedReceipt m_parsed_card_balance;
+        bool m_waiting_balance_response; // флаг ожидания баланса карты для вывода его на экран дисплея.
     };
 
-    using HttpLogicPtr = std::shared_ptr<HttpLogic>;
+    using HttpLogicPtr = std::shared_ptr<PrimeLogic>;
 }

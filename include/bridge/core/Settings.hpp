@@ -19,14 +19,21 @@ struct Settings {
         unsigned int baud_rate;
     } serial;
 
-    struct Server {
+    struct ServerPrime {
         std::string ip;
         int port; // socket
         std::string port_str; // asio
         std::string host; // http header
         std::string username; //digest user
         std::string password; //digest pass
-    } server;
+    } server_prime;
+
+    struct ServerBos {
+        std::string ip;
+        int port;
+        std::string username; //basic user
+        std::string password; //basic pass
+    } server_bos;
 
     struct Dwin {
 
@@ -159,9 +166,6 @@ struct Settings {
     // --- Buttons ---
         uint16_t vp_button_cancel_transaction;
 
-    // --- Page Service Menu ---
-        uint16_t vp_back_button_service_menu;
-
     // --- Page Choose Fuel Type For Editing (second variable) ---
         uint16_t vp_icon_fuel_type_for_editing;
         uint16_t vp_fuel_price_for_editing_integer;
@@ -173,6 +177,12 @@ struct Settings {
         uint16_t vp_trk_id_first_page;
         std::vector<uint16_t> vp_trk_id_pages;
         uint16_t vp_trk_id_second_page;
+
+    // --- Page Balance Card ---
+        uint16_t vp_card_balance_number;
+        uint16_t vp_card_balance_thousands;
+        uint16_t vp_card_balance_hundreds;
+        uint16_t vp_card_balance_tens;
 
     // --- Fuel type picture ---
         std::vector<uint16_t> vp_product_id_pages;
@@ -245,7 +255,7 @@ struct Settings {
         int page_service_menu;
         int page_level_gauges_info;
         int page_level_gauge_info;
-        int page_select_fuel_type_edit;
+        int page_card_balance;
         int page_set_fuel_price;
         int page_set_amount_trk;
         int page_set_fuel_price_another_variable;
@@ -288,6 +298,7 @@ struct Settings {
         int text_len_fuel_integer;
         int text_len_standalone_version;
         int text_len_standalone_id;
+        int text_len_card_number;
 
     // --- Audio ID ---
         int audio_id_welcome_nozzle_up;
@@ -299,6 +310,9 @@ struct Settings {
         int sleep_after_chosen_trk_page;
         int waiting_dispenser_fuelling;
         int show_incorrect_pin_page;
+        int show_return_money_process_end;
+        int waiting_cancel_success;
+        bool enable_card_balance_into_receipt;
     } business_logic;
 
     struct APIDispenser {
@@ -342,12 +356,17 @@ struct Settings {
             s.serial.port = j["serial"]["port"];
             s.serial.baud_rate = j["serial"]["baud_rate"];
 
-            s.server.ip = j["server"]["ip"];
-            s.server.port = j["server"]["port"];
-            s.server.port_str = std::to_string(s.server.port);
-            s.server.host = j["server"]["host_header"];
-            s.server.username = j["server"]["username"];
-            s.server.password = j["server"]["password"];
+            s.server_prime.ip = j["server_prime"]["ip"];
+            s.server_prime.port = j["server_prime"]["port"];
+            s.server_prime.port_str = std::to_string(s.server_prime.port);
+            s.server_prime.host = j["server_prime"]["host_header"];
+            s.server_prime.username = j["server_prime"]["username"];
+            s.server_prime.password = j["server_prime"]["password"];
+
+            s.server_bos.ip = j["server_bos"]["ip"];
+            s.server_bos.port = j["server_bos"]["port"];
+            s.server_bos.username = j["server_bos"]["username"];
+            s.server_bos.password = j["server_bos"]["password"];
 
             // s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_second_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_third_page"));
@@ -362,6 +381,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twelvth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fourteenth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_eighteenth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfourth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyfifth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentysixth_page"));
@@ -743,9 +763,12 @@ struct Settings {
             LOAD_HEX(vp_trk_id_first_page);
             LOAD_HEX(vp_trk_id_second_page);
 
-            LOAD_HEX(vp_button_cancel_transaction);
+            LOAD_HEX(vp_card_balance_number);
+            LOAD_HEX(vp_card_balance_thousands);
+            LOAD_HEX(vp_card_balance_hundreds);
+            LOAD_HEX(vp_card_balance_tens);
 
-            LOAD_HEX(vp_back_button_service_menu);
+            LOAD_HEX(vp_button_cancel_transaction);
 
             LOAD_HEX(vp_icon_fuel_type_for_editing);
             LOAD_HEX(vp_fuel_price_for_editing_integer);
@@ -770,7 +793,7 @@ struct Settings {
             s.dwin.page_service_menu                   = j["dwin"]["page_service_menu"];
             s.dwin.page_level_gauges_info              = j["dwin"]["page_level_gauges_info"];
             s.dwin.page_level_gauge_info               = j["dwin"]["page_level_gauge_info"];
-            s.dwin.page_select_fuel_type_edit          = j["dwin"]["page_select_fuel_type_edit"];
+            s.dwin.page_card_balance                   = j["dwin"]["page_card_balance"];
             s.dwin.page_set_fuel_price                 = j["dwin"]["page_set_fuel_price"];
             s.dwin.page_set_amount_trk                 = j["dwin"]["page_set_amount_trk"];
             s.dwin.page_set_fuel_price_another_variable= j["dwin"]["page_set_fuel_price_another_variable"];
@@ -784,7 +807,7 @@ struct Settings {
             s.dwin.page_select_used_trk                = j["dwin"]["page_select_used_trk"];
             s.dwin.page_return_money_cancel_transaction= j["dwin"]["page_return_money_cancel_transaction"];
             s.dwin.page_error_transaction_failed       = j["dwin"]["page_error_transaction_failed"];
-            s.dwin.page_error_incorrect_pincode       = j["dwin"]["page_error_incorrect_pincode"];
+            s.dwin.page_error_incorrect_pincode        = j["dwin"]["page_error_incorrect_pincode"];
 
             s.dwin.audio_id_welcome_nozzle_up          = j["dwin"]["audio_id_welcome_nozzle_up"];
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];
@@ -810,6 +833,7 @@ struct Settings {
             s.dwin.text_len_order_integer = j["dwin"]["text_len_order_integer"];
             s.dwin.text_len_fuel_type = j["dwin"]["text_len_fuel_type"];
             s.dwin.text_len_standalone_version = j["dwin"]["text_len_standalone_version"];
+            s.dwin.text_len_card_number = j["dwin"]["text_len_card_number"];
             s.dwin.text_len_standalone_id = j["dwin"]["text_len_standalone_id"];
             s.dwin.text_len_percent_progress_bar = j["dwin"]["text_len_percent_progress_bar"];
             s.dwin.text_len_date_time_footer = j["dwin"]["text_len_date_time_footer"];
@@ -820,9 +844,12 @@ struct Settings {
             s.dwin.icon_dispenser_nozzle_up = j["dwin"]["icon_dispenser_nozzle_up"];
             s.dwin.icon_dispenser_order_end = j["dwin"]["icon_dispenser_order_end"];
 
-            s.business_logic.sleep_after_chosen_trk_page = j["business"]["sleep_after_chosen_trk_page"];
-            s.business_logic.waiting_dispenser_fuelling  = j["business"]["waiting_dispenser_fuelling"];
-            s.business_logic.show_incorrect_pin_page        = j["business"]["show_incorrect_pin_page"];
+            s.business_logic.sleep_after_chosen_trk_page     = j["business"]["sleep_after_chosen_trk_page"];
+            s.business_logic.waiting_dispenser_fuelling      = j["business"]["waiting_dispenser_fuelling"];
+            s.business_logic.show_incorrect_pin_page         = j["business"]["show_incorrect_pin_page"];
+            s.business_logic.show_return_money_process_end   = j["business"]["show_return_money_process_end"];
+            s.business_logic.waiting_cancel_success          = j["business"]["waiting_cancel_success"];
+            s.business_logic.enable_card_balance_into_receipt= j["business"]["enable_card_balance_into_receipt"];
 
             s.APIDispenser.authorize = j["api.dispenser_command"]["authorize"];
             s.APIDispenser.close = j["api.dispenser_command"]["close"];
@@ -870,9 +897,9 @@ struct Settings {
             // default
             s.serial.port = "/dev/ttyUSB0";
             s.serial.baud_rate = 115200;
-            s.server.ip = "127.0.0.1";
-            s.server.port_str = "80";
-            s.server.host = "localhost";
+            s.server_prime.ip = "127.0.0.1";
+            s.server_prime.port_str = "80";
+            s.server_prime.host = "localhost";
         }
         return s;
     }

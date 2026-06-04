@@ -4,11 +4,12 @@
 
 #include <string>
 #include "bridge/core/constant.hpp"
-#include "bridge/version.hpp"
+#include "../../config/version.hpp.in"
 
 namespace bridge {
 
-    const std::string HTTP_LAYER = "HTTP";
+    const std::string PRIME_HTTP_LAYER = "HTTP_PRIME";
+    const std::string BOS_HTTP_LAYER = "HTTP_BOS";
     const std::string UART_LAYER = "UART";
     const std::string PIPE_LAYER = "PIPE";
     const std::string HTTP_UNAUTHORIZED = "HTTP/1.1 401";
@@ -42,6 +43,12 @@ namespace bridge {
     const std::string GET_TASKS = "get_tasks";
     const std::string GET_TANKERS = "get_takers";
 
+    const std::string SET_SALES = "set_sales";
+    const std::string SET_METROLOGICAL = "set_metrological";
+
+    const std::string BOS_MESSAGE_SET_SALES = "BOS_REPORT_SALES";
+    const std::string BOS_MESSAGE_SET_METROLOGICAL = "BOS_REPORT_LEVEL_FUEL";
+
     const std::string USER_TOUCH_VOLUME_BUTTON = "VOLUME_BUTTON";
     const std::string USER_TOUCH_PAGINATION_TRK_BUTTON = "PAGINATION_TRK";
     const std::string USER_TOUCH_PAGINATION_FUEL_BUTTON = "PAGINATION_FUEL";
@@ -72,6 +79,7 @@ namespace bridge {
     const std::string USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON = "ACCEPT_RECEPTION_FUEL";
     const std::string USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON = "FINISH_RECEPTION_FUEL";
     const std::string USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON = "CHOOSE_RECEPTION_LEVEL_GAUGE";
+    const std::string USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN = "CANCEL_TRANSACTION_AFTER_CANCEL_PIN";
 
     // const std::string AUDIO_PLAY_WELCOME = "PLAY_WELCOME";
     // const std::string AUDIO_PLAY_FUELLING_END = "PLAY_FUELLING_END";
@@ -135,4 +143,14 @@ namespace bridge {
     const int VP_TEXT_STEP = 4;
 
     const int POCO_ERROR = 599;
+
+    const std::string UPDATE_CURRENT_ORDER_AMOUNT = "UPDATE_AMOUNT_DISPLAY";
+    const std::string UPDATE_CURRENT_ORDER_VOLUME = "UPDATE_VOLUME_DISPLAY";
+    const std::string UPDATE_CURRENT_FUELLING_VOLUME = "UPDATE_FUELLING_VOLUME_DISPLAY";
+    const std::string UPDATE_CURRENT_FUELLING_AMOUNT = "UPDATE_FUELLING_AMOUNT_DISPLAY";
+    const std::string CLEAR_CURRENT_ORDER_AMOUNT_AND_VOLUME = "CLEAR_AMOUNT_AND_VOLUME_DISPLAY";
+    const std::string ON_GET_BALANCE_RESPONSE = "GET_BALANCE_RESPONSE";
+
+    const std::string GET_BALANCE_TYPE = "GET_BALANCE";
+    const std::string GET_PAYMENT_TYPE = "GET_PAYMENT";
 }

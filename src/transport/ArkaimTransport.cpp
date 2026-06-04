@@ -20,7 +20,7 @@ void ArkaimTransport::stop() {
 }
 
 void ArkaimTransport::send(const RawData& /*raw_data*/) {
-    // Not used directly — ArkaimLogic communicates via itp::entity/node
+    // Not used, ArkaimLogic communicates by itp::entity/node
 }
 
 void ArkaimTransport::setReceiveHandler(ReceiveHandler handler) {
@@ -40,4 +40,4 @@ bool ArkaimTransport::isConnected() const {
     return m_running.load() && m_endpoint_taken;
 }
 
-} // namespace bridge
+}

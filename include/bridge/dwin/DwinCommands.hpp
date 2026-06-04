@@ -4,6 +4,7 @@
 #pragma once
 #include "bridge/core/MessageLayer.hpp"
 #include "bridge/core/constant.hpp"
+#include "bridge/core/utility.hpp"
 #include <vector>
 
 namespace bridge {
@@ -124,6 +125,46 @@ namespace bridge {
         // Быстрый вывод из спящего режима (100% яркость)
         static void sendWakeUpDwin(MessageLayer &core) {
             sendSetBrightnessToDwin(core, 100);
+        }
+
+        static void sendTriPartFloatToDwin(uint16_t thousands_vp, uint16_t units_vp, uint16_t kopecks_vp,
+                                        MessageLayer &core,
+                                        int thousands_length, int units_length, int kopecks_length,
+                                        const std::string& value) {
+            std::string int_part, kopecks_part;
+
+            std::tie(int_part, kopecks_part) = utility::splitFloatString(value, kopecks_length);
+
+            std::string thousands_part = "";
+            std::string units_part = "0";
+
+
+            bool is_negative = false;
+            if (!int_part.empty() && int_part[0] == '-') {
+                is_negative = true;
+                int_part = int_part.substr(1);
+            }
+
+
+            if (int_part.length() > 3) {
+                units_part = int_part.substr(int_part.length() - 3);
+                thousands_part = int_part.substr(0, int_part.length() - 3);
+            } else {
+                units_part = int_part;
+                thousands_part = "";
+            }
+
+            if (is_negative) {
+                if (!thousands_part.empty()) {
+                    thousands_part = "-" + thousands_part;
+                } else {
+                    units_part = "-" + units_part;
+                }
+            }
+
+            sendRightAlignmentWithPadding(core, thousands_vp, thousands_part, thousands_length);
+            sendRightAlignmentWithPadding(core, units_vp, units_part, units_length);
+            sendRightAlignmentWithPadding(core, kopecks_vp, kopecks_part, kopecks_length);
         }
     };
 }

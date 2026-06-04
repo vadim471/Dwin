@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <ios>
 #include <string>
+#include <regex>
 #include <ctime>
 #include "bridge/core/types.hpp"
 #include <algorithm>
@@ -128,6 +129,9 @@ namespace bridge {
         }
         if (status == DISPENSER_LOCKED) {
             return s.dwin.icon_dispenser_locked;;
+        }
+        if (status == DISPENSER_FUELLING) {
+            return s.dwin.icon_dispenser_fueling;
         }
         return s.dwin.icon_dispenser_idle;
     }
@@ -297,6 +301,135 @@ namespace bridge {
         return nullptr;
     }
 
+    std::string utility::getLevelGaugeIdByProductId(const std::vector<Tanker>& tankers, const std::string& product_id) {
+        for (const auto& tanker : tankers) {
+
+            if (tanker.product_id == product_id) {
+                if (!tanker.level_gauge_ids.empty()) {
+                    return tanker.level_gauge_ids.front();
+                }
+            }
+        }
+        return "";
+    }
+
+    std::string utility::getTimeStringForBos(uint64_t time) {
+        time_t raw_time = static_cast<time_t>(time);
+
+        struct tm* dt = std::gmtime(&raw_time);
+        char buffer[20];
+
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", dt);
+
+        return std::string(buffer);
+    }
+
+    std::string utility::formatLimitType(const std::string& type) {
+        if (type == "суточного") return "сут.";
+        if (type == "месячного") return "мес.";
+        if (type == "недельного") return "нед.";
+        if (type == "годового") return "год.";
+        return type;
+    }
+
+    ParsedReceipt utility::parseTerminalBalanceReceipt(const std::string& receipt_text) {
+        ParsedReceipt data;
+        std::smatch match;
+
+        std::regex walletRegex("Кошелек\\s+([^\\s]+)");
+        if (std::regex_search(receipt_text, match, walletRegex)) {
+            data.wallet_type = match[1].str();
+        }
+
+        std::regex balanceRegex("баланс:\\s*([\\d\\s\\xC2\\xA0,]+)");
+        if (std::regex_search(receipt_text, match, balanceRegex)) {
+            std::string rawBalance = match[1].str();
+
+            rawBalance.erase(std::remove(rawBalance.begin(), rawBalance.end(), ' '), rawBalance.end());
+
+            size_t pos;
+            while ((pos = rawBalance.find("\xC2\xA0")) != std::string::npos) {
+                rawBalance.erase(pos, 2);
+            }
+
+            std::replace(rawBalance.begin(), rawBalance.end(), ',', '.');
+            data.balance_before = rawBalance;
+        }
+
+        std::regex limitRegex("Остаток\\s+(суточного|месячного|недельного|годового)\\s+лимита\\s*\\.+\\s*([\\d,]+)\\s*([^\\s\\.]+)");
+
+        auto words_begin = std::sregex_iterator(receipt_text.begin(), receipt_text.end(), limitRegex);
+        auto words_end = std::sregex_iterator();
+
+        std::stringstream ss;
+        bool found_any_limit = false;
+
+        for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+            std::smatch match = *i;
+            std::string limitType = match[1].str();
+            std::string valueStr = match[2].str();
+            std::string unitStr = match[3].str();
+
+            std::replace(valueStr.begin(), valueStr.end(), ',', '.');
+            double val = 0.0;
+            try { val = std::stod(valueStr); } catch (...) {}
+
+            if (found_any_limit) ss << "\n";
+
+            ss << "Ост. " << formatLimitType(limitType) << " лимита: "
+               << std::fixed << std::setprecision(2) << val << unitStr;
+
+            found_any_limit = true;
+        }
+
+        if (found_any_limit) {
+            data.limit_info = ss.str();
+        }
+
+        return data;
+    }
+
+    //"             OОО ТОС\n                КАЗС-1\n               г. Мурманск\n\n
+    //Номер карты:  000038\n
+    //Операция:     ДЕБЕТ\n
+    //Продукт:      ДТ\n
+    //Кол-во, лит.: 290.000\n
+    //Кошелек:      ЛИТРОВЫЙ\n
+    //-------------- Баланс, лит. ------------\n
+    //до операции        |  после операции\n
+    //+984855.16         |  +984565.16\n
+    //----------------------------------------\n
+    //Баланс:             984565.16\n
+    //Лимит операции:     0.00 лит.\n
+    //Ост. сут. лимита:   10000.00 лит.\n
+    //Ост. мес. лимита:   0.00 лит.\n\n
+    //Цена за литр : 1.00 руб.\n
+    //Номер чека   : 313760\n
+    //2026-05-05 13:21:19 \n \n \n \n \n \n \n \n \n \n\n-------------------------------\n"
+    std::string utility::getFormattedReceiptForBos(const std::string& address,
+        const std::string& card_number,
+        const std::string& operation,
+        const std::string& product_name,
+        double volume_liters,
+        double price_per_liter,
+        uint64_t transaction_id,
+        uint64_t receipt_time) {
+
+        std::stringstream receipt;
+
+        receipt << "             " << address;
+        receipt << "Номер карты: " << card_number << "\n";
+        receipt << "Операция: " << operation << "\n";
+
+        receipt << "Продукт: " << product_name << "\n";
+        receipt << "Количество литров: " << std::fixed << std::setprecision(2) << volume_liters << " л.\n";
+        receipt << "Цена за литр: " << std::fixed << std::setprecision(2) << price_per_liter << " руб.\n";
+        receipt << "Номер транзакции: " << transaction_id << "\n\n";
+        receipt << "             " << getTimeStringForBos(receipt_time) << "\n \n \n \n \n \n \n \n \n \n\n-------------------------------\n";
+
+        return receipt.str();
+    }
+
     const std::string utility::getCurrentTimeString() {
         std::time_t now = std::time(nullptr);
         std::tm* local_time = std::localtime(&now);
@@ -440,12 +573,9 @@ namespace bridge {
                 j = json::object();
             }
 
-            // Проверяем наличие базовой структуры
             if (!j.contains("gas.station") || !j["gas.station"].is_object()) {
                 j["gas.station"] = json::object();
             }
-
-            // Магия nlohmann::json: он сам превратит вектор С++ в массив JSON ["trk2", "trk1"]
             j["gas.station"]["used_trks"] = selected_trks;
 
             std::ofstream outFile(configPath);
@@ -507,6 +637,8 @@ namespace bridge {
         // 1 м3 = 1000 литров
         return (afterValue - beforeValue) * 1000.0;
     }
+
+    //std::string utility::createReceiptFromBank()
 
     std::string utility::createReceiptFromTransaction(
         uint64_t transaction_id,
@@ -682,32 +814,50 @@ namespace bridge {
         const std::string& address,
         const std::string& card_number,
         const std::string& product_name,
-        double volume_liters,
+        std::string& wallet_type,
+        double refund_volume,
         double price_per_liter,
-        uint64_t transaction_id
+        uint64_t transaction_id,
+
+        std::string* balance_before,
+        std::string* balance_after,
+        std::string* limit_info
     ) {
         std::stringstream receipt;
 
-        receipt << "========================================\n";
-        receipt << "              ЧЕК ДЕБЕТА\n";
-        receipt << "========================================\n\n";
+        // double refund_volume = ordered_volume_liters - actual_volume_liters;
 
-        receipt << "АДРЕС:\n" << address << "\n\n";
+        receipt << address << "\n\n";
 
         receipt << "Номер карты: " << card_number << "\n";
-        receipt << "Операция: ДЕБЕТ\n\n";
+        receipt << "Операция: ВОЗВРАТ\n\n";
 
         receipt << "Продукт: " << product_name << "\n";
-        receipt << "Количество литров: " << std::fixed << std::setprecision(2) << volume_liters << " л.\n";
+        receipt << "Кол-во, лит: " << std::fixed << std::setprecision(2) << refund_volume << "\n";
+        receipt << "Кошелек: " << wallet_type << "\n";
+
+        if (balance_after) {
+            receipt << "--------------" << "Баланс" << "--------------" << "\n";
+            receipt << "до операции | после операции" << "\n";
+
+            receipt << (balance_before ? *balance_before : "N/A") << " | " << *balance_after << "\n\n";
+
+            receipt << "--------------" << "----" << "--------------" << "\n";
+            receipt << "Баланс: " << *balance_after << "\n";
+
+            if (limit_info && !limit_info->empty()) {
+                receipt << *limit_info << "\n";
+            }
+        }
+
         receipt << "Цена за литр: " << std::fixed << std::setprecision(2) << price_per_liter << " руб.\n";
         receipt << "Номер транзакции: " << transaction_id << "\n\n";
 
         time_t now = std::time(nullptr);
         char time_buf[64];
         strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&now));
-        receipt << "ДАТА: " << time_buf << "\n\n";
+        receipt << time_buf << "\n\n";
 
-        receipt << "========================================\n";
 
         return receipt.str();
     }
@@ -716,35 +866,45 @@ namespace bridge {
         const std::string& address,
         const std::string& card_number,
         const std::string& product_name,
-        double ordered_volume_liters,
-        double actual_volume_liters,
-        double price_per_liter,
-        uint64_t transaction_id
+        std::string& wallet_type,
+        double refund_volume,
+
+        std::string* balance_before,
+        std::string* balance_after,
+        std::string* limit_info
     ) {
         std::stringstream receipt;
 
-        double refund_volume = ordered_volume_liters - actual_volume_liters;
+        // double refund_volume = ordered_volume_liters - actual_volume_liters;
 
-        receipt << "========================================\n";
-        receipt << "             ЧЕК ВОЗВРАТА\n";
-        receipt << "========================================\n\n";
-
-        receipt << "АДРЕС:\n" << address << "\n\n";
+        receipt << address << "\n\n";
 
         receipt << "Номер карты: " << card_number << "\n";
         receipt << "Операция: ВОЗВРАТ\n\n";
 
         receipt << "Продукт: " << product_name << "\n";
-        receipt << "Количество литров: " << std::fixed << std::setprecision(2) << refund_volume << " л.\n";
-        receipt << "Цена за литр: " << std::fixed << std::setprecision(2) << price_per_liter << " руб.\n";
-        receipt << "Номер транзакции: " << transaction_id << "\n\n";
+        receipt << "Кол-во, лит: " << std::fixed << std::setprecision(2) << refund_volume << "\n";
+        receipt << "Кошелек: " << wallet_type << "\n";
+
+        if (balance_after) {
+            receipt << "--------------" << "Баланс" << "--------------" << "\n";
+            receipt << "до операции | после операции" << "\n";
+
+            receipt << (balance_before ? *balance_before : "N/A") << " | " << *balance_after << "\n\n";
+
+            receipt << "--------------" << "----" << "--------------" << "\n";
+            receipt << "Баланс: " << *balance_after << "\n";
+
+            if (limit_info && !limit_info->empty()) {
+                receipt << *limit_info << "\n";
+            }
+        }
 
         time_t now = std::time(nullptr);
         char time_buf[64];
         strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&now));
-        receipt << "ДАТА: " << time_buf << "\n\n";
+        receipt << time_buf << "\n\n";
 
-        receipt << "========================================\n";
 
         return receipt.str();
     }

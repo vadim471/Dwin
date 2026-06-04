@@ -5,7 +5,7 @@
       <paths name="Debian9x32 (9fe1a7f2-9619-4162-8559-a9bba88405bb)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/dwin_exmpl" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/vadim/dwin" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-event-trace" />

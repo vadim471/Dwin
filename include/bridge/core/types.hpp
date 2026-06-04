@@ -37,7 +37,6 @@ namespace bridge {
         int code;
         std::string description;
         std::string context;
-
     };
 
     struct Message {
@@ -136,6 +135,7 @@ namespace bridge {
         std::string weight; // Масса (кг).
 
         LevelGauge(const std::string& _id) : id(_id) {}
+        LevelGauge(){}
     };
 
     struct Tanker {
@@ -149,5 +149,31 @@ namespace bridge {
         std::vector<std::string> level_gauge_ids;
 
         Tanker(const std::string& _id) : id(_id) {}
+    };
+
+    struct ApiRoute {
+        std::string method; //GET, POST, PUT
+        std::string url; //"api/v3/device"
+    };
+
+    enum class GaugeTaskType {
+        BEFORE_FUELLING, //ORD_AUTHORIZED
+        AFTER_FUELLING // ORD_INTERRUPTED / ORD_DELIVERED
+    };
+
+    // Структура для заполнения в последствии информации об уровнемерах в другую структуру.
+    struct PendingGaugeTask {
+        std::string order_id;
+        std::string dispenser_id;
+        GaugeTaskType task_type;
+    };
+
+    // Структура для извлечения полезной нагрузки из чека баланса optima-pc.
+    struct ParsedReceipt {
+        std::string card_number;
+        std::string wallet_type; // "Денежный", "Литровый" и т.д.
+        std::string balance_before; // Очищенный баланс: "940934.423"
+        std::string balance_after;
+        std::string limit_info;  // Отформатированный лимит: "Ост. сут. лимита: 10.00л"
     };
 }

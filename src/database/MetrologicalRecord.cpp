@@ -33,7 +33,6 @@ void MetrologicalRecordRepository::createTable() {
     
     db_->execute(sql);
     
-    // Создать индексы для быстрого поиска
     db_->execute("CREATE INDEX IF NOT EXISTS idx_id_tso ON metrological_records(id_tso);");
     db_->execute("CREATE INDEX IF NOT EXISTS idx_fuel_name ON metrological_records(fuel_name);");
     db_->execute("CREATE INDEX IF NOT EXISTS idx_name_pmp ON metrological_records(name_pmp);");

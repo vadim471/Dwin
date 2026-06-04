@@ -6,9 +6,9 @@
 #include <string>
 
 namespace bridge {
-
     // Logic layers
-    extern const std::string HTTP_LAYER;
+    extern const std::string PRIME_HTTP_LAYER;
+    extern const std::string BOS_HTTP_LAYER;
     extern const std::string UART_LAYER;
     extern const std::string PIPE_LAYER;
 
@@ -46,10 +46,20 @@ namespace bridge {
     extern const std::string FUEL_VOLUME_ORDER_TYPE;
     extern const std::string CREATE_ORDER;
 
+    // Type for MESSAGE Struct BOS part
+    extern const std::string BOS_MESSAGE_SET_SALES;
+    extern const std::string BOS_MESSAGE_SET_METROLOGICAL;
+
     //DWIN const
     extern const int FUEL_TYPE_LEN;
     extern const int VP_TEXT_STEP;
     extern const int TRK_ID_LEN;
+
+    extern const std::string UPDATE_CURRENT_ORDER_AMOUNT;
+    extern const std::string UPDATE_CURRENT_ORDER_VOLUME;
+    extern const std::string UPDATE_CURRENT_FUELLING_VOLUME;
+    extern const std::string UPDATE_CURRENT_FUELLING_AMOUNT;
+    extern const std::string CLEAR_CURRENT_ORDER_AMOUNT_AND_VOLUME;
 
     // Const for HTTP Layer message
     extern const std::string HTTP_RESPONSE;
@@ -85,6 +95,7 @@ namespace bridge {
     extern const std::string USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
     extern const std::string USER_TOUCH_FINISH_RECEPTION_FUEL_BUTTON;
     extern const std::string USER_TOUCH_CHOOSE_RECEPTION_LEVEL_GAUGE_BUTTON;
+    extern const std::string USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN;
 
     // HTTP GET
     extern const std::string GET_PRODUCTS;
@@ -94,6 +105,10 @@ namespace bridge {
     extern const std::string GET_EVENTS;
     extern const std::string GET_TASKS;
     extern const std::string GET_TANKERS;
+
+    // BOS POST
+    extern const std::string SET_SALES;
+    extern const std::string SET_METROLOGICAL;
 
     // HTTP POST
     extern const std::string SET_COMMAND;
@@ -142,4 +157,8 @@ namespace bridge {
 
     // Error codes
     extern const int POCO_ERROR;
+
+    extern const std::string ON_GET_BALANCE_RESPONSE;
+    extern const std::string GET_BALANCE_TYPE;
+    extern const std::string GET_PAYMENT_TYPE;
 }

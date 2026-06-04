@@ -15,7 +15,7 @@ namespace bridge {
     // Интерфейс транспорта — абстрагирует UART, WS, HTTP, PIPE
     class ITransport {
     public:
-        using ReceiveHandler = std::function<void(const RawData& raw_data, const std::string& message_source)>; // При регистрации канала определяется функция
+        using ReceiveHandler = std::function<void(const RawData& raw_data)>; // При регистрации канала определяется функция
 
         virtual ~ITransport() = default;
 

@@ -24,7 +24,7 @@ namespace bridge {
             msg.resource_id = trk_id;
             msg.payload.assign(json_string.begin(), json_string.end());
 
-            core.sendTo(HTTP_LAYER, msg);
+            core.sendTo(PRIME_HTTP_LAYER, msg);
         }
     };
 }

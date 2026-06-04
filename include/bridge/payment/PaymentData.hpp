@@ -16,7 +16,6 @@ struct PaymentRequestData {
     uint32_t amount_value = 0;
     uint8_t amount_decimal = 0;
 
-    //std::string dispenser_id = ""; // Необходимо для повторного ввода ПИН-кода. в HttpLogic я достаю из мапы заказов последний по этому айди, чтобы не запрашивать по новой данные заказа.
 
     // Confirm-specific fields (from reference: payment.cpp)
     uint8_t not_complete = 0;       // 0 = full delivery, 1 = partial
@@ -97,6 +96,20 @@ inline Bytes serializeReceiptData(const ReceiptData& receipt) {
     return Bytes(body.begin(), body.end());
 }
 
+inline std::string serializeReceiptDataToString(const ReceiptData& receipt) {
+    nlohmann::json json = {
+        {"address", receipt.address},
+        {"card_number", receipt.card_number},
+        {"product_name", receipt.product_name},
+        {"volume_liters", receipt.volume_liters},
+        {"price_per_liter", receipt.price_per_liter},
+        {"transaction_id", receipt.transaction_id},
+        {"ordered_volume_liters", receipt.ordered_volume_liters},
+        {"is_refund", receipt.is_refund}
+    };
+
+    return json.dump();
+}
 inline bool deserializeReceiptData(const Bytes& payload, ReceiptData& receipt) {
     try {
         const std::string body(payload.begin(), payload.end());
@@ -116,5 +129,4 @@ inline bool deserializeReceiptData(const Bytes& payload, ReceiptData& receipt) {
         return false;
     }
 }
-
 } // namespace bridge

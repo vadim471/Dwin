@@ -65,12 +65,12 @@ private:
     // ---- Confirm / Cancel ----
     void handleConfirm(const Message& msg);
     void handleCancel(const Message& msg);
-    void onConfirmResponse(uint16_t error, itp::frame& response, std::string order_id, std::string receipt);
+    void onConfirmResponse(uint16_t error, itp::frame& response, std::string order_id);
     void onCancelResponse(uint16_t error, itp::frame& response, std::string order_id);
 
     // ---- PIN handling ----
     void handlePinEntered(const Message& msg);
-    void processPinRequired(itp::frame& response, const std::string& order_id);
+    void processPinRequired(itp::frame& response, const std::string* order_id, const std::string &type_pin_required);
     void onPinRequest(uint16_t error, itp::frame& response);
     void onPinReady(itp::frame& event);
 
@@ -86,6 +86,7 @@ private:
     void handleGetBalance(const Message& msg);
     void sendGetBalance(const std::string& product_id, uint32_t price_value, uint8_t price_decimal);
     void onGetBalanceResponse(uint16_t error, itp::frame& response);
+    void sendGetBalanceResponse(const std::string &message , bool success);
 
     MessageLayer* m_core = nullptr;
     boost::asio::io_service& m_ios;
@@ -120,6 +121,9 @@ private:
     std::string m_card_number;
     std::vector<uint8_t> m_card_data;
     int32_t m_card_issuer = 0;
+
+    // ---- Additional card state (from get_balance) ----
+    //ParsedReceipt m_parsed_additional_card_info;
 
     // ---- PIN state ----
     std::vector<uint8_t> m_pin_data;

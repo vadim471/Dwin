@@ -11,18 +11,27 @@
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPDigestCredentials.h>
+#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/SSLManager.h>
 
 #include "bridge/core/constant.hpp"
 
 namespace bridge {
 
-    HttpTransport::HttpTransport(const std::string& host, uint16_t port, const std::string& user, const std::string& pass)
-        : m_host(host), m_port(port), m_user(user), m_pass(pass) {
-        m_session.setHost(host);
-        m_session.setPort(port);
-        m_session.setKeepAlive(true);
-        m_credentials.setUsername(m_user);
-        m_credentials.setPassword(m_pass);
+    HttpTransport::HttpTransport(const std::string& channel_name, const std::string& host,
+                      uint16_t port, bool use_ssl, std::shared_ptr<IHttpAuthenticator> authenticator)
+        : m_channel_name(channel_name), m_host(host), m_port(port), m_authenticator(std::move(authenticator)) {
+
+        if (use_ssl) {
+            Poco::Net::Context::Ptr context = new Poco::Net::Context(
+                Poco::Net::Context::CLIENT_USE, "", "", "",
+                Poco::Net::Context::VERIFY_NONE, 9, false,
+                "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
+            );
+            m_session = std::make_unique<Poco::Net::HTTPSClientSession>(m_host, m_port, context);
+        } else {
+            m_session = std::make_unique<Poco::Net::HTTPClientSession>(m_host, m_port);
+        }
     }
 
     HttpTransport::~HttpTransport() { stop(); }
@@ -109,7 +118,9 @@ namespace bridge {
                           << "Body: " << response_data.body << std::endl;
 
                 if (response_data.status_code == 401 || response_data.status_code == 403) {
-                    m_session_cookie.clear();
+                    if (m_authenticator) {
+                        m_authenticator->reset();
+                    }
                 }
             }
 
@@ -124,12 +135,12 @@ namespace bridge {
                 raw_data.data.push_back('\0');
                 raw_data.data.insert(raw_data.data.end(), response_data.body.begin(), response_data.body.end());
 
-                m_receive_handler(raw_data, HTTP_LAYER);
+                m_receive_handler(raw_data);
             }
 
         } catch (Poco::Exception& ex) {
             std::cerr << "HTTP [POCO] Error: " << ex.displayText() << std::endl;
-            m_session.reset();
+            m_session->reset();
             if (m_receive_handler) {
                 RawData raw_data;
 
@@ -143,70 +154,45 @@ namespace bridge {
                 std::string err_body = "{\"error\": \"" + ex.displayText() + "\"}";
                 raw_data.data.insert(raw_data.data.end(), err_body.begin(), err_body.end());
 
-                m_receive_handler(raw_data, HTTP_LAYER);
+                m_receive_handler(raw_data);
             }
         }
     }
 
-    void HttpTransport::setCookie(const Poco::Net::HTTPResponse& response) {
-        std::vector<Poco::Net::HTTPCookie> cookies;
-        response.getCookies(cookies);
 
-        for (const auto& cookie : cookies) {
-            if (cookie.getName() == "session_id") {
-                m_session_cookie = cookie.getName() + "=" + cookie.getValue();
-            }
-        }
-    }
 
     HttpResponseData HttpTransport::authenticate(Poco::Net::HTTPRequest &request, const std::string &body) {
         using namespace Poco::Net;
 
-        if (!m_session_cookie.empty()) {
-            request.set("Cookie", m_session_cookie);
-        }
-
-        try {
-            m_credentials.updateAuthInfo(request);
-        } catch (std::exception& ex) {
-
+        if (m_authenticator) {
+            m_authenticator->prepareRequest(request);
         }
 
         HTTPResponse response;
         std::stringstream responseStream;
 
         try {
-            std::ostream& os = m_session.sendRequest(request);
+            std::ostream& os = m_session->sendRequest(request);
             if (!body.empty()) os << body;
 
-            std::istream& is = m_session.receiveResponse(response);
+            std::istream& is = m_session->receiveResponse(response);
             Poco::StreamCopier::copyStream(is, responseStream);
         } catch (std::exception& ex) {
-            m_session.reset();
-            std::ostream& os = m_session.sendRequest(request);
+            m_session->reset();
+            std::ostream& os = m_session->sendRequest(request);
             if (!body.empty()) os << body;
 
-            std::istream& is = m_session.receiveResponse(response);
+            std::istream& is = m_session->receiveResponse(response);
             Poco::StreamCopier::copyStream(is, responseStream);
         }
 
-        setCookie(response);
+        if (m_authenticator) {
+            m_authenticator->processResponse(response);
+        }
 
         if (response.getStatus() == HTTPResponse::HTTP_UNAUTHORIZED) {
-
-            m_credentials.authenticate(request, response);
-
-            if (!m_session_cookie.empty()) {
-                request.set("Cookie", m_session_cookie);
-            }
-
-            std::ostream& os = m_session.sendRequest(request);
-            if (!body.empty()) os << body;
-
-            std::istream& is = m_session.receiveResponse(response);
-
             responseStream.str(""); responseStream.clear();
-            Poco::StreamCopier::copyStream(is, responseStream);
+            m_authenticator->handleUnauthorized(*m_session, request, response, body, responseStream);
         }
         return { request.getURI(), response.getStatus(), responseStream.str(), response.getReason() };
     }

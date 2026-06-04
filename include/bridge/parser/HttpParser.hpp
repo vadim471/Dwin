@@ -1,33 +1,23 @@
 //
-// Created by vadim.tissen on 10.12.2025.
+// Created by vadim.tissen on 12.05.2026.
 //
 
 #pragma once
-#include <Poco/Net/HTTPClientSession.h>
+#include <unordered_map>
 
 #include "IMessageParser.hpp"
-#include "bridge/core/Settings.hpp"
-
 
 namespace bridge {
-    struct ApiRoute {
-        std::string method; //GET, POST, PUT
-        std::string url; //"api/v3/device"
-    };
-
     class HttpParser : public IMessageParser {
     public:
-        explicit HttpParser(const Settings& settings);
+        virtual ~HttpParser() = default;
 
-        std::vector<Message> parse(const RawData& input, const std::string& message_source) override;
-
+        std::vector<Message> parse(const RawData& input, const std::string& source) override;
         RawData serialize(const Message& message) override;
+
+    protected:
+        void addRoute(const std::string &type, const std::string &method, const std::string &url);
     private:
-        void addRoute(const std::string& messageType, const std::string& method, const std::string& url);
-
-        std::map<std::string, ApiRoute> m_routes;
-        std::vector<uint8_t> m_buffer;
-        Settings m_settings;
-
+        std::unordered_map<std::string, ApiRoute> m_routes;
     };
 }

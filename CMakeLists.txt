@@ -66,8 +66,8 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
 find_package(Threads REQUIRED)
-find_package(OpenSSL)
-find_package(Poco REQUIRED COMPONENTS Net Crypto Util Foundation)
+find_package(OpenSSL REQUIRED)
+find_package(Poco REQUIRED COMPONENTS Net NetSSL Crypto Util Foundation)
 find_package(SQLite3 REQUIRED)
 
 
@@ -111,6 +111,19 @@ set(ARKAIM_INFRA_SOURCES
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cl2/source/itp/tools.cpp
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/callback.cpp
     ${ARKAIM_INFRASTRUCTURE_DIR}/prime-main/lib/itp/cpp/source/itp/root.cpp
+        include/bridge/httpAuth/IHttpAuthenticator.hpp
+        include/bridge/httpAuth/DigestAuthenticator.hpp
+        include/bridge/httpAuth/BasicAuthenticator.hpp
+        src/httpAuth/BasicAuthenticator.cpp
+        src/httpAuth/DigestAuthenticator.cpp
+        src/parser/BosParser.cpp
+        include/bridge/parser/BosParser.hpp
+        include/bridge/parser/HttpParser.hpp
+        src/parser/HttpParser.cpp
+        include/bridge/logic/BosLogic.hpp
+        src/logic/BosLogic.cpp
+        include/bridge/bos/SalesData.hpp
+        include/bridge/bos/FuelLevelData.hpp
 )
 
 configure_file(
@@ -144,28 +157,37 @@ add_executable(dwin_exmpl src/main.cpp
         # Parser
         include/bridge/parser/IMessageParser.hpp
         include/bridge/parser/DwinParser.hpp
-        include/bridge/parser/HttpParser.hpp
+        include/bridge/parser/PrimeParser.hpp
         include/bridge/parser/ArkaimParser.hpp
         src/parser/DwinParser.cpp
-        src/parser/HttpParser.cpp
+        src/parser/PrimeParser.cpp
         src/parser/ArkaimParser.cpp
+
+        #Auth
+        include/bridge/httpAuth/BasicAuthenticator.hpp
+        include/bridge/httpAuth/DigestAuthenticator.hpp
+        include/bridge/httpAuth/IHttpAuthenticator.hpp
+        src/httpAuth/DigestAuthenticator.cpp
+        src/httpAuth/BasicAuthenticator.cpp
         
         # Logic
         include/bridge/logic/ILogicHandler.hpp
         include/bridge/logic/DwinLogic.hpp
-        include/bridge/logic/HttpLogic.hpp
+        include/bridge/logic/PrimeLogic.hpp
         include/bridge/logic/ArkaimLogic.hpp
         src/logic/DwinLogic.cpp
-        src/logic/HttpLogic.cpp
+        src/logic/PrimeLogic.cpp
         src/logic/ArkaimLogic.cpp
         
         # Database
         include/bridge/database/Database.hpp
         include/bridge/database/Transaction.hpp
         include/bridge/database/MetrologicalRecord.hpp
+        include/bridge/database/BosRepository.hpp
         src/database/Database.cpp
         src/database/Transaction.cpp
         src/database/MetrologicalRecord.cpp
+        src/database/BosRepository.cpp
         
         # DWIN
         include/bridge/dwin/DwinCommands.hpp
@@ -219,6 +241,7 @@ target_link_libraries(dwin_exmpl
         OpenSSL::SSL
         OpenSSL::Crypto
         Poco::Net
+        Poco::NetSSL
         Poco::Crypto
         Poco::Util
         Poco::Foundation

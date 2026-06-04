@@ -7,6 +7,7 @@
 
 #include "bridge/core/constant.hpp"
 #include "bridge/core/Logger.hpp"
+#include "bridge/core/Settings.hpp"
 
 //SerialTransport.cpp
 namespace bridge {
@@ -14,25 +15,22 @@ namespace bridge {
         SerialTransport::stop();
     }
 
-    SerialTransport::SerialTransport(boost::asio::io_service& ios,
-                                     unsigned int baud_rate,
-                                     const std::string& port,
-                                     const std::string& name)
-        : ios(ios)
-          , port(ios)
-          , baud_rate(baud_rate)
-          , name(name)
-          , port_name(port)
-    {
-    }
+    SerialTransport::SerialTransport(boost::asio::io_service& ios, const Settings &settings)
+        :   ios(ios),
+            m_settings(settings),
+            port(ios)
+    {}
 
     void SerialTransport::setReceiveHandler(ReceiveHandler handler) {
-        receive_handler = std::move(handler); // ref ref по левой ссылке, передаю владение объектом другой функции
+        receive_handler = std::move(handler);
     }
 
     void SerialTransport::start() {
         if (running) return;
         running = true;
+        port_name = m_settings.serial.port;
+        baud_rate = m_settings.serial.baud_rate;
+
 
         boost::system::error_code ec;
 
@@ -155,7 +153,7 @@ namespace bridge {
             RawData raw_data;
             raw_data.data.assign(read_buffer.data.begin(), read_buffer.data.begin() + bytes_transferred);
 
-            receive_handler(raw_data, UART_LAYER);
+            receive_handler(raw_data);
         }
         doRead();
     }

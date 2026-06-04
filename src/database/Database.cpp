@@ -36,8 +36,7 @@ void Database::open() {
         LOG_SYSTEM_ERROR << "Failed to open database: " << error;
         throw DatabaseException("Failed to open database: " + error);
     }
-    
-    // Включить поддержку внешних ключей
+
     execute("PRAGMA foreign_keys = ON;");
     
     LOG_SYSTEM_INFO << "Database opened successfully: " << dbPath_;

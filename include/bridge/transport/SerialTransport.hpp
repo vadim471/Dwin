@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 
+#include "bridge/core/Settings.hpp"
 #include "bridge/core/types.hpp"
 
 //SerialTransport.hpp
@@ -15,10 +16,7 @@ namespace bridge {
 
     class SerialTransport : public ITransport {
     public:
-        SerialTransport(boost::asio::io_service& ios,
-                        unsigned int baud_rate = 115200,
-                        const std::string& port = "COM5",
-                        const std::string& name = "UART");
+        SerialTransport(boost::asio::io_service& ios, const Settings &settings);
 
         ~SerialTransport() override;
 
@@ -41,17 +39,14 @@ namespace bridge {
         boost::asio::io_service& ios;
         boost::asio::serial_port port;
         unsigned int baud_rate;
-        std::string name;
         std::string port_name;
+        Settings m_settings;
 
         ReceiveHandler receive_handler;
         std::atomic<bool> running{false};
 
-        //Буффер для сообщений от дисплея
         RawData read_buffer { Bytes(1024) };
 
-
-        //Очередь для отправки
         std::mutex write_serial_mutex;
         std::queue<RawData> write_serial_queue;
     };

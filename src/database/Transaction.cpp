@@ -43,6 +43,8 @@ void TransactionRepository::createTable() {
             secure_data_hash TEXT,
             secure_data_hash_salt TEXT,
             
+            sent_to_server INTEGER DEFAULT 0,
+            
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     )";
@@ -53,6 +55,7 @@ void TransactionRepository::createTable() {
     db_->execute("CREATE INDEX IF NOT EXISTS idx_shift_number ON transactions(shift_number);");
     db_->execute("CREATE INDEX IF NOT EXISTS idx_rrn ON transactions(rrn);");
     db_->execute("CREATE INDEX IF NOT EXISTS idx_created_at ON transactions(created_at);");
+    db_->execute("CREATE INDEX IF NOT EXISTS idx_sent_to_server ON transactions(sent_to_server);");
     
     LOG_SYSTEM_INFO << "Transactions table created/verified";
 }
@@ -68,8 +71,8 @@ int64_t TransactionRepository::insert(const TransactionData& transaction) {
             goods_product_name_utf8, goods_quantity_in_milliliters,
             goods_price_in_kops_by_liter, rrn, auth_code, response_code,
             secure_data, secure_data_initialization_vector,
-            secure_data_hash, secure_data_hash_salt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            secure_data_hash, secure_data_hash_salt, sent_to_server
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     )";
     
     sqlite3_stmt* stmt = db_->prepare(sql);
@@ -103,6 +106,7 @@ int64_t TransactionRepository::insert(const TransactionData& transaction) {
     sqlite3_bind_text(stmt, 24, transaction.secureDataInitializationVector.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 25, transaction.secureDataHash.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 26, transaction.secureDataHashSalt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 27, transaction.sent_to_server ? 1 : 0);
     
     int rc = sqlite3_step(stmt);
     db_->finalize(stmt);
@@ -180,7 +184,9 @@ TransactionData TransactionRepository::mapFromStatement(sqlite3_stmt* stmt) {
     text = sqlite3_column_text(stmt, 26);
     if (text) data.secureDataHashSalt = reinterpret_cast<const char*>(text);
     
-    text = sqlite3_column_text(stmt, 27);
+    data.sent_to_server = sqlite3_column_int(stmt, 27) != 0;
+    
+    text = sqlite3_column_text(stmt, 28);
     if (text) data.createdAt = reinterpret_cast<const char*>(text);
     
     return data;
@@ -338,6 +344,36 @@ int64_t TransactionRepository::count() {
     
     db_->finalize(stmt);
     return count;
+}
+
+std::vector<TransactionData> TransactionRepository::getUnsent() {
+    const char* sql = "SELECT * FROM transactions WHERE sent_to_server = 0 ORDER BY created_at ASC;";
+    sqlite3_stmt* stmt = db_->prepare(sql);
+    
+    std::vector<TransactionData> transactions;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        transactions.push_back(mapFromStatement(stmt));
+    }
+    
+    db_->finalize(stmt);
+    return transactions;
+}
+
+void TransactionRepository::markAsSent(int64_t id) {
+    const char* sql = "UPDATE transactions SET sent_to_server = 1 WHERE id = ?;";
+    sqlite3_stmt* stmt = db_->prepare(sql);
+    
+    sqlite3_bind_int64(stmt, 1, id);
+    
+    int rc = sqlite3_step(stmt);
+    db_->finalize(stmt);
+    
+    if (rc != SQLITE_DONE) {
+        LOG_SYSTEM_ERROR << "Failed to mark transaction as sent";
+        throw DatabaseException("Failed to mark transaction as sent");
+    }
+    
+    LOG_SYSTEM_INFO << "Transaction marked as sent: " << id;
 }
 
 } // namespace bridge
