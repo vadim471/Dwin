@@ -159,8 +159,6 @@ namespace bridge {
         }
     }
 
-
-
     HttpResponseData HttpTransport::authenticate(Poco::Net::HTTPRequest &request, const std::string &body) {
         using namespace Poco::Net;
 

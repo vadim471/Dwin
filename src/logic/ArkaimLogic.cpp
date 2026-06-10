@@ -984,6 +984,7 @@ namespace bridge {
         } else if (code == itp::CL2_PAY_ERR_INVALID_PIN) {
             std::cerr << "[ArkaimLogic] Transaction FAILED, Incorrect PIN" << (int) code
                     << " msg=\"" << message << "\"" << std::endl;
+            m_waiting_pin_for_balance = true;
             sendGetBalanceResponse(INCORECT_PINCODE, false);
         }
         else {

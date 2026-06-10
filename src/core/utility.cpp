@@ -12,6 +12,7 @@
 #include <ctime>
 #include "bridge/core/types.hpp"
 #include <algorithm>
+#include <iconv.h>
 
 namespace bridge {
     std::string utility::bytesToHex(const std::vector<uint8_t> &bytes) {
@@ -336,6 +337,17 @@ namespace bridge {
         ParsedReceipt data;
         std::smatch match;
 
+        std::regex cardRegex("№:\\s*([0-9 ]+)");
+        if (std::regex_search(receipt_text, match, cardRegex)) {
+            std::string cardNum = match[1].str();
+
+            if (!cardNum.empty()) {
+                cardNum.erase(cardNum.find_last_not_of(" ") + 1);
+            }
+
+            data.card_number = cardNum;
+        }
+
         std::regex walletRegex("Кошелек\\s+([^\\s]+)");
         if (std::regex_search(receipt_text, match, walletRegex)) {
             data.wallet_type = match[1].str();
@@ -387,6 +399,39 @@ namespace bridge {
         }
 
         return data;
+    }
+
+
+    std::string utility::getWalletSymbol(const std::string& wallet_type) {
+        if (wallet_type == "Литровый") {
+            return "л.";
+        } else if (wallet_type == "Денежный") {
+            return "р.";
+        }
+        return ""; // По умолчанию или если тип неизвестен
+    }
+
+    std::string utility::convertUtf8ToCp1251(const std::string& utf8_str) {
+        iconv_t cd = iconv_open("CP1251", "UTF-8");
+        if (cd == (iconv_t)-1) {
+            return utf8_str; // Если кодировка не поддерживается ОС, возвращаем как есть
+        }
+
+        size_t in_bytes_left = utf8_str.length();
+        char* in_buf = const_cast<char*>(utf8_str.data());
+
+        // CP1251 занимает максимум 1 байт на символ, поэтому буфера размера UTF-8 хватит с запасом
+        std::vector<char> out_buffer(in_bytes_left + 1, 0);
+        size_t out_bytes_left = out_buffer.size() - 1;
+        char* out_buf = out_buffer.data();
+
+        if (iconv(cd, &in_buf, &in_bytes_left, &out_buf, &out_bytes_left) == (size_t)-1) {
+            iconv_close(cd);
+            return utf8_str; // При ошибке конвертации возвращаем оригинал
+        }
+
+        iconv_close(cd);
+        return std::string(out_buffer.data());
     }
 
     //"             OОО ТОС\n                КАЗС-1\n               г. Мурманск\n\n
@@ -907,6 +952,22 @@ namespace bridge {
 
 
         return receipt.str();
+    }
+
+    std::pair<std::string, std::string> utility::splitByFirstSpace(const std::string& str) {
+        size_t spacePos = str.find(' ');
+
+        if (spacePos != std::string::npos) {
+            std::string first_part = str.substr(0, spacePos);
+            std::string second_part = str.substr(spacePos + 1);
+
+            // Удаляем абсолютно все пробелы из второй части
+            second_part.erase(std::remove(second_part.begin(), second_part.end(), ' '), second_part.end());
+
+            return std::make_pair(first_part, second_part);
+        }
+
+        return std::make_pair(str, "");
     }
 }
 

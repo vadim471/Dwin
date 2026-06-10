@@ -172,6 +172,9 @@ namespace bridge {
         // Хендлер обработки отмены транзакции сразу после оплаты
         void handleImmediatlyCancelTransaction(MessageLayer& core);
 
+        // Хендлер обработки нажатия кнопки ENTER ввода ПИН кода.
+        void handleEnterPinCodeButton(MessageLayer& core, const Message& message);
+
         // Хендлер обработки завершения приема топлива сервисного меню.
         void handleFinishReceptionFuel(MessageLayer& core);
 

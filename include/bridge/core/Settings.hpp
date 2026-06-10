@@ -179,10 +179,12 @@ struct Settings {
         uint16_t vp_trk_id_second_page;
 
     // --- Page Balance Card ---
-        uint16_t vp_card_balance_number;
+        uint16_t vp_card_balance_number_first_part;
+        uint16_t vp_card_balance_number_second_part;
         uint16_t vp_card_balance_thousands;
         uint16_t vp_card_balance_hundreds;
         uint16_t vp_card_balance_tens;
+        uint16_t vp_card_balance_type;
 
     // --- Fuel type picture ---
         std::vector<uint16_t> vp_product_id_pages;
@@ -270,6 +272,7 @@ struct Settings {
         int page_return_money_cancel_transaction;
         int page_error_transaction_failed;
         int page_error_incorrect_pincode;
+        int page_waiting_card_operation;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -298,7 +301,7 @@ struct Settings {
         int text_len_fuel_integer;
         int text_len_standalone_version;
         int text_len_standalone_id;
-        int text_len_card_number;
+        int text_len_balance_type;
 
     // --- Audio ID ---
         int audio_id_welcome_nozzle_up;
@@ -392,6 +395,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_twentyseventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtysecond_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfifth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyseventh_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -401,6 +405,7 @@ struct Settings {
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_eighth_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_ninth_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_tenth_page"));
+            s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_thirtyseventh_page"));
 
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_sixth_page"));
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_seventh_page"));
@@ -472,6 +477,7 @@ struct Settings {
             s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_fourteenth_page"));
             s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_twentysixth_page"));
             s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_twentyseventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_integer.push_back(getHex("vp_current_fuel_type_price_integer_thirtyseventh_page"));
 
             s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_third_page"));
             s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_forth_page"));
@@ -485,7 +491,9 @@ struct Settings {
             s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_twelvth_page"));
             s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_thirteenth_page"));
             s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_fourteenth_page"));
-
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_twentysixth_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_twentyseventh_page"));
+            s.dwin.vp_current_fuel_type_price_pages_decimal.push_back(getHex("vp_current_fuel_type_price_decimal_thirtyseventh_page"));
 
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_first_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_second_page"));
@@ -763,10 +771,12 @@ struct Settings {
             LOAD_HEX(vp_trk_id_first_page);
             LOAD_HEX(vp_trk_id_second_page);
 
-            LOAD_HEX(vp_card_balance_number);
+            LOAD_HEX(vp_card_balance_number_first_part);
+            LOAD_HEX(vp_card_balance_number_second_part);
             LOAD_HEX(vp_card_balance_thousands);
             LOAD_HEX(vp_card_balance_hundreds);
             LOAD_HEX(vp_card_balance_tens);
+            LOAD_HEX(vp_card_balance_type);
 
             LOAD_HEX(vp_button_cancel_transaction);
 
@@ -808,6 +818,7 @@ struct Settings {
             s.dwin.page_return_money_cancel_transaction= j["dwin"]["page_return_money_cancel_transaction"];
             s.dwin.page_error_transaction_failed       = j["dwin"]["page_error_transaction_failed"];
             s.dwin.page_error_incorrect_pincode        = j["dwin"]["page_error_incorrect_pincode"];
+            s.dwin.page_waiting_card_operation         = j["dwin"]["page_waiting_card_operation"];
 
             s.dwin.audio_id_welcome_nozzle_up          = j["dwin"]["audio_id_welcome_nozzle_up"];
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];
@@ -830,10 +841,10 @@ struct Settings {
 
             s.dwin.text_len_trk_id = j["dwin"]["text_len_trk_id"];
             s.dwin.text_len_order_decimal = j["dwin"]["text_len_order_decimal"];
+            s.dwin.text_len_balance_type = j["dwin"]["text_len_balance_type"];
             s.dwin.text_len_order_integer = j["dwin"]["text_len_order_integer"];
             s.dwin.text_len_fuel_type = j["dwin"]["text_len_fuel_type"];
             s.dwin.text_len_standalone_version = j["dwin"]["text_len_standalone_version"];
-            s.dwin.text_len_card_number = j["dwin"]["text_len_card_number"];
             s.dwin.text_len_standalone_id = j["dwin"]["text_len_standalone_id"];
             s.dwin.text_len_percent_progress_bar = j["dwin"]["text_len_percent_progress_bar"];
             s.dwin.text_len_date_time_footer = j["dwin"]["text_len_date_time_footer"];

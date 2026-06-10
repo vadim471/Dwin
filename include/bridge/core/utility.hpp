@@ -173,5 +173,14 @@ namespace bridge {
         // Считает количество литров при возврате.
         static double calculateFuelLiters(const std::string& before,
                            const std::string& after);
+
+        // Возвращает символ в зависимости от типа кошелька
+        static std::string getWalletSymbol(const std::string& wallet_type);
+
+        // Возвращает пару значений, разделенных пробелом.
+        static std::pair<std::string, std::string> splitByFirstSpace(const std::string& str);
+
+        // Конвертер в формат CP1251.
+        static std::string convertUtf8ToCp1251(const std::string& utf8_str);
     };
 }

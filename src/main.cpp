@@ -26,6 +26,7 @@
 #include <itp/logger.hpp>
 
 #include "bridge/core/Settings.hpp"
+#include "bridge/database/LevelGaugeRepository.hpp"
 #include "bridge/httpAuth/BasicAuthenticator.hpp"
 #include "bridge/httpAuth/DigestAuthenticator.hpp"
 #include "bridge/logic/BosLogic.hpp"
@@ -69,11 +70,11 @@ int main() {
         // INIT DB
         auto db = std::make_shared<Database>("Standalone.db");
         auto transactionRepo = std::make_shared<TransactionRepository>(db);
-        auto metrologicalRepo = std::make_shared<MetrologicalRecordRepository>(db);
+        //auto metrologicalRepo = std::make_shared<LevelGaugeRepository>(db);
         auto bosRepo = std::make_shared<BosRepository>(db);
 
         transactionRepo->createTable();
-        metrologicalRepo->createTable();
+//        metrologicalRepo->createTable();
         bosRepo->createTable();
         
         LOG_SYSTEM_INFO << "Database initialized successfully";
@@ -194,31 +195,31 @@ int main() {
                 case '3': {
                     // Тестовая вставка транзакции
                     TransactionData testTransaction;
-                    testTransaction.shiftNumber = 5;
-                    testTransaction.isReversalTransaction = false;
-                    testTransaction.openWayCardType = 1;
-                    testTransaction.cardIdHash = "9E2B0DF2E88A64DF2624FB27CCB2F9F8F846173D";
-                    testTransaction.cardIdHashSalt = "8F127B07BAA49C215A17EBA9C5C22EB01CA67B05";
-                    testTransaction.terminalId = "1KA00101";
-                    testTransaction.mti = "0200";
-                    testTransaction.year = 2022;
-                    testTransaction.month = 2;
-                    testTransaction.day = 22;
-                    testTransaction.hour = 15;
-                    testTransaction.minute = 20;
-                    testTransaction.second = 56;
-                    testTransaction.amountInKops = 500;
-                    testTransaction.goodsPumpNumber = 1;
-                    testTransaction.goodsProductCode = "0001000095";
-                    testTransaction.goodsProductNameUtf8 = "АИ-95";
-                    testTransaction.goodsQuantityInMilliliters = 5000;
-                    testTransaction.goodsPriceInKopsByLiter = 100;
-                    testTransaction.rrn = "205377107042";
-                    testTransaction.authCode = "363249";
-                    testTransaction.responseCode = "00";
-                    
-                    int64_t id = transactionRepo->insert(testTransaction);
-                    std::cout << "[INFO] Transaction inserted with ID: " << id << std::endl;
+                    // testTransaction.shiftNumber = 5;
+                    // testTransaction.isReversalTransaction = false;
+                    // testTransaction.openWayCardType = 1;
+                    // testTransaction.cardIdHash = "9E2B0DF2E88A64DF2624FB27CCB2F9F8F846173D";
+                    // testTransaction.cardIdHashSalt = "8F127B07BAA49C215A17EBA9C5C22EB01CA67B05";
+                    // testTransaction.terminalId = "1KA00101";
+                    // testTransaction.mti = "0200";
+                    // testTransaction.year = 2022;
+                    // testTransaction.month = 2;
+                    // testTransaction.day = 22;
+                    // testTransaction.hour = 15;
+                    // testTransaction.minute = 20;
+                    // testTransaction.second = 56;
+                    // testTransaction.amountInKops = 500;
+                    // testTransaction.goodsPumpNumber = 1;
+                    // testTransaction.goodsProductCode = "0001000095";
+                    // testTransaction.goodsProductNameUtf8 = "АИ-95";
+                    // testTransaction.goodsQuantityInMilliliters = 5000;
+                    // testTransaction.goodsPriceInKopsByLiter = 100;
+                    // testTransaction.rrn = "205377107042";
+                    // testTransaction.authCode = "363249";
+                    // testTransaction.responseCode = "00";
+                    //
+                    // int64_t id = transactionRepo->insert(testTransaction);
+                    // std::cout << "[INFO] Transaction inserted with ID: " << id << std::endl;
                     break;
                 }
                 case '4': {
@@ -238,36 +239,22 @@ int main() {
                     testRecord.upperVolume = "10";
                     testRecord.weight = "0";
                     
-                    int64_t id = metrologicalRepo->insert(testRecord);
-                    std::cout << "[INFO] Metrological record inserted with ID: " << id << std::endl;
+                    //int64_t id = metrologicalRepo->insert(testRecord);
+                    std::cout << "[INFO] Metrological record inserted with ID: " << std::endl;
                     break;
                 }
                 case '5': {
                     // Показать все транзакции
-                    auto transactions = transactionRepo->getAll();
-                    std::cout << "\n=== Transactions (Total: " << transactions.size() << ") ===" << std::endl;
-                    for (const auto& t : transactions) {
-                        std::cout << "ID: " << t.id 
-                                  << " | Shift: " << t.shiftNumber
-                                  << " | RRN: " << t.rrn
-                                  << " | Product: " << t.goodsProductNameUtf8
-                                  << " | Amount: " << t.amountInKops << " kops"
-                                  << std::endl;
-                    }
-                    break;
-                }
-                case '6': {
-                    // Показать все метрологические записи
-                    auto records = metrologicalRepo->getAll();
-                    std::cout << "\n=== Metrological Records (Total: " << records.size() << ") ===" << std::endl;
-                    for (const auto& r : records) {
-                        std::cout << "ID: " << r.id
-                                  << " | Date: " << r.date
-                                  << " | Fuel: " << r.fuelName
-                                  << " | PMP: " << r.namePmp
-                                  << " | Volume: " << r.totalVolume
-                                  << std::endl;
-                    }
+                    // auto transactions = transactionRepo->getAll();
+                    // std::cout << "\n=== Transactions (Total: " << transactions.size() << ") ===" << std::endl;
+                    // for (const auto& t : transactions) {
+                    //     std::cout << "ID: " << t.id
+                    //               << " | Shift: " << t.shiftNumber
+                    //               << " | RRN: " << t.rrn
+                    //               << " | Product: " << t.goodsProductNameUtf8
+                    //               << " | Amount: " << t.amountInKops << " kops"
+                    //               << std::endl;
+                    // }
                     break;
                 }
                 case 'q': {

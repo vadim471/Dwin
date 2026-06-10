@@ -13,43 +13,52 @@ namespace bridge {
 // Структура для хранения данных транзакции (заказа)
 struct TransactionData {
     int64_t id = 0;
-    int shiftNumber = 0;
-    bool isReversalTransaction = false;
-    int openWayCardType = 0;
-    std::string cardIdHash;
-    std::string cardIdHashSalt;
-    std::string terminalId;
-    std::string mti;
-    
-    // Дата и время транзакции
-    int year = 0;
-    int month = 0;
-    int day = 0;
-    int hour = 0;
-    int minute = 0;
-    int second = 0;
-    
-    int64_t amountInKops = 0;
-    int goodsPumpNumber = 0;
-    std::string goodsProductCode;
-    std::string goodsProductNameUtf8;
-    int64_t goodsQuantityInMilliliters = 0;
-    int64_t goodsPriceInKopsByLiter = 0;
-    std::string rrn;
-    std::string authCode;
-    std::string responseCode;
-    
-    // Сырые данные транзакции
-    std::string secureData;
-    std::string secureDataInitializationVector;
-    std::string secureDataHash;
-    std::string secureDataHashSalt;
+    std::string date;
+    std::string processing;
+    std::string fact_amount;
+    std::string fact_price;
+    std::string fact_quantity;
+    std::string rqs_amount;
+    std::string rqs_price;
+    std::string rqs_quantity;
+    std::string transaction_id;
+    std::string card_number;
+    std::string fuel_name;
+    std::string trk_name;
+    std::string type_sale;
+    std::string id_tso;
+
+    std::string after_density;
+    std::string after_filling;
+    std::string after_lower_level;
+    std::string after_lower_volume;
+    std::string after_temperature;
+    std::string after_total_volume;
+    std::string after_upper_level;
+    std::string after_upper_volume;
+    std::string after_weight;
+
+    std::string before_density;
+    std::string before_filling;
+    std::string before_lower_level;
+    std::string before_lower_volume;
+    std::string before_temperature;
+    std::string before_total_volume;
+    std::string before_upper_level;
+    std::string before_upper_volume;
+    std::string before_weight;
+
+    std::string discount;
+    std::string dispenser_volume_begin;
+    std::string dispenser_volume_end;
+    std::string dsc;
+    std::string receipt;
     
     // Флаг отправки на сервер
     bool sent_to_server = false;
     
     // Метка времени создания записи
-    std::string createdAt;
+    std::string created_at;
 };
 
 class TransactionRepository {

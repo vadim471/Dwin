@@ -69,6 +69,7 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Poco REQUIRED COMPONENTS Net NetSSL Crypto Util Foundation)
 find_package(SQLite3 REQUIRED)
+find_package(Iconv REQUIRED)
 
 
 include_directories(${Boost_INCLUDE_DIRS})
@@ -124,6 +125,7 @@ set(ARKAIM_INFRA_SOURCES
         src/logic/BosLogic.cpp
         include/bridge/bos/SalesData.hpp
         include/bridge/bos/FuelLevelData.hpp
+        src/database/FuelReceptionRepository.cpp
 )
 
 configure_file(
@@ -182,11 +184,9 @@ add_executable(dwin_exmpl src/main.cpp
         # Database
         include/bridge/database/Database.hpp
         include/bridge/database/Transaction.hpp
-        include/bridge/database/MetrologicalRecord.hpp
         include/bridge/database/BosRepository.hpp
         src/database/Database.cpp
         src/database/Transaction.cpp
-        src/database/MetrologicalRecord.cpp
         src/database/BosRepository.cpp
         
         # DWIN
@@ -237,6 +237,7 @@ endif()
 
 target_link_libraries(dwin_exmpl
         ${Boost_LIBRARIES}
+        Iconv::Iconv
         Threads::Threads
         OpenSSL::SSL
         OpenSSL::Crypto

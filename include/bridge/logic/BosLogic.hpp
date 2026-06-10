@@ -6,11 +6,12 @@
 #include "ILogicHandler.hpp"
 #include "bridge/core/Settings.hpp"
 #include "bridge/database/BosRepository.hpp"
+#include "bridge/database/Transaction.hpp"
 
 namespace bridge {
     class BosLogic : public ILogicHandler {
     public:
-        BosLogic(const Settings& settings);
+        BosLogic(const Settings& settings, std::shared_ptr<TransactionRepository> transaction_repo);
         void handle(const Message& message, MessageLayer& core) override;
 
     private:
@@ -22,5 +23,6 @@ namespace bridge {
 
         Settings m_settings;
         std::shared_ptr<BosRepository> m_bos_repo;
+        std::shared_ptr<TransactionRepository> m_transaction_repo;
     };
 }

@@ -55,12 +55,14 @@ namespace bridge {
             Message msg;
             msg.type = DWIN_MESSAGE_TYPE_CHANGE_NUMBER;
 
+            std::string cp1251_value = utility::convertUtf8ToCp1251(value);
+
             std::vector<uint8_t> payload;
             // Адрес VP (2 байта)
             payload.push_back((vp >> 8) & 0xFF);
             payload.push_back(vp & 0xFF);
 
-            size_t textLen = value.length();
+            size_t textLen = cp1251_value.length();
 
             size_t padCount = len - textLen;
 
@@ -69,7 +71,7 @@ namespace bridge {
             }
 
             for (size_t i = 0; i < textLen; ++i) {
-                payload.push_back(static_cast<uint8_t>(value[i]));
+                payload.push_back(static_cast<uint8_t>(cp1251_value[i]));
             }
 
             msg.payload = payload;

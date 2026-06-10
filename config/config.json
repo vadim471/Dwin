@@ -47,6 +47,7 @@
           "vp_trk_id_thirtyfirst_page": "0x7911",
           "vp_trk_id_thirtysecond_page": "0x7913",
           "vp_trk_id_thirtyfifth_page": "0x7915",
+          "vp_trk_id_thirtyseventh_page": "0x6600",
 
           "vp_text_standalone_id_first_page": "0x8030",
           "vp_text_standalone_id_second_page": "0x8090",
@@ -132,6 +133,7 @@
           "vp_chosen_fuel_type_eighth_page": "0x5710",
           "vp_chosen_fuel_type_ninth_page": "0x5810",
           "vp_chosen_fuel_type_tenth_page": "0x5910",
+          "vp_chosen_fuel_type_thirtyseventh_page": "6436",
 
           "vp_current_order_volume_integer_sixth_page": "0x5530",
           "vp_current_order_volume_integer_seventh_page": "0x5630",
@@ -203,6 +205,7 @@
           "vp_current_fuel_type_price_integer_fourteenth_page": "0x6302",
           "vp_current_fuel_type_price_integer_twentysixth_page": "0x7523",
           "vp_current_fuel_type_price_integer_twentyseventh_page": "0x7623",
+          "vp_current_fuel_type_price_integer_thirtyseventh_page": "0x6430",
 
           "vp_current_fuel_type_price_decimal_third_page": "0x8804",
           "vp_current_fuel_type_price_decimal_forth_page": "0x8810",
@@ -218,6 +221,7 @@
           "vp_current_fuel_type_price_decimal_fourteenth_page": "0x6306",
           "vp_current_fuel_type_price_decimal_twentysixth_page": "0x7527",
           "vp_current_fuel_type_price_decimal_twentyseventh_page": "0x7627",
+          "vp_current_fuel_type_price_decimal_thirtyseventh_page": "0x6434",
 
           "vp_current_date_time_footer_first_page": "0x8040",
           "vp_current_date_time_footer_second_page": "0x8100",
@@ -253,9 +257,9 @@
           "vp_current_date_time_footer_thirtysecond_page": "0x9900",
           "vp_current_date_time_footer_thirtythird_page": "0x5180",
           "vp_current_date_time_footer_thirtyfourth_page": "0x5480",
-          "vp_current_date_time_footer_thirtyfifth_page": "0x6380",
-          "vp_current_date_time_footer_thirtysixth_page": "0x6880",
-          "vp_current_date_time_footer_thirtyseventh_page": "0x7080",
+          "vp_current_date_time_footer_thirtyfifth_page": "0x6880",
+          "vp_current_date_time_footer_thirtysixth_page": "0x7080",
+          "vp_current_date_time_footer_thirtyseventh_page": "0x6380",
 
           "vp_current_fuel_type_eleventh_page": "0x6050",
           "vp_current_fuel_type_twelvth_page": "0x6150",
@@ -305,10 +309,12 @@
 
           "vp_set_service_pincode_pinpad": "0x5346",
 
-          "vp_card_balance_number": "0x6402",
+          "vp_card_balance_number_first_part": "0x6402",
+          "vp_card_balance_number_second_part": "0x6405",
           "vp_card_balance_thousands": "0x6413",
           "vp_card_balance_hundreds": "0x6416",
           "vp_card_balance_tens": "0x6420",
+          "vp_card_balance_type": "0x6422",
 
           "vp_text_gauges_filling_percent": "0x6500",
           "vp_text_level_gauge_id": "0x6504",
@@ -466,6 +472,7 @@
           "page_return_money_cancel_transaction": 30,
           "page_error_transaction_failed": 31,
           "page_error_incorrect_pincode": 32,
+          "page_waiting_card_operation": 37,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,
@@ -486,13 +493,13 @@
           "text_len_order_integer": 6,
           "text_len_order_decimal": 2,
           "text_len_order_volume": 9,
+          "text_len_balance_type": 1,
 
           "text_len_fuel_type": 3,
           "text_len_fuel_price": 5,
           "text_len_percent_progress_bar": 3,
           "text_len_date_time_footer": 20,
           "text_len_standalone_version": 25,
-          "text_len_card_number": 11,
           "text_len_standalone_id": 6,
 
           "audio_id_welcome_nozzle_up": 1,

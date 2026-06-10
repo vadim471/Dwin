@@ -52,8 +52,6 @@ namespace bridge {
         std::cout << "Running Core" << std::endl;
 
         while (m_running) {
-
-
             Message message;
             {
                 std::unique_lock<std::mutex> lock(m_mutex);

@@ -7,6 +7,8 @@
 
 #include "bridge/json.hpp"
 #include "bridge/core/types.hpp"
+#include "bridge/core/utility.hpp"
+#include "bridge/database/Transaction.hpp"
 
 namespace bridge {
     enum TypeSale {
@@ -106,5 +108,52 @@ namespace bridge {
 
         const auto body = j.dump();
         return Bytes(body.begin(), body.end());
+    }
+
+
+    inline void parseTransactionFromJson(const nlohmann::json& j, TransactionData& t_data) {
+         t_data.date = j.value("Date", "");
+            t_data.processing = j.value("Processing", "");
+            t_data.fact_amount = j.value("FactAmount", "");
+            t_data.fact_price = j.value("FactPrice", "");
+            t_data.fact_quantity = j.value("FactQuantity", "");
+            t_data.rqs_amount = j.value("RqsAmount", "");
+            t_data.rqs_price = j.value("RqsPrice", "");
+            t_data.rqs_quantity = j.value("RqsQuantity", "");
+            t_data.transaction_id = j.value("TransactionId", "");
+            t_data.card_number = j.value("CardNumber", "");
+            t_data.fuel_name = j.value("FuelName", "");
+            t_data.trk_name = j.value("TrkName", "");
+            t_data.type_sale = j.value("TypeSale", "");
+            t_data.id_tso = j.value("IdTsp", "");
+
+            t_data.after_density = j.value("AfterDensity", "");
+            t_data.after_filling = j.value("AfterFilling", "");
+            t_data.after_lower_level = j.value("AfterLowerLevel", "");
+            t_data.after_lower_volume = j.value("AfterLowerVolume", "");
+            t_data.after_temperature = j.value("AfterTemperature", "");
+            t_data.after_total_volume = j.value("AfterTotalVolume", "");
+            t_data.after_upper_level = j.value("AfterUpperLevel", "");
+            t_data.after_upper_volume = j.value("AfterUpperVolume", "");
+            t_data.after_weight = j.value("AfterWeight", "");
+
+            t_data.before_density = j.value("BeforeDensity", "");
+            t_data.before_filling = j.value("BeforeFilling", "");
+            t_data.before_lower_level = j.value("BeforeLowerLevel", "");
+            t_data.before_lower_volume = j.value("BeforeLowerVolume", "");
+            t_data.before_temperature = j.value("BeforeTemperature", "");
+            t_data.before_total_volume = j.value("BeforeTotalVolume", "");
+            t_data.before_upper_level = j.value("BeforeUpperLevel", "");
+            t_data.before_upper_volume = j.value("BeforeUpperVolume", "");
+            t_data.before_weight = j.value("BeforeWeight", "");
+
+            t_data.discount = j.value("Discount", "");
+            t_data.dispenser_volume_begin = j.value("DispenserVolumeBegin", "");
+            t_data.dispenser_volume_end = j.value("DispenserVolumeEnd", "");
+            t_data.dsc = j.value("Dsc", "");
+            t_data.receipt = j.value("Receipt", "");
+
+            t_data.sent_to_server = false;
+            t_data.created_at = utility::getCurrentTimeString();
     }
 }

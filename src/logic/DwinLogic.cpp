@@ -116,9 +116,20 @@ namespace bridge {
         std::string receipt = std::string(message.payload.begin(), message.payload.end());
         ParsedReceipt parsed_receipt = utility::parseTerminalBalanceReceipt(receipt);
 
+        // Отправка баланса карты.
         DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
             m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
-        DwinCommands::sendTextToDwin(core, m_settings.dwin.vp_card_balance_number, parsed_receipt.card_number, m_settings.dwin.text_len_card_number);
+
+        // Отправка типа карты.
+        std::string wallet_type_to_dwin = utility::getWalletSymbol(parsed_receipt.wallet_type);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_type, wallet_type_to_dwin, 2); // m_settings.dwin.text_len_fuel_integer
+
+        //Отправка номера карты.
+        std::string first_part_card_number, second_part_card_number;
+        std::tie(first_part_card_number, second_part_card_number) = utility::splitByFirstSpace(parsed_receipt.card_number);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
+
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
     }
 
@@ -487,6 +498,11 @@ namespace bridge {
         // Кнопка отмены транзакции при вводе пин-кода. Кейс - приложили карту, создали заказ, нажали с пин-кода назад.
         if (key_value == 6) {
             msg.type = USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN;
+        }
+
+        // Кнопка ОК выхода с баланса карты
+        if (key_value == 7) {
+            // TODO или нет
         }
 
         // Кнопка сброса выбора ТРК редактирования используемых ТРК.

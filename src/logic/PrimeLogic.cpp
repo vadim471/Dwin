@@ -102,7 +102,6 @@ namespace bridge {
 
         core.sendToLogicLayer(UART_LAYER, clear_input_blocks_display);
 
-
         m_amount_trk = m_settings.gas_station.amount_trk;
         m_amount_trk_png = utility::getIconForGasStation(m_amount_trk, m_settings);
         m_selected_dispensers = m_settings.gas_station.used_trks;
@@ -150,7 +149,7 @@ namespace bridge {
         if (m_reception_active && !m_reception_level_gauge_id.empty()) {
             getParameters(core, m_reception_level_gauge_id);
         }
-
+        setFooterDateTime(core);
         // Перезавод таймера
         scheduleNextTick(core);
     }
@@ -304,12 +303,7 @@ namespace bridge {
             return;
         }
         if (message.type == USER_TOUCH_PIN_PAD_ENTER_PIN_CODE_BUTTON) {
-            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
-            Message pin_msg;
-            pin_msg.source = PRIME_HTTP_LAYER;
-            pin_msg.type = PAY_PIN_ENTERED;
-            pin_msg.payload = message.payload;
-            core.sendToLogicLayer(PIPE_LAYER, pin_msg);
+            handleEnterPinCodeButton(core, message);
             return;
         }
         if (message.type == USER_TOUCH_PIN_PAD_ENTER_DOCUMENT_NUMBER_BUTTON) {
@@ -340,6 +334,7 @@ namespace bridge {
         }
         if (message.type == PAY_GET_BALANCE) {
             m_waiting_balance_response = true;
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
         }
         if (message.type == ON_GET_BALANCE_RESPONSE) {
             handleGetBalanceCard(core, message);
@@ -347,6 +342,20 @@ namespace bridge {
         if (message.type == USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN) {
             handleCancelEnterPin(core);
         }
+    }
+
+    void PrimeLogic::handleEnterPinCodeButton(MessageLayer& core, const Message& message) {
+        if (!m_waiting_balance_response) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
+        } else {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
+        }
+
+        Message pin_msg;
+        pin_msg.source = PRIME_HTTP_LAYER;
+        pin_msg.type = PAY_PIN_ENTERED;
+        pin_msg.payload = message.payload;
+        core.sendToLogicLayer(PIPE_LAYER, pin_msg);
     }
 
     void PrimeLogic::handleCancelEnterPin(MessageLayer& core) {
@@ -369,7 +378,6 @@ namespace bridge {
                 Message message_balance;
                 message_balance.source = PRIME_HTTP_LAYER;
                 message_balance.type = ON_GET_BALANCE_RESPONSE;
-                message_balance.payload = message.payload;
                 message_balance.payload = message.payload;
 
                 core.sendToLogicLayer(UART_LAYER, message_balance);
@@ -732,7 +740,6 @@ namespace bridge {
                 setProductIdOnDisplay(core, icon_fuel);
                 setFuelTypePriceOnDisplay(core, product->price);
                 setProductTextOnDisplay(core, utility::extractFirstInt(product->id));
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_in_progress);
                 DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_progress_order_bar_twelvth_page, 100);
                 DwinCommands::sendRightAlignmentWithPadding(
                     core, m_settings.dwin.vp_progress_bar_percent_text_twelvth_page, "100",
@@ -1093,10 +1100,10 @@ namespace bridge {
             processOrderFinalization(device_id, core);
         }
 
-        setFooterDateTime(core);
-        checkTimers(core);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        // setFooterDateTime(core);
+        // checkTimers(core);
+        //
+        // std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     void PrimeLogic::handleRandomDispenserStatus(const json &event, MessageLayer &core) {
@@ -1604,6 +1611,12 @@ namespace bridge {
 
                     if (jObj.contains("order")) {
                         auto order = jObj["order"];
+                        std::string order_id = utility::parseStringFromJson(order["id"]);
+
+                        if (m_orders.find(trk_id) == m_orders.end() || m_orders[trk_id].id != order_id) {
+                            // Прерываем выполнение цикла для этой ТРК, чтобы код НЕ дошел до createPayment
+                            break;
+                        }
 
                         auto nozzle = order["nozzle"];
                         auto product_id = nozzle["product_id"];
@@ -1614,7 +1627,7 @@ namespace bridge {
                             utility::parseIntFromJson(target_amount["exponent"]));
                         std::string target_amount_value = target_amount["value"];
                         int target_amount_exponent = target_amount["exponent"];
-
+                        //DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
 
                         auto target_volume = order["target_volume"];
                         std::string target_volume_string = utility::getFormattedStringFromJson(
@@ -1630,7 +1643,7 @@ namespace bridge {
                             utility::parseIntFromJson(price["exponent"]));
                         int price_exponent = price["exponent"];
 
-                        std::string order_id = utility::parseStringFromJson(order["id"]);
+
 
                         m_dispensers[i].order.volume = target_volume_string;
                         m_dispensers[i].order.amount = target_amount_string;
@@ -1863,7 +1876,7 @@ namespace bridge {
             } else {
                 if (task_id == m_current_order_task) {
                     // Перелистываем на страницу "операция по карте выполняется".
-                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
+                    //DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
                 }
                 getDispenserStatus(core, m_current_dispenser_id);
             }
@@ -2148,7 +2161,7 @@ namespace bridge {
             } else {
                 std::string command = m_settings.APIDispenser.close;
                 PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);
+                startPageTimer(m_settings.business_logic.show_return_money_process_end, m_settings.dwin.page_error_transaction_failed);
                 m_pending_info_sales.erase(order_id);
             }
         }
