@@ -126,6 +126,8 @@ set(ARKAIM_INFRA_SOURCES
         include/bridge/bos/SalesData.hpp
         include/bridge/bos/FuelLevelData.hpp
         src/database/FuelReceptionRepository.cpp
+        src/database/LevelGaugeRepository.cpp
+        include/bridge/payment/CardData.hpp
 )
 
 configure_file(

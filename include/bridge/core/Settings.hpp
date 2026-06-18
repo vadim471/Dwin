@@ -224,15 +224,18 @@ struct Settings {
 
         uint16_t vp_basic_touch;
 
+    // --- Revert Values ---
+        std::vector<uint16_t> vp_revert_fuel_volume_integer;
+        std::vector<uint16_t> vp_revert_fuel_volume_decimal;
 
     // --- Current values ---
         uint16_t vp_chosen_order_volume; // кнопка быстрого выбора количества топлива (не пинпад).
         uint16_t vp_button_get_balance; // кнопка запроса баланса карты.
 
         uint16_t vp_current_order_amount_integer;
-        std::vector<uint16_t> vp_current_fuel_volume_integer;
+        uint16_t vp_current_fuel_volume_integer;
         uint16_t vp_current_order_amount_decimal;
-        std::vector<uint16_t> vp_current_fuel_volume_decimal;
+        uint16_t vp_current_fuel_volume_decimal;
 
         uint16_t vp_progress_order_bar_eleventh_page;
         uint16_t vp_progress_bar_percent_text_eleventh_page;
@@ -613,14 +616,14 @@ struct Settings {
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_thirteenth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentysixth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentyseventh_page"));
+            
+            LOAD_HEX(vp_current_fuel_volume_integer);
+            s.dwin.vp_revert_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentysixth_page"));
+            s.dwin.vp_revert_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
 
-            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer"));
-            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentysixth_page"));
-            s.dwin.vp_current_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
-
-            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal"));
-            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentysixth_page"));
-            s.dwin.vp_current_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentyseventh_page"));
+            LOAD_HEX(vp_current_fuel_volume_decimal);
+            s.dwin.vp_revert_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentysixth_page"));
+            s.dwin.vp_revert_fuel_volume_decimal.push_back(getHex("vp_current_fuel_volume_decimal_twentyseventh_page"));
 
             LOAD_HEX(vp_volume_last_order_integer);
             LOAD_HEX(vp_price_last_order_integer);

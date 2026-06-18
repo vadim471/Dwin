@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <iconv.h>
 
+#include "bridge/payment/CardData.hpp"
+
 namespace bridge {
     std::string utility::bytesToHex(const std::vector<uint8_t> &bytes) {
         std::stringstream ss;
@@ -685,47 +687,67 @@ namespace bridge {
 
     //std::string utility::createReceiptFromBank()
 
-    std::string utility::createReceiptFromTransaction(
-        uint64_t transaction_id,
-        const std::string& product_id,
-        uint32_t price_value, uint8_t price_decimal,
-        uint32_t volume_value, uint8_t volume_decimal,
-        uint32_t amount_value, uint8_t amount_decimal,
-        uint32_t fact_volume_value, uint8_t fact_volume_decimal,
-        uint32_t fact_amount_value, uint8_t fact_amount_decimal,
-        bool not_complete,
-        uint64_t transaction_time
-    ) {
-        std::stringstream receipt;
+    // std::string utility::createReceiptFromTransaction(
+    //     uint64_t transaction_id,
+    //     const std::string& product_id,
+    //     uint32_t price_value, uint8_t price_decimal,
+    //     uint32_t volume_value, uint8_t volume_decimal,
+    //     uint32_t amount_value, uint8_t amount_decimal,
+    //     uint32_t fact_volume_value, uint8_t fact_volume_decimal,
+    //     uint32_t fact_amount_value, uint8_t fact_amount_decimal,
+    //     bool not_complete,
+    //     uint64_t transaction_time
+    // ) {
+    //     std::stringstream receipt;
+    //
+    //     receipt << "========================================\n";
+    //     receipt << "           ЧЕК ТРАНЗАКЦИИ\n";
+    //     receipt << "========================================\n\n";
+    //
+    //     time_t time = static_cast<time_t>(transaction_time / 1000);
+    //     char time_buf[64];
+    //     strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&time));
+    //     receipt << "Дата: " << time_buf << "\n";
+    //     receipt << "ID транзакции: " << transaction_id << "\n\n";
+    //
+    //     receipt << "Товар: " << product_id << "\n";
+    //     receipt << "Цена за литр: " << formatDecimalValue(price_value, price_decimal) << " руб.\n\n";
+    //
+    //     if (not_complete) {
+    //         receipt << "--- Запрошено ---\n";
+    //         receipt << "Объем: " << formatDecimalValue(volume_value, volume_decimal) << " л.\n";
+    //         receipt << "Сумма: " << formatDecimalValue(amount_value, amount_decimal) << " руб.\n\n";
+    //     }
+    //
+    //     receipt << "--- Отпущено ---\n";
+    //     receipt << "Объем: " << formatDecimalValue(fact_volume_value, fact_volume_decimal) << " л.\n";
+    //     receipt << "Сумма: " << formatDecimalValue(fact_amount_value, fact_amount_decimal) << " руб.\n\n";
+    //
+    //     receipt << "========================================\n";
+    //     receipt << "        Спасибо за покупку!\n";
+    //     receipt << "========================================\n";
+    //
+    //     return receipt.str();
+    // }
+    std::string utility::calculateRevertFuelString(uint32_t volume_value_begin, uint8_t volume_decimal_begin,
+                                          uint32_t volume_value_end, uint8_t volume_decimal_end) {
 
-        receipt << "========================================\n";
-        receipt << "           ЧЕК ТРАНЗАКЦИИ\n";
-        receipt << "========================================\n\n";
+        double ordered = static_cast<double>(volume_value_begin) / std::pow(10, volume_decimal_begin);
+        double dispensed = static_cast<double>(volume_value_end) / std::pow(10, volume_decimal_end);
 
-        time_t time = static_cast<time_t>(transaction_time / 1000);
-        char time_buf[64];
-        strftime(time_buf, sizeof(time_buf), "%d.%m.%Y %H:%M:%S", localtime(&time));
-        receipt << "Дата: " << time_buf << "\n";
-        receipt << "ID транзакции: " << transaction_id << "\n\n";
+        double revert = ordered - dispensed;
 
-        receipt << "Товар: " << product_id << "\n";
-        receipt << "Цена за литр: " << formatDecimalValue(price_value, price_decimal) << " руб.\n\n";
-
-        if (not_complete) {
-            receipt << "--- Запрошено ---\n";
-            receipt << "Объем: " << formatDecimalValue(volume_value, volume_decimal) << " л.\n";
-            receipt << "Сумма: " << formatDecimalValue(amount_value, amount_decimal) << " руб.\n\n";
+        if (revert < 0.0) {
+            revert = 0.0;
         }
 
-        receipt << "--- Отпущено ---\n";
-        receipt << "Объем: " << formatDecimalValue(fact_volume_value, fact_volume_decimal) << " л.\n";
-        receipt << "Сумма: " << formatDecimalValue(fact_amount_value, fact_amount_decimal) << " руб.\n\n";
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(2) << revert;
+        std::string result = oss.str();
 
-        receipt << "========================================\n";
-        receipt << "        Спасибо за покупку!\n";
-        receipt << "========================================\n";
+        std::replace(result.begin(), result.end(), '.', ',');
 
-        return receipt.str();
+        return result;
     }
 
     std::string utility::createSecondReceiptFromLevelGauge(
@@ -859,7 +881,7 @@ namespace bridge {
         const std::string& address,
         const std::string& card_number,
         const std::string& product_name,
-        std::string& wallet_type,
+        const std::string& wallet_type,
         double refund_volume,
         double price_per_liter,
         uint64_t transaction_id,
@@ -869,8 +891,6 @@ namespace bridge {
         std::string* limit_info
     ) {
         std::stringstream receipt;
-
-        // double refund_volume = ordered_volume_liters - actual_volume_liters;
 
         receipt << address << "\n\n";
 
@@ -920,7 +940,6 @@ namespace bridge {
     ) {
         std::stringstream receipt;
 
-        // double refund_volume = ordered_volume_liters - actual_volume_liters;
 
         receipt << address << "\n\n";
 
@@ -961,7 +980,6 @@ namespace bridge {
             std::string first_part = str.substr(0, spacePos);
             std::string second_part = str.substr(spacePos + 1);
 
-            // Удаляем абсолютно все пробелы из второй части
             second_part.erase(std::remove(second_part.begin(), second_part.end(), ' '), second_part.end());
 
             return std::make_pair(first_part, second_part);

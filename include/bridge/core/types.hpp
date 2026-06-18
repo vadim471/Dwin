@@ -97,6 +97,7 @@ namespace bridge {
         std::string method;
         std::string uri;
         std::string body;
+        std::string resource_id;
     };
 
     struct Product {
@@ -166,14 +167,5 @@ namespace bridge {
         std::string order_id;
         std::string dispenser_id;
         GaugeTaskType task_type;
-    };
-
-    // Структура для извлечения полезной нагрузки из чека баланса optima-pc.
-    struct ParsedReceipt {
-        std::string card_number;
-        std::string wallet_type; // "Денежный", "Литровый" и т.д.
-        std::string balance_before; // Очищенный баланс: "940934.423"
-        std::string balance_after;
-        std::string limit_info;  // Отформатированный лимит: "Ост. сут. лимита: 10.00л"
     };
 }

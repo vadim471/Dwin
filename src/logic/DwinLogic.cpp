@@ -10,6 +10,7 @@
 #include "bridge/core/types.hpp"
 #include "bridge/dwin/DwinCommands.hpp"
 #include "bridge/core/Logger.hpp"
+#include "bridge/payment/CardData.hpp"
 
 namespace bridge {
     DwinLogic::DwinLogic(const Settings &settings) : m_settings(settings) {
@@ -53,18 +54,12 @@ namespace bridge {
     void DwinLogic::setCurrentFuellingVolume(MessageLayer &core, const std::string &value) {
         std::string int_part_target_volume, dec_part_target_volume;
         std::tie(int_part_target_volume, dec_part_target_volume) = utility::splitFloatString(value, 2);
-
-        for (uint16_t vp: m_settings.dwin.vp_current_fuel_volume_integer) {
-            if (vp == 0) continue;
-            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_current_fuel_volume_integer,
                                                         int_part_target_volume, m_settings.dwin.text_len_order_integer);
-        }
 
-        for (uint16_t vp: m_settings.dwin.vp_current_fuel_volume_decimal) {
-            if (vp == 0) continue;
-            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_current_fuel_volume_decimal,
                                                         dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
-        }
+
     }
 
     void DwinLogic::setCurrentFuellingAmount(MessageLayer &core, const std::string &value) {
@@ -102,35 +97,62 @@ namespace bridge {
         else if (message.type == UPDATE_CURRENT_FUELLING_VOLUME) {
             std::string str(message.payload.begin(), message.payload.end());
             setCurrentFuellingVolume(core, str);
-        } else if (message.type == UPDATE_CURRENT_FUELLING_AMOUNT) {
+        }
+        else if (message.type == UPDATE_CURRENT_FUELLING_AMOUNT) {
             std::string str(message.payload.begin(), message.payload.end());
             setCurrentFuellingAmount(core, str);
-        } else if (message.type == CLEAR_CURRENT_ORDER_AMOUNT_AND_VOLUME) {
+        }
+        else if (message.type == CLEAR_CURRENT_ORDER_AMOUNT_AND_VOLUME) {
             clearInputAmountAndVolumeText(core);
-        } else if (message.type == ON_GET_BALANCE_RESPONSE) {
+        }
+        else if (message.type == ON_GET_BALANCE_RESPONSE) {
             handleGetBalanceResponse(message, core);
+        }
+        else if (message.type == PAY_REVERT) {
+            std::string str(message.payload.begin(), message.payload.end());
+            handleRevertAmount(str, core);
         }
     }
 
+    void DwinLogic::handleRevertAmount(std::string &str, MessageLayer &core) {
+        std::string int_part_target_volume, dec_part_target_volume;
+        std::tie(int_part_target_volume, dec_part_target_volume) = utility::splitFloatString(str, 2);
+
+        for (uint16_t vp : m_settings.dwin.vp_revert_fuel_volume_integer) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        int_part_target_volume, m_settings.dwin.text_len_order_integer);
+        }
+
+        for (uint16_t vp : m_settings.dwin.vp_revert_fuel_volume_decimal) {
+            if (vp == 0) continue;
+            DwinCommands::sendRightAlignmentWithPadding(core, vp,
+                                                        dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
+        }
+
+
+
+    }
+
     void DwinLogic::handleGetBalanceResponse(const Message &message, MessageLayer& core) const {
-        std::string receipt = std::string(message.payload.begin(), message.payload.end());
-        ParsedReceipt parsed_receipt = utility::parseTerminalBalanceReceipt(receipt);
+        ParsedReceipt parsed_receipt;
+        if (deserializeCardInfo(message.payload, parsed_receipt)) {
+            // Отправка баланса карты.
+            DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
+                m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
 
-        // Отправка баланса карты.
-        DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
-            m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
+            // Отправка типа карты.
+            std::string wallet_type_to_dwin = utility::getWalletSymbol(parsed_receipt.wallet_type);
+            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_type, wallet_type_to_dwin, 2); // m_settings.dwin.text_len_fuel_integer
 
-        // Отправка типа карты.
-        std::string wallet_type_to_dwin = utility::getWalletSymbol(parsed_receipt.wallet_type);
-        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_type, wallet_type_to_dwin, 2); // m_settings.dwin.text_len_fuel_integer
+            //Отправка номера карты.
+            std::string first_part_card_number, second_part_card_number;
+            std::tie(first_part_card_number, second_part_card_number) = utility::splitByFirstSpace(parsed_receipt.card_number);
+            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
+            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
 
-        //Отправка номера карты.
-        std::string first_part_card_number, second_part_card_number;
-        std::tie(first_part_card_number, second_part_card_number) = utility::splitByFirstSpace(parsed_receipt.card_number);
-        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
-        DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
-
-        DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
+        }
     }
 
     // Обработка нажатий на дисплей.
@@ -234,7 +256,7 @@ namespace bridge {
         }
 
         if (vp == m_settings.dwin.vp_button_cancel_transaction) {
-            handleCancelTransaction(message, core);
+            handleCancelTransaction(core);
         }
 
         if (vp == m_settings.dwin.vp_button_finish_reception_fuel) {
@@ -258,7 +280,7 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = PAY_GET_BALANCE;
 
-        core.sendToLogicLayer(PIPE_LAYER, msg);
+        //core.sendToLogicLayer(PIPE_LAYER, msg);
         core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
@@ -454,7 +476,7 @@ namespace bridge {
         core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
-    void DwinLogic::handleCancelTransaction(const Message &message, MessageLayer& core) {
+    void DwinLogic::handleCancelTransaction(MessageLayer& core) {
         Message msg;
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;

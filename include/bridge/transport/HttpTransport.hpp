@@ -28,7 +28,7 @@ namespace bridge {
         void setReceiveHandler(ReceiveHandler handler) override;
 
     private:
-        void performRequest(const std::string& method, const std::string& uri, const std::string& body);
+        void performRequest(const std::string& method, const std::string& uri, const std::string& body, const std::string& resource_id);
         HttpResponseData authenticate(Poco::Net::HTTPRequest& request, const std::string& body);
         void workerThread();
 

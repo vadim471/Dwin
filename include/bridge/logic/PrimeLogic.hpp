@@ -19,6 +19,7 @@
 #include <itp/logger.hpp>
 
 #include "bridge/bos/SalesData.hpp"
+#include "bridge/payment/CardData.hpp"
 
 
 //HttpLogic.hpp
@@ -271,6 +272,9 @@ namespace bridge {
         // Проверка задержки заказа.
         void checkFuellingProcess(MessageLayer& core);
 
+        // Очистить все input поля на дисплее.
+        void clearInputTextDwin(MessageLayer &core);
+
         boost::asio::deadline_timer m_timer;
         boost::asio::deadline_timer m_ui_timer;
         std::atomic<bool> m_waitingResponse;
@@ -280,6 +284,7 @@ namespace bridge {
 
         long long m_lastId = 0;
         Settings m_settings;
+        boost::asio::io_service &m_ios;
 
         std::vector<Product> m_products;
         std::vector<Dispenser> m_dispensers;

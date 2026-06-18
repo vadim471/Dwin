@@ -45,6 +45,7 @@ namespace bridge {
     extern const std::string HTTP_MESSAGE_TYPE_RESPONSE;
     extern const std::string FUEL_VOLUME_ORDER_TYPE;
     extern const std::string CREATE_ORDER;
+    extern const std::string PAY_REVERT;
 
     // Type for MESSAGE Struct BOS part
     extern const std::string BOS_MESSAGE_SET_SALES;
@@ -161,4 +162,6 @@ namespace bridge {
     extern const std::string ON_GET_BALANCE_RESPONSE;
     extern const std::string GET_BALANCE_TYPE;
     extern const std::string GET_PAYMENT_TYPE;
+
+    extern const std::string ARKAIM_INITIALIZED;
 }

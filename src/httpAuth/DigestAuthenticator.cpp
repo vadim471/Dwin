@@ -36,11 +36,13 @@ namespace bridge {
     }
 
     void DigestAuthenticator::processResponse(const Poco::Net::HTTPResponse &response) {
-
+        setCookie(response);
     }
 
     bool DigestAuthenticator::handleUnauthorized(Poco::Net::HTTPClientSession &session, Poco::Net::HTTPRequest &request, Poco::Net::HTTPResponse &response, const std::string &body, std::ostream &responseStream) {
         m_credentials.authenticate(request, response);
+
+        setCookie(response);
 
         if (!m_session_cookie.empty()) {
             request.set("Cookie", m_session_cookie);

@@ -8,6 +8,7 @@
 
 #include "Settings.hpp"
 #include "bridge/core/types.hpp"
+#include "bridge/payment/CardData.hpp"
 
 namespace bridge {
     class utility {
@@ -113,17 +114,17 @@ namespace bridge {
         static std::string formatDecimalValue(uint32_t value, uint8_t decimal);
 
         // Создает чек для печати из данных транзакции
-        static std::string createReceiptFromTransaction(
-            uint64_t transaction_id,
-            const std::string& product_id,
-            uint32_t price_value, uint8_t price_decimal,
-            uint32_t volume_value, uint8_t volume_decimal,
-            uint32_t amount_value, uint8_t amount_decimal,
-            uint32_t fact_volume_value, uint8_t fact_volume_decimal,
-            uint32_t fact_amount_value, uint8_t fact_amount_decimal,
-            bool not_complete,
-            uint64_t transaction_time
-        );
+        // static std::string createReceiptFromTransaction(
+        //     uint64_t transaction_id,
+        //     const std::string& product_id,
+        //     uint32_t price_value, uint8_t price_decimal,
+        //     uint32_t volume_value, uint8_t volume_decimal,
+        //     uint32_t amount_value, uint8_t amount_decimal,
+        //     uint32_t fact_volume_value, uint8_t fact_volume_decimal,
+        //     uint32_t fact_amount_value, uint8_t fact_amount_decimal,
+        //     bool not_complete,
+        //     uint64_t transaction_time
+        // );
 
         static std::string createFirstReceiptFromLevelGauge(
             const LevelGauge& level_gauge,
@@ -147,7 +148,7 @@ namespace bridge {
             const std::string& address,
             const std::string& card_number,
             const std::string& product_name,
-            std::string& wallet_type,
+            const std::string& wallet_type,
             double refund_volume,
             double price_per_liter,
             uint64_t transaction_id,
@@ -182,5 +183,9 @@ namespace bridge {
 
         // Конвертер в формат CP1251.
         static std::string convertUtf8ToCp1251(const std::string& utf8_str);
+
+        // Высчитать количество литров для возврата.
+        static std::string calculateRevertFuelString(uint32_t volume_value_begin, uint8_t volume_decimal_begin,
+                                          uint32_t volume_value_end, uint8_t volume_decimal_end) ;
     };
 }

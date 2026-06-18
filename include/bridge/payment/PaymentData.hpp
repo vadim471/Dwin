@@ -78,6 +78,7 @@ struct ReceiptData {
     uint64_t transaction_id = 0;
     double ordered_volume_liters = 0.0;  // Для чека возврата
     bool is_refund = false;
+    std::string wallet_type;
 };
 
 inline Bytes serializeReceiptData(const ReceiptData& receipt) {
@@ -89,7 +90,8 @@ inline Bytes serializeReceiptData(const ReceiptData& receipt) {
         {"price_per_liter", receipt.price_per_liter},
         {"transaction_id", receipt.transaction_id},
         {"ordered_volume_liters", receipt.ordered_volume_liters},
-        {"is_refund", receipt.is_refund}
+        {"is_refund", receipt.is_refund},
+        {"wallet_type", receipt.wallet_type}
     };
 
     const auto body = json.dump();
@@ -105,7 +107,8 @@ inline std::string serializeReceiptDataToString(const ReceiptData& receipt) {
         {"price_per_liter", receipt.price_per_liter},
         {"transaction_id", receipt.transaction_id},
         {"ordered_volume_liters", receipt.ordered_volume_liters},
-        {"is_refund", receipt.is_refund}
+        {"is_refund", receipt.is_refund},
+        {"wallet_type", receipt.wallet_type}
     };
 
     return json.dump();
@@ -123,10 +126,11 @@ inline bool deserializeReceiptData(const Bytes& payload, ReceiptData& receipt) {
         receipt.transaction_id = json.value("transaction_id", uint64_t(0));
         receipt.ordered_volume_liters = json.value("ordered_volume_liters", 0.0);
         receipt.is_refund = json.value("is_refund", false);
+        receipt.wallet_type = json.value("wallet_type", std::string());
 
         return true;
     } catch (...) {
         return false;
     }
 }
-} // namespace bridge
+}

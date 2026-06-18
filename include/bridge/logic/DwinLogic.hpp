@@ -76,7 +76,7 @@ namespace bridge {
         void handleSelectedTRK(const Message &message, MessageLayer& core);
 
         // Хендлер обработки отмены заказа.
-        void handleCancelTransaction(const Message &message, MessageLayer& core);
+        void handleCancelTransaction(MessageLayer& core);
 
         // Хендлер обработки нажатия на кнопку получения баланса карты.
         void handleGetCardBalance(MessageLayer& core);
@@ -106,6 +106,9 @@ namespace bridge {
                                         MessageLayer &core,
                                         int thousands_length, int units_length, int kopecks_length,
                                         const std::string& value);
+
+        // Функция
+        void handleRevertAmount(std::string &str, MessageLayer& core);
 
         // Строка, содержащая значение, введенное с пинпада.
         std::string d_pinpad_buffer;

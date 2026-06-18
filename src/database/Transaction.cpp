@@ -42,7 +42,7 @@ namespace bridge {
             tracnsaction_id, card_number, fuel_name, trk_name, type_sale, id_tso,
             after_density, after_filling, after_lower_level, after_lower_volume, after_temperature, after_total_volume, after_upper_level, after_upper_volume, after_weight,
             before_density, before_filling, before_lower_level, before_lower_volume, before_temperature, before_total_volume, before_upper_level, before_upper_volume, before_weight,
-            discount, dispenser_volume_begin, dispenser_volume_end, dsc, receipt, sent_to_server, createdAt
+            discount, dispenser_volume_begin, dispenser_volume_end, dsc, receipt, sent_to_server, created_at
         ) VALUES (
             ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
         );

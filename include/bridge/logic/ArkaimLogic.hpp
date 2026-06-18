@@ -146,4 +146,4 @@ private:
 
 using ArkaimLogicPtr = std::shared_ptr<ArkaimLogic>;
 
-} // namespace bridge
+}

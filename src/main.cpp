@@ -18,7 +18,6 @@
 #include "bridge/core/Logger.hpp"
 #include "bridge/database/Database.hpp"
 #include "bridge/database/Transaction.hpp"
-#include "bridge/database/MetrologicalRecord.hpp"
 #include "bridge/database/BosRepository.hpp"
 #include <Poco/Net/SSLManager.h>
 
@@ -70,11 +69,11 @@ int main() {
         // INIT DB
         auto db = std::make_shared<Database>("Standalone.db");
         auto transactionRepo = std::make_shared<TransactionRepository>(db);
-        //auto metrologicalRepo = std::make_shared<LevelGaugeRepository>(db);
+        auto metrologicalRepo = std::make_shared<LevelGaugeRepository>(db);
         auto bosRepo = std::make_shared<BosRepository>(db);
 
         transactionRepo->createTable();
-//        metrologicalRepo->createTable();
+        metrologicalRepo->createTable();
         bosRepo->createTable();
         
         LOG_SYSTEM_INFO << "Database initialized successfully";
@@ -113,13 +112,13 @@ int main() {
         auto http_logic = std::make_shared<PrimeLogic>(cfg, ios);
         core.registerLogic(PRIME_HTTP_LAYER, http_logic);
 
-        auto bos_logic = std::make_shared<BosLogic>(cfg);
+        auto bos_logic = std::make_shared<BosLogic>(cfg, transactionRepo, metrologicalRepo);
         core.registerLogic(BOS_HTTP_LAYER, bos_logic);
 
         auto arkaim_logic = std::make_shared<ArkaimLogic>(ios, arkaim_trans);
         core.registerLogic(PIPE_LAYER, arkaim_logic);
 
-        // ITP Logger для удаленного логирования (кроме ArkaimLogic)
+        // ITP Logger для удаленного логирования (кроме ArkaimLogic).
         auto itp_logger_instance = std::make_shared<itp::logger>();
 
         std::thread ioThread([&ios](){
@@ -147,8 +146,8 @@ int main() {
         dwin_logic->setItpLogger(itp_logger_instance);
         LOG_SYSTEM_INFO << "ITP Logger initialized for HttpLogic and DwinLogic";
         
-        LOG_SYSTEM_INFO << "Starting HTTP logic loop";
-        http_logic->startLoop(core);
+        // LOG_SYSTEM_INFO << "Starting HTTP logic loop";
+        // http_logic->startLoop(core);
 
 
         while (keepRunning) {
@@ -192,71 +191,7 @@ int main() {
                     std::cout << "[INFO] Sent text '" << data << "' to VP " << vp << std::endl;
                     break;
                 }
-                case '3': {
-                    // Тестовая вставка транзакции
-                    TransactionData testTransaction;
-                    // testTransaction.shiftNumber = 5;
-                    // testTransaction.isReversalTransaction = false;
-                    // testTransaction.openWayCardType = 1;
-                    // testTransaction.cardIdHash = "9E2B0DF2E88A64DF2624FB27CCB2F9F8F846173D";
-                    // testTransaction.cardIdHashSalt = "8F127B07BAA49C215A17EBA9C5C22EB01CA67B05";
-                    // testTransaction.terminalId = "1KA00101";
-                    // testTransaction.mti = "0200";
-                    // testTransaction.year = 2022;
-                    // testTransaction.month = 2;
-                    // testTransaction.day = 22;
-                    // testTransaction.hour = 15;
-                    // testTransaction.minute = 20;
-                    // testTransaction.second = 56;
-                    // testTransaction.amountInKops = 500;
-                    // testTransaction.goodsPumpNumber = 1;
-                    // testTransaction.goodsProductCode = "0001000095";
-                    // testTransaction.goodsProductNameUtf8 = "АИ-95";
-                    // testTransaction.goodsQuantityInMilliliters = 5000;
-                    // testTransaction.goodsPriceInKopsByLiter = 100;
-                    // testTransaction.rrn = "205377107042";
-                    // testTransaction.authCode = "363249";
-                    // testTransaction.responseCode = "00";
-                    //
-                    // int64_t id = transactionRepo->insert(testTransaction);
-                    // std::cout << "[INFO] Transaction inserted with ID: " << id << std::endl;
-                    break;
-                }
-                case '4': {
-                    // Тестовая вставка метрологической записи
-                    MetrologicalRecordData testRecord;
-                    testRecord.date = "2022-04-29T17:40:16.070";
-                    testRecord.density = "0";
-                    testRecord.filling = "0";
-                    testRecord.fuelName = "ДТ";
-                    testRecord.idTso = "757586";
-                    testRecord.lowerLevel = "0";
-                    testRecord.lowerVolume = "0";
-                    testRecord.namePmp = "101";
-                    testRecord.temperature = "0";
-                    testRecord.totalVolume = "10";
-                    testRecord.upperLevel = "0";
-                    testRecord.upperVolume = "10";
-                    testRecord.weight = "0";
-                    
-                    //int64_t id = metrologicalRepo->insert(testRecord);
-                    std::cout << "[INFO] Metrological record inserted with ID: " << std::endl;
-                    break;
-                }
-                case '5': {
-                    // Показать все транзакции
-                    // auto transactions = transactionRepo->getAll();
-                    // std::cout << "\n=== Transactions (Total: " << transactions.size() << ") ===" << std::endl;
-                    // for (const auto& t : transactions) {
-                    //     std::cout << "ID: " << t.id
-                    //               << " | Shift: " << t.shiftNumber
-                    //               << " | RRN: " << t.rrn
-                    //               << " | Product: " << t.goodsProductNameUtf8
-                    //               << " | Amount: " << t.amountInKops << " kops"
-                    //               << std::endl;
-                    // }
-                    break;
-                }
+
                 case 'q': {
                     LOG_SYSTEM_INFO << "User requested shutdown";
                     keepRunning = false;

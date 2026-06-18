@@ -5,13 +5,20 @@
 
 #include "bridge/logic/BosLogic.hpp"
 
+#include "bridge/bos/FuelLevelData.hpp"
 #include "bridge/bos/SalesData.hpp"
 #include "bridge/database/Transaction.hpp"
 #include "bridge/core/MessageLayer.hpp"
 #include "bridge/core/utility.hpp"
+#include "bridge/database/LevelGaugeRepository.hpp"
 
 namespace bridge {
-    BosLogic::BosLogic(const Settings &settings) : m_settings(settings) {
+    BosLogic::BosLogic(const Settings &settings, std::shared_ptr<TransactionRepository> transaction_repo,
+        std::shared_ptr<LevelGaugeRepository> level_gauge_repo) :
+    m_settings(settings),
+    m_transaction_repo(transaction_repo),
+    m_level_gauge_repo(level_gauge_repo)
+    {
     };
 
     void BosLogic::handle(const Message &message, MessageLayer &core) {
@@ -72,21 +79,25 @@ namespace bridge {
     }
 
     void BosLogic::handleBosMetrological(const Message &message, MessageLayer &core) {
-        Message request;
+        try {
+            std::string json_str(message.payload.begin(), message.payload.end());
+            auto j = nlohmann::json::parse(json_str);
+            LevelGaugeData lg_data;
+            parseLevelGaugeRecordFromJson(j, lg_data);
 
-        request.source = BOS_HTTP_LAYER;
-        request.type = SET_METROLOGICAL;
-        request.payload = message.payload;
+            int64_t db_id = m_level_gauge_repo->insert(lg_data);
 
-        core.sendTo(BOS_HTTP_LAYER, request);
+            Message request;
+
+            request.source = BOS_HTTP_LAYER;
+            request.type = SET_METROLOGICAL;
+            request.payload = message.payload;
+
+            core.sendTo(BOS_HTTP_LAYER, request);
+        } catch (const nlohmann::json::exception &e) {
+            std::cerr << "[BosLogic] JSON parse error in handleBosMetrological: " << e.what() << std::endl;
+        } catch (const std::exception &e) {
+            std::cerr << "[BosLogic] Database error: " << e.what() << std::endl;
+        }
     }
-
-    //
-    // Message refund_msg;
-    // refund_msg.source = PRIME_HTTP_LAYER;
-    // refund_msg.type = PRINT_REFUND_RECEIPT;
-    // refund_msg.resource_id = order.id;
-    // refund_msg.payload = serializeReceiptData(receipt);
-    //
-    // core.sendToLogicLayer(PIPE_LAYER, refund_msg);
 }

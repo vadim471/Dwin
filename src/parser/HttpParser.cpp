@@ -28,13 +28,16 @@ namespace bridge {
                 msg.status_code = std::stoi(status_str);
 
                 auto it2 = std::find(it1 + 1, input.data.end(), '\0');
-
                 if (it2 != input.data.end()) {
                     msg.url.assign(it1 + 1, it2);
-                    msg.payload.assign(it2 + 1, input.data.end());
-                } else {
 
-                    msg.url.assign(it1 + 1, input.data.end());
+                    auto it3 = std::find(it2 + 1, input.data.end(), '\0');
+                    if (it3 != input.data.end()) {
+                        msg.resource_id.assign(it2 + 1, it3); // Достали ID!
+                        msg.payload.assign(it3 + 1, input.data.end());
+                    } else {
+                        msg.payload.assign(it2 + 1, input.data.end());
+                    }
                 }
             }
 
@@ -58,21 +61,25 @@ namespace bridge {
 
         const ApiRoute& route = it->second;
         std::string url = route.url;
-        std::string body = "";
 
         if (!message.resource_id.empty()) {
             url = utility::replaceIdInUrl(url, "ID", message.resource_id);
         }
 
-        // Добавление тела в POST методы.
+        // Заполняем массив безопасно через \0 (METHOD \0 URL \0 RESOURCE_ID \0 BODY)
+        raw_data.data.insert(raw_data.data.end(), route.method.begin(), route.method.end());
+        raw_data.data.push_back('\0');
+
+        raw_data.data.insert(raw_data.data.end(), url.begin(), url.end());
+        raw_data.data.push_back('\0');
+
+        raw_data.data.insert(raw_data.data.end(), message.resource_id.begin(), message.resource_id.end());
+        raw_data.data.push_back('\0');
+
         if (!message.payload.empty() && route.method != "GET") {
-            body.assign(message.payload.begin(), message.payload.end());
+            raw_data.data.insert(raw_data.data.end(), message.payload.begin(), message.payload.end());
         }
 
-        // Собираем строку: METHOD|URL|BODY
-        std::string command = it->second.method + "|" + url + "|" + body;
-
-        raw_data.data.assign(command.begin(), command.end());
         return raw_data;
     }
 }

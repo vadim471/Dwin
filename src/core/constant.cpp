@@ -153,4 +153,8 @@ namespace bridge {
 
     const std::string GET_BALANCE_TYPE = "GET_BALANCE";
     const std::string GET_PAYMENT_TYPE = "GET_PAYMENT";
+
+    const std::string ARKAIM_INITIALIZED = "174";
+
+    const std::string PAY_REVERT = "PAY_REVERT";
 }

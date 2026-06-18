@@ -56,28 +56,29 @@ namespace bridge {
 
     // По "|" разделены METHOD | URI | BODY
     void HttpTransport::send(const RawData& data) {
-        if (!m_running) {
-            return;
-        }
+        if (!m_running || data.data.empty()) return;
 
-        std::string command(data.data.begin(), data.data.end());
+        // Ищем первый \0 (после METHOD)
+        auto it1 = std::find(data.data.begin(), data.data.end(), '\0');
+        if (it1 == data.data.end()) return;
+        std::string method(data.data.begin(), it1);
 
-        std::stringstream ss(command);
-        std::string segment;
-        std::vector<std::string> parts;
+        // Ищем второй \0 (после URI)
+        auto it2 = std::find(it1 + 1, data.data.end(), '\0');
+        if (it2 == data.data.end()) return;
+        std::string uri(it1 + 1, it2);
 
-        while(std::getline(ss, segment, '|')) {
-            parts.push_back(segment);
-        }
+        // Ищем третий \0 (после RESOURCE_ID)
+        auto it3 = std::find(it2 + 1, data.data.end(), '\0');
+        if (it3 == data.data.end()) return;
+        std::string resource_id(it2 + 1, it3);
 
-        if (parts.size() < 2) return;
-        std::string method = parts[0];
-        std::string uri = parts[1];
-        std::string body = (parts.size() > 2) ? parts[2] : "";
+        // Все, что осталось - это BODY
+        std::string body(it3 + 1, data.data.end());
 
         {
             std::lock_guard<std::mutex> lock(m_queue_mutex);
-            m_queue.push({method, uri, body});
+            m_queue.push({method, uri, body, resource_id}); // Кладем в очередь с ID
         }
         m_cv.notify_one();
     }
@@ -95,11 +96,12 @@ namespace bridge {
                 m_queue.pop();
             }
 
-            performRequest(task.method, task.uri, task.body);
+            performRequest(task.method, task.uri, task.body, task.resource_id);
         }
     }
 
-    void HttpTransport::performRequest(const std::string& method, const std::string& uri, const std::string& body) {
+    void HttpTransport::performRequest(const std::string& method, const std::string& uri,
+        const std::string& body, const std::string& resource_id) {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         try {
             using namespace Poco::Net;
@@ -133,6 +135,11 @@ namespace bridge {
 
                 raw_data.data.insert(raw_data.data.end(), response_data.url.begin(), response_data.url.end());
                 raw_data.data.push_back('\0');
+
+                // ВАЖНО: Вставляем resource_id ДО тела (body)
+                raw_data.data.insert(raw_data.data.end(), resource_id.begin(), resource_id.end());
+                raw_data.data.push_back('\0');
+
                 raw_data.data.insert(raw_data.data.end(), response_data.body.begin(), response_data.body.end());
 
                 m_receive_handler(raw_data);
@@ -149,6 +156,10 @@ namespace bridge {
                 raw_data.data.push_back('\0');
 
                 raw_data.data.insert(raw_data.data.end(), uri.begin(), uri.end());
+                raw_data.data.push_back('\0');
+
+                // ПУСТОЙ ID (или оригинальный) ПРИ ОШИБКЕ ТОЖЕ НУЖЕН
+                raw_data.data.insert(raw_data.data.end(), resource_id.begin(), resource_id.end());
                 raw_data.data.push_back('\0');
 
                 std::string err_body = "{\"error\": \"" + ex.displayText() + "\"}";
