@@ -12,5 +12,6 @@ namespace bridge {
     BosParser::BosParser() {
         addRoute(SET_SALES, "POST", "/hs/Report/Sales/");
         addRoute(SET_METROLOGICAL, "POST", "/hs/Report/LevelFuel");
+        addRoute(SET_FUEL_RECEIPTION, "POST", "/hs/Report/AcceptFuel");
     };
 }

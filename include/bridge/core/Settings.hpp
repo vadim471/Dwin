@@ -276,6 +276,10 @@ struct Settings {
         int page_error_transaction_failed;
         int page_error_incorrect_pincode;
         int page_waiting_card_operation;
+        int page_choose_receiption_level_gauge;
+        int page_error_failed_read_card_data;
+        int page_error_card_not_enough_money;
+        int page_error_no_prime_connection;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -399,6 +403,8 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtysecond_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyfifth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyseventh_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyeighth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyninth_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -423,6 +429,8 @@ struct Settings {
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_fourteenth_page"));
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentysixth_page"));
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentyseventh_page"));
+            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
+
 
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_sixth_page"));
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_seventh_page"));
@@ -437,6 +445,8 @@ struct Settings {
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_fourteenth_page"));
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_twentysixth_page"));
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_twentyseventh_page"));
+            s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_fuel_volume_decimal_twentyseventh_page"));
+
 
             s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_sixth_page"));
             s.dwin.vp_current_order_amount_integer_pages.push_back(getHex("vp_current_order_amount_integer_seventh_page"));
@@ -533,7 +543,11 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtythird_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfourth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyfifth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtysixth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyseventh_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyeighth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyninth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_fortyth_page"));
 
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_first_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_second_page"));
@@ -572,6 +586,9 @@ struct Settings {
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyfifth_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtysixth_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyseventh_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyeighth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyninth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fortyth_page"));
 
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_first_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_second_page"));
@@ -610,13 +627,16 @@ struct Settings {
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyfifth_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtysixth_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyseventh_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyeighth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyninth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fortyth_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_thirteenth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentysixth_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twentyseventh_page"));
-            
+
             LOAD_HEX(vp_current_fuel_volume_integer);
             s.dwin.vp_revert_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentysixth_page"));
             s.dwin.vp_revert_fuel_volume_integer.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
@@ -822,6 +842,10 @@ struct Settings {
             s.dwin.page_error_transaction_failed       = j["dwin"]["page_error_transaction_failed"];
             s.dwin.page_error_incorrect_pincode        = j["dwin"]["page_error_incorrect_pincode"];
             s.dwin.page_waiting_card_operation         = j["dwin"]["page_waiting_card_operation"];
+            s.dwin.page_choose_receiption_level_gauge     = j["dwin"]["page_choose_receiption_level_gauge"];
+            s.dwin.page_error_failed_read_card_data    = j["dwin"]["page_error_failed_read_card_data"];
+            s.dwin.page_error_card_not_enough_money    = j["dwin"]["page_error_card_not_enough_money"];
+            s.dwin.page_error_no_prime_connection      = j["dwin"]["page_error_no_prime_connection"];
 
             s.dwin.audio_id_welcome_nozzle_up          = j["dwin"]["audio_id_welcome_nozzle_up"];
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];

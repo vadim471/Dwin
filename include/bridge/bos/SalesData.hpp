@@ -8,7 +8,7 @@
 #include "bridge/json.hpp"
 #include "bridge/core/types.hpp"
 #include "bridge/core/utility.hpp"
-#include "bridge/database/Transaction.hpp"
+#include "bridge/database/TransactionRepository.hpp"
 
 namespace bridge {
     enum TypeSale {
@@ -61,7 +61,6 @@ namespace bridge {
         std::string receipt;
     };
 
-
     inline void parseTransactionFromJson(const nlohmann::json &j, TransactionData &t_data) {
         t_data.date = j.value("Date", "");
         t_data.processing = j.value("Processing", "");
@@ -76,7 +75,7 @@ namespace bridge {
         t_data.fuel_name = j.value("FuelName", "");
         t_data.trk_name = j.value("TrkName", "");
         t_data.type_sale = j.value("TypeSale", "");
-        t_data.id_tso = j.value("IdTsp", "");
+        t_data.id_tso = j.value("IdTso", "");
 
         t_data.after_density = j.value("AfterDensity", "");
         t_data.after_filling = j.value("AfterFilling", "");

@@ -987,5 +987,10 @@ namespace bridge {
 
         return std::make_pair(str, "");
     }
+
+    double utility::stringToDouble(std::string s) {
+        std::replace(s.begin(), s.end(), ',', '.');
+        return std::stod(s);
+    }
 }
 

@@ -493,6 +493,10 @@ namespace bridge {
             std::cerr << "[ArkaimLogic] Transaction FAILED, Incorrect PIN" << (int) code
                     << " msg=\"" << message << "\"" << std::endl;
             sendPaymentResponse(order_id, false, 0, message);
+        } else if (code == itp::CL2_PAY_ERR_GENERIC_ERROR) {
+            std::cerr << "[ArkaimLogic] Transaction FAILED, NOT ENOUGH MONEY" << (int) code
+                    << " msg=\"" << message << "\"" << std::endl;
+            sendPaymentResponse(order_id, false, 0, message);
         } else {
             std::cerr << "[ArkaimLogic] Transaction FAILED, code=" << (int) code
                     << " msg=\"" << message << "\"" << std::endl;
@@ -674,7 +678,7 @@ namespace bridge {
             msg.source = PIPE_LAYER;
             msg.type = PAY_CANCEL_RESPONSE_SUCCESS;
             msg.resource_id = order_id;
-            m_core->sendToLogicLayer(UART_LAYER, msg);
+            //m_core->sendToLogicLayer(UART_LAYER, msg);
             m_core->sendToLogicLayer(PRIME_HTTP_LAYER, msg);
         }
 
@@ -682,7 +686,6 @@ namespace bridge {
         m_card_resolved = false;
         m_card_number.clear();
         m_card_data.clear();
-        //m_parsed_additional_card_info = {};
         m_pin_data.clear();
         m_pending.active = false;
         m_order_transactions.erase(order_id);
@@ -961,6 +964,7 @@ namespace bridge {
 
         if (error) {
             std::cerr << "[ArkaimLogic] Get balance error=" << error << std::endl;
+            sendGetBalanceResponse(NON_RECOGNIZED_ERROR, false);
             return;
         }
 

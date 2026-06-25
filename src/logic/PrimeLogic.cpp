@@ -18,6 +18,7 @@
 #include <tuple>
 #include <utility>
 
+#include "bridge/bos/FuelReceiptionData.hpp"
 #include "bridge/bos/SalesData.hpp"
 #include "bridge/payment/CardData.hpp"
 
@@ -216,8 +217,7 @@ namespace bridge {
             handleEnterFuelVolumeOrderPinPad(core, pin_buffer);
             return;
         }
-        if (message.type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON || message.type ==
-            USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON) {
+        if (message.type == USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON || message.type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON) {
             handleLevelGaugeButton(message, core);
             return;
         }
@@ -288,6 +288,8 @@ namespace bridge {
         }
         if (message.type == PAY_CANCEL_RESPONSE_SUCCESS) {
             // Возврат успешен — через 5с на стартовую страницу
+            // TODO заполнить страницу возврата данными с заказа
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process_end);
             clearTimers();
             startPageTimer(m_settings.business_logic.waiting_cancel_success, getStartPage(), [this, &core]() {
                 m_current_dispenser_id.clear();
@@ -401,6 +403,10 @@ namespace bridge {
             } else if (json_message == INCORECT_PINCODE) {
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_incorrect_pincode);
                 startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_print_pin);
+            } else if (json_message == NON_RECOGNIZED_ERROR) {
+                // Страницы неуспешного считывания карты (ошибка 4 от Аркаим).
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_failed_read_card_data);
+                startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_put_card_or_scan_code);
             }
         }
     }
@@ -525,6 +531,16 @@ namespace bridge {
                 print_message.resource_id = tanker->id;
                 print_message.payload.assign(receipt.begin(), receipt.end());
                 core.sendToLogicLayer(PIPE_LAYER, print_message);
+
+                // Отправка сообщения о пополнении в BOS сервер.
+                FuelReceiptData receipt_data = createFuelReceiptData(&initial_gauge, level_gauge, m_reception_level_gauge_id, m_reception_document_number, product_name);
+
+                Message bos_receiption_message;
+                bos_receiption_message.type = BOS_MESSAGE_SET_RECEIPTION;
+                bos_receiption_message.source = PRIME_HTTP_LAYER;
+                auto payload_bytes = serializeFuelReceiptData(receipt_data);
+                bos_receiption_message.payload = payload_bytes;
+                core.sendToLogicLayer(BOS_HTTP_LAYER, bos_receiption_message);
             }
         }
         m_reception_active = false;
@@ -550,7 +566,7 @@ namespace bridge {
             return;
         }
 
-        m_current_tanker_id = tanker->id;
+        //m_current_tanker_id = tanker->id;
 
         std::string product_name;
         if (Product *product = utility::getProductById(m_products, tanker->product_id)) {
@@ -717,6 +733,7 @@ namespace bridge {
         if (fuel_price_set) {
             m_current_dispenser_id = m_selected_dispensers[index];
             Dispenser *dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
+            setTRKIdOnDisplay(core, utility::extractFirstInt(m_current_dispenser_id));
             if (dispenser->status == DISPENSER_IDLE) {
                 processDispenserIdleAfterUserTouch(core);
             } else if (dispenser->status == DISPENSER_NOZZLE_UP) {
@@ -749,7 +766,7 @@ namespace bridge {
                     m_settings.dwin.text_len_percent_progress_bar);
             }
 
-            setTRKIdOnDisplay(core, utility::extractFirstInt(m_current_dispenser_id));
+
         } else {
             fillPageEditingFuelTypeSecondVariable(m_products, core);
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_price_another_variable);
@@ -811,6 +828,7 @@ namespace bridge {
         if (message.status_code == POCO_ERROR) {
             err.source = ErrorSource::NETWORK;
             err.severity = ErrorSeverity::FATAL;
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_no_prime_connection);
         } else if (message.status_code >= 500) {
             err.source = ErrorSource::HTTP;
             err.severity = ErrorSeverity::CRITICAL;
@@ -870,10 +888,18 @@ namespace bridge {
         }
     }
 
+
     void PrimeLogic::handleLevelGaugeButton(const Message &message, MessageLayer &core) {
         const LevelGauge *level_gauge = utility::getLevelGaugeById(m_level_gauge,
                                                                    m_level_gauge[m_current_level_gauge_index].id);
         setLevelGaugeParametersOnDisplay(core, *level_gauge, message.type);
+        DwinCommands::sendPageToDwin(core, m_settings.dwin.page_choose_receiption_level_gauge);
+
+        if (message.type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_level_gauges_info);
+        } else if (message.type == USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_choose_receiption_level_gauge);
+        }
     }
 
     void PrimeLogic::handleEditFuelButton(MessageLayer &core) {
@@ -1584,8 +1610,8 @@ namespace bridge {
         setProductIdOnDisplay(core, icon_fuel);
         setFuelTypePriceOnDisplay(core, product->price);
         setProductTextOnDisplay(core, utility::extractFirstInt(product->id));
-        DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_welcome_nozzle_up);
         DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
+        DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_welcome_nozzle_up);
     }
 
     void PrimeLogic::processDispenserStatus(const json &jObj, MessageLayer &core, const std::string &url) {
@@ -1657,7 +1683,6 @@ namespace bridge {
                             utility::parseIntFromJson(target_amount["exponent"]));
                         std::string target_amount_value = target_amount["value"];
                         int target_amount_exponent = target_amount["exponent"];
-                        //DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
 
                         auto target_volume = order["target_volume"];
                         std::string target_volume_string = utility::getFormattedStringFromJson(
@@ -1667,7 +1692,6 @@ namespace bridge {
                         int target_volume_exponent = target_volume["exponent"];
 
                         auto price = order["price"];
-                        //std::string price_value = price["value"];
                         std::string price_value = utility::getFormattedStringFromJson(
                             utility::parseStringFromJson(price["value"]),
                             utility::parseIntFromJson(price["exponent"]));
@@ -1690,29 +1714,17 @@ namespace bridge {
                         m_orders[trk_id].status = utility::parseStringFromJson(order["status"]);
                         m_orders[trk_id].id = order_id;
 
-
-                        //setCurrentOrderAmountOnDisplay(core, target_amount_string);
                         Message msg_order_amount;
                         msg_order_amount.type = UPDATE_CURRENT_ORDER_AMOUNT;
                         msg_order_amount.payload.assign(target_amount_string.begin(), target_amount_string.end());
 
                         core.sendToLogicLayer(UART_LAYER, msg_order_amount);
 
-                        //setCurrentOrderVolumeOnDisplay(core, target_volume_string);
                         Message msg_order_volume;
                         msg_order_volume.type = UPDATE_CURRENT_ORDER_VOLUME;
                         msg_order_volume.payload.assign(target_volume_string.begin(), target_volume_string.end());
 
                         core.sendToLogicLayer(UART_LAYER, msg_order_volume);
-
-                        //setCurrentFuelingVolume(core, target_volume_string);
-                        // Message msg_order_fuelling_volume;
-                        // msg_order_fuelling_volume.type = UPDATE_CURRENT_FUELLING_VOLUME;
-                        // msg_order_fuelling_volume.payload.assign(target_volume_string.begin(),
-                        //                                          target_volume_string.end());
-                        //
-                        // core.sendToLogicLayer(UART_LAYER, msg_order_fuelling_volume);
-
 
                         std::string product_id_processing = utility::primeIdToProcessingId(
                             product_id, m_settings.gas_station.prime_standalone,
@@ -2210,13 +2222,20 @@ namespace bridge {
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_incorrect_pincode);
                 startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_print_pin);
                 return;
+            } else if (error_msg == NOT_ENOUGH_MONEY) {
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_card_not_enough_money);
+                startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_put_card_or_scan_code, [&core, this]() {
+                    clearInputTextDwin( core);
+                });
+            } else {
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);
+                startPageTimer(m_settings.business_logic.show_return_money_process_end, getStartPage(), [&core, this]() {
+                    clearInputTextDwin( core);
+                });
             }
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);
-            startPageTimer(m_settings.business_logic.show_return_money_process_end, getStartPage(), [&core, this]() {
-                clearInputTextDwin( core);
-            });
+
             m_pending_info_sales.erase(order_id);
         }
     }

@@ -128,6 +128,7 @@ set(ARKAIM_INFRA_SOURCES
         src/database/FuelReceptionRepository.cpp
         src/database/LevelGaugeRepository.cpp
         include/bridge/payment/CardData.hpp
+        include/bridge/bos/FuelReceiptionData.hpp
 )
 
 configure_file(
@@ -185,10 +186,10 @@ add_executable(dwin_exmpl src/main.cpp
         
         # Database
         include/bridge/database/Database.hpp
-        include/bridge/database/Transaction.hpp
+        include/bridge/database/TransactionRepository.hpp
         include/bridge/database/BosRepository.hpp
         src/database/Database.cpp
-        src/database/Transaction.cpp
+        src/database/TransactionRepository.cpp
         src/database/BosRepository.cpp
         
         # DWIN

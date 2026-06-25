@@ -48,6 +48,8 @@
           "vp_trk_id_thirtysecond_page": "0x7913",
           "vp_trk_id_thirtyfifth_page": "0x7915",
           "vp_trk_id_thirtyseventh_page": "0x6600",
+          "vp_trk_id_thirtyeighth_page": "0x5212",
+          "vp_trk_id_thirtyninth_page": "0x5274",
 
           "vp_text_standalone_id_first_page": "0x8030",
           "vp_text_standalone_id_second_page": "0x8090",
@@ -86,6 +88,9 @@
           "vp_text_standalone_id_thirtyfifth_page": "0x6370",
           "vp_text_standalone_id_thirtysixth_page": "0x6870",
           "vp_text_standalone_id_thirtyseventh_page": "0x7070",
+          "vp_text_standalone_id_thirtyeighth_page": "0x5244",
+          "vp_text_standalone_id_thirtyninth_page": "0x5380",
+          "vp_text_standalone_id_fortyth_page": "0x5664",
 
           "vp_text_standalone_version_first_page": "0x8000",
           "vp_text_standalone_version_second_page": "0x8060",
@@ -124,6 +129,9 @@
           "vp_text_standalone_version_thirtyfifth_page": "0x6340",
           "vp_text_standalone_version_thirtysixth_page": "0x6840",
           "vp_text_standalone_version_thirtyseventh_page": "0x7040",
+          "vp_text_standalone_version_thirtyeighth_page": "0x5214",
+          "vp_text_standalone_version_thirtyninth_page": "0x5350",
+          "vp_text_standalone_version_fortyth_page": "0x5570",
 
           "vp_chosen_fuel_type_third_page": "0x5210",
           "vp_chosen_fuel_type_forth_page": "0x5310",
@@ -260,6 +268,9 @@
           "vp_current_date_time_footer_thirtyfifth_page": "0x6880",
           "vp_current_date_time_footer_thirtysixth_page": "0x7080",
           "vp_current_date_time_footer_thirtyseventh_page": "0x6380",
+          "vp_current_date_time_footer_thirtyeighth_page": "0x5253",
+          "vp_current_date_time_footer_thirtyninth_page": "0x5550",
+          "vp_current_date_time_footer_fortyth_page": "0x5674",
 
           "vp_current_fuel_type_eleventh_page": "0x6050",
           "vp_current_fuel_type_twelvth_page": "0x6150",
@@ -299,7 +310,6 @@
           "vp_progress_bar_percent_text_twelvth_page": "0x6170",
 
           "vp_basic_touch": "0x5036",
-
 
           "vp_fuel_volume_pinpad": "0x5340",
           "vp_button_number_document_pinpad": "0x5425",
@@ -472,7 +482,11 @@
           "page_return_money_cancel_transaction": 30,
           "page_error_transaction_failed": 31,
           "page_error_incorrect_pincode": 32,
+          "page_choose_receiption_level_gauge": 35,
           "page_waiting_card_operation": 37,
+          "page_error_failed_read_card_data": 38,
+          "page_error_card_not_enough_money": 39,
+          "page_error_no_prime_connection": 40,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,

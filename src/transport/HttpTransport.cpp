@@ -107,7 +107,7 @@ namespace bridge {
             using namespace Poco::Net;
 
             HTTPRequest request(method, uri, HTTPMessage::HTTP_1_1);
-            request.setKeepAlive(true);
+            request.setKeepAlive(false);
             if (!body.empty()) {
                 request.setContentLength(body.length());
                 request.setContentType("application/json");

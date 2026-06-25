@@ -17,7 +17,7 @@
 #include "bridge/core/constant.hpp"
 #include "bridge/core/Logger.hpp"
 #include "bridge/database/Database.hpp"
-#include "bridge/database/Transaction.hpp"
+#include "bridge/database/TransactionRepository.hpp"
 #include "bridge/database/BosRepository.hpp"
 #include <Poco/Net/SSLManager.h>
 
@@ -25,6 +25,7 @@
 #include <itp/logger.hpp>
 
 #include "bridge/core/Settings.hpp"
+#include "bridge/database/FuelReceptionRepository.hpp"
 #include "bridge/database/LevelGaugeRepository.hpp"
 #include "bridge/httpAuth/BasicAuthenticator.hpp"
 #include "bridge/httpAuth/DigestAuthenticator.hpp"
@@ -69,12 +70,14 @@ int main() {
         // INIT DB
         auto db = std::make_shared<Database>("Standalone.db");
         auto transactionRepo = std::make_shared<TransactionRepository>(db);
+        auto fuelReceiptRepo = std::make_shared<FuelReceptionRepository>(db);
         auto metrologicalRepo = std::make_shared<LevelGaugeRepository>(db);
         auto bosRepo = std::make_shared<BosRepository>(db);
 
         transactionRepo->createTable();
         metrologicalRepo->createTable();
         bosRepo->createTable();
+        fuelReceiptRepo->createTable();
         
         LOG_SYSTEM_INFO << "Database initialized successfully";
         
@@ -97,7 +100,6 @@ int main() {
         auto http_pars_prime = std::make_shared<PrimeParser>();
         auto http_pars_bos = std::make_shared<BosParser>();
 
-
         auto arkaim_trans = std::make_shared<ArkaimTransport>(itp::named_pipe::uptr());
         auto arkaim_pars  = std::make_shared<ArkaimParser>();
 
@@ -112,7 +114,7 @@ int main() {
         auto http_logic = std::make_shared<PrimeLogic>(cfg, ios);
         core.registerLogic(PRIME_HTTP_LAYER, http_logic);
 
-        auto bos_logic = std::make_shared<BosLogic>(cfg, transactionRepo, metrologicalRepo);
+        auto bos_logic = std::make_shared<BosLogic>(cfg, transactionRepo, metrologicalRepo, fuelReceiptRepo);
         core.registerLogic(BOS_HTTP_LAYER, bos_logic);
 
         auto arkaim_logic = std::make_shared<ArkaimLogic>(ios, arkaim_trans);
@@ -141,13 +143,9 @@ int main() {
 
         itp_logger_instance->start(arkaim_logic->getItpRoot(), true);
         http_logic->setItpLogger(itp_logger_instance);
-        // Устанавливаем BosRepository в HttpLogic
-        //http_logic->setBosRepository(bosRepo);
+
         dwin_logic->setItpLogger(itp_logger_instance);
         LOG_SYSTEM_INFO << "ITP Logger initialized for HttpLogic and DwinLogic";
-        
-        // LOG_SYSTEM_INFO << "Starting HTTP logic loop";
-        // http_logic->startLoop(core);
 
 
         while (keepRunning) {

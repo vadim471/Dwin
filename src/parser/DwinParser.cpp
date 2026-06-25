@@ -23,10 +23,6 @@ namespace bridge {
     std::vector<Message> DwinParser::parse(const RawData& input, const std::string& sourceName) {
         std::vector<Message> messages;
 
-        // if (!input.data.empty()) {
-        //
-        // }
-
         // 1. Дописываем новые данные в конец буфера
         m_buffer.insert(m_buffer.end(), input.data.begin(), input.data.end());
 

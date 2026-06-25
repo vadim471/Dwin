@@ -18,7 +18,8 @@ namespace bridge {
     SerialTransport::SerialTransport(boost::asio::io_service& ios, const Settings &settings)
         :   ios(ios),
             m_settings(settings),
-            port(ios)
+            port(ios),
+            m_write_timer(ios) // Инициализируем таймер
     {}
 
     void SerialTransport::setReceiveHandler(ReceiveHandler handler) {
@@ -31,7 +32,6 @@ namespace bridge {
         port_name = m_settings.serial.port;
         baud_rate = m_settings.serial.baud_rate;
 
-
         boost::system::error_code ec;
 
         LOG_UART_INFO << "Opening serial port: " << port_name;
@@ -42,16 +42,16 @@ namespace bridge {
                       << ": " << ec.message() << std::endl;
             return;
         }
-        
+
         LOG_UART_INFO << "Configuring serial port: baudrate=" << baud_rate;
         port.set_option(boost::asio::serial_port_base::baud_rate(baud_rate));
         port.set_option(boost::asio::serial_port_base::character_size(8));
         port.set_option(boost::asio::serial_port_base::parity(
-        boost::asio::serial_port_base::parity::none));
+            boost::asio::serial_port_base::parity::none));
         port.set_option(boost::asio::serial_port_base::stop_bits(
-       boost::asio::serial_port_base::stop_bits::one));
+            boost::asio::serial_port_base::stop_bits::one));
         port.set_option(boost::asio::serial_port_base::flow_control(
-        boost::asio::serial_port_base::flow_control::none));
+            boost::asio::serial_port_base::flow_control::none));
 
         LOG_UART_INFO << "Serial port " << port_name << " opened successfully";
         doRead();
@@ -68,6 +68,10 @@ namespace bridge {
 
     void SerialTransport::closePort() {
         boost::system::error_code ec;
+
+        // Обязательно отменяем таймер при остановке транспорта
+        m_write_timer.cancel(ec);
+
         if (port.is_open()) {
             port.cancel(ec);
             port.close(ec);
@@ -82,13 +86,10 @@ namespace bridge {
 
         std::lock_guard<std::mutex> lock(write_serial_mutex);
 
-        // Проверяем, была ли очередь пуста ДО того, как мы добавили элемент.
-        // Если была пуста, это наш пакет должен запустить процесс записи.
         bool write_in_progress = !write_serial_queue.empty();
         write_serial_queue.push(raw_data);
 
-        // Если запись сейчас не идет, запускаем её.
-        // Если идет, doWrite сам подхватит следующий элемент после завершения текущего.
+        // Если очередь была пуста, отправляем ПЕРВЫЙ пакет мгновенно
         if (!write_in_progress) {
             doWrite();
         }
@@ -110,11 +111,20 @@ namespace bridge {
         std::lock_guard<std::mutex> lock(write_serial_mutex);
 
         if (!ec) {
-            write_serial_queue.pop(); // Удаляем отправленный пакет
+            write_serial_queue.pop();
 
-            // Если есть еще что-то в очереди, отправляем дальше
             if (!write_serial_queue.empty()) {
-                doWrite();
+                m_write_timer.expires_from_now(boost::posix_time::milliseconds(5));
+
+                m_write_timer.async_wait([this](const boost::system::error_code& timer_ec) {
+                    // Проверяем, что таймер не был отменен (например, вызван stop())
+                    if (!timer_ec) {
+                        std::lock_guard<std::mutex> timer_lock(write_serial_mutex);
+                        if (!write_serial_queue.empty() && running) {
+                            doWrite();
+                        }
+                    }
+                });
             }
         } else {
             if (ec != boost::asio::error::operation_aborted) {
@@ -125,7 +135,6 @@ namespace bridge {
             }
         }
     }
-
 
     void SerialTransport::doRead() {
         if (!running) return;
@@ -149,7 +158,6 @@ namespace bridge {
         }
 
         if (bytes_transferred > 0 && receive_handler) {
-            //LOG_UART_DEBUG << "Received " << bytes_transferred << " bytes from " << port_name;
             RawData raw_data;
             raw_data.data.assign(read_buffer.data.begin(), read_buffer.data.begin() + bytes_transferred);
 

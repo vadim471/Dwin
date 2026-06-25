@@ -187,5 +187,8 @@ namespace bridge {
         // Высчитать количество литров для возврата.
         static std::string calculateRevertFuelString(uint32_t volume_value_begin, uint8_t volume_decimal_begin,
                                           uint32_t volume_value_end, uint8_t volume_decimal_end) ;
+
+        // Из строки "63.,6" вернуть double 63,6.
+        static double stringToDouble(std::string s);
     };
 }

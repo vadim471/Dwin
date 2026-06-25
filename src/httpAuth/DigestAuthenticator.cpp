@@ -40,20 +40,28 @@ namespace bridge {
     }
 
     bool DigestAuthenticator::handleUnauthorized(Poco::Net::HTTPClientSession &session, Poco::Net::HTTPRequest &request, Poco::Net::HTTPResponse &response, const std::string &body, std::ostream &responseStream) {
+        // 1. POCO вычисляет хэши Digest на основе параметров из 401 ответа
         m_credentials.authenticate(request, response);
 
+        // 2. КРИТИЧНО: Сервер прислал Connection: close.
+        // Сбрасываем сессию, чтобы POCO инициировал новое TCP-соединение.
+        session.reset();
+
+        // 3. Сохраняем куки, если сервер вдруг их передал вместе с 401
         setCookie(response);
 
         if (!m_session_cookie.empty()) {
             request.set("Cookie", m_session_cookie);
         }
 
+        // 4. Отправляем авторизованный запрос в НОВЫЙ сокет
         std::ostream& os = session.sendRequest(request);
         if (!body.empty()) os << body;
 
         std::istream& is = session.receiveResponse(response);
         Poco::StreamCopier::copyStream(is, responseStream);
 
+        // 5. Забираем заветную session_id из 200 OK
         setCookie(response);
 
         return response.getStatus() != Poco::Net::HTTPResponse::HTTP_UNAUTHORIZED;

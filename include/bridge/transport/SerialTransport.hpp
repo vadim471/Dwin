@@ -49,5 +49,7 @@ namespace bridge {
 
         std::mutex write_serial_mutex;
         std::queue<RawData> write_serial_queue;
+
+        boost::asio::deadline_timer m_write_timer; // Таймер для последовательной отправки команд в ОЗУ процессора DWIN.
     };
 }

@@ -125,7 +125,7 @@ namespace bridge {
         // Хендлер обработки выбора сервисного меню.
         void handleServiceMenuButton(const Message& message, MessageLayer& core);
 
-        // Хендлер обработки выбора состояния уровнемеров.
+        // Хендлер обработки выбора уровнемера. В зависимости от message.type выбирается страница заполнения информации.
         void handleLevelGaugeButton(const Message& message, MessageLayer& core);
 
         // Хендлер обработки выбора редактирования цены топлива.

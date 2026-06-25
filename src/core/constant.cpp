@@ -45,9 +45,11 @@ namespace bridge {
 
     const std::string SET_SALES = "set_sales";
     const std::string SET_METROLOGICAL = "set_metrological";
+    const std::string SET_FUEL_RECEIPTION = "set_fuel_reception";
 
     const std::string BOS_MESSAGE_SET_SALES = "BOS_REPORT_SALES";
     const std::string BOS_MESSAGE_SET_METROLOGICAL = "BOS_REPORT_LEVEL_FUEL";
+    const std::string BOS_MESSAGE_SET_RECEIPTION = "BOS_MESSAGE_SET_RECEIPTION";
 
     const std::string USER_TOUCH_VOLUME_BUTTON = "VOLUME_BUTTON";
     const std::string USER_TOUCH_PAGINATION_TRK_BUTTON = "PAGINATION_TRK";
@@ -157,4 +159,6 @@ namespace bridge {
     const std::string ARKAIM_INITIALIZED = "174";
 
     const std::string PAY_REVERT = "PAY_REVERT";
+    const std::string NON_RECOGNIZED_ERROR = "NON_RECOGNIZED_ERROR";
+    const std::string NOT_ENOUGH_MONEY = "Недостаточно средств";
 }

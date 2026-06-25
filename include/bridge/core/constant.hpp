@@ -32,6 +32,8 @@ namespace bridge {
     extern const std::string TITLE_ENDING_RECEPTION_FUEL;
     extern const std::string TITLE_ENDING_BEFORE_RECEPTION_FUEL;
     extern const std::string TITLE_ENDING_AFTER_RECEPTION_FUEL;
+    extern const std::string NON_RECOGNIZED_ERROR;
+    extern const std::string NOT_ENOUGH_MONEY;
 
     // Path to config file
     extern const std::string CONFIG;
@@ -50,6 +52,7 @@ namespace bridge {
     // Type for MESSAGE Struct BOS part
     extern const std::string BOS_MESSAGE_SET_SALES;
     extern const std::string BOS_MESSAGE_SET_METROLOGICAL;
+    extern const std::string BOS_MESSAGE_SET_RECEIPTION;
 
     //DWIN const
     extern const int FUEL_TYPE_LEN;
@@ -110,6 +113,7 @@ namespace bridge {
     // BOS POST
     extern const std::string SET_SALES;
     extern const std::string SET_METROLOGICAL;
+    extern const std::string SET_FUEL_RECEIPTION;
 
     // HTTP POST
     extern const std::string SET_COMMAND;

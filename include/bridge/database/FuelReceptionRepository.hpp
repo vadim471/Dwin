@@ -14,11 +14,11 @@ namespace bridge {
 struct FuelReceptionRecord {
     int64_t id = 0;
     std::string date;               // ISO 8601 формат
-    int64_t timestamp = 0;          // Unix timestamp в миллисекундах
     std::string gauge_id;           // ID уровнемера
     std::string gauge_name;         // Название резервуара
     std::string fuel_name;          // Название топлива
     std::string document_number;    // Номер накладной
+    std::string id_tso;
     
     // Показания до приема
     double before_upper_level = 0.0;

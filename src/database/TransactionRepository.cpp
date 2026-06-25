@@ -1,4 +1,4 @@
-#include "bridge/database/Transaction.hpp"
+#include "bridge/database/TransactionRepository.hpp"
 #include <sqlite3.h>
 #include <iostream>
 

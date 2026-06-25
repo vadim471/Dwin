@@ -6,10 +6,12 @@
 #include "bridge/logic/BosLogic.hpp"
 
 #include "bridge/bos/FuelLevelData.hpp"
+#include "bridge/bos/FuelReceiptionData.hpp"
 #include "bridge/bos/SalesData.hpp"
-#include "bridge/database/Transaction.hpp"
+#include "bridge/database/TransactionRepository.hpp"
 #include "bridge/core/MessageLayer.hpp"
 #include "bridge/core/utility.hpp"
+#include "bridge/database/FuelReceptionRepository.hpp"
 #include "bridge/database/LevelGaugeRepository.hpp"
 
 namespace bridge {
@@ -30,8 +32,38 @@ namespace bridge {
             handleBosMetrological(message, core);
             return;
         }
+        if (message.type == BOS_MESSAGE_SET_RECEIPTION) {
+            handleBosReceipt(message, core);
+            return;
+        }
+
         if (message.type == HTTP_RESPONSE) {
             handleHttpResponse(message, core);
+        }
+    }
+
+    void BosLogic::handleBosReceipt(const Message &message, MessageLayer &core) {
+        try {
+            std::string json_str(message.payload.begin(), message.payload.end());
+            auto j = nlohmann::json::parse(json_str);
+            FuelReceptionRecord f_data;
+
+            parseFuelReceiptFromJson(j, f_data);
+
+            int64_t db_id = m_fuel_reception_repo->insert(f_data);
+
+            Message request;
+
+            request.source = BOS_HTTP_LAYER;
+            request.type = SET_FUEL_RECEIPTION;
+            request.resource_id = std::to_string(db_id);
+            request.payload = message.payload;
+
+            core.sendTo(BOS_HTTP_LAYER, request);
+        } catch (const nlohmann::json::exception &e) {
+            std::cerr << "[BosLogic] JSON parse error in handleBosSales: " << e.what() << std::endl;
+        } catch (const std::exception &e) {
+            std::cerr << "[BosLogic] Database error: " << e.what() << std::endl;
         }
     }
 
