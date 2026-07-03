@@ -34,6 +34,11 @@ namespace bridge {
     extern const std::string TITLE_ENDING_AFTER_RECEPTION_FUEL;
     extern const std::string NON_RECOGNIZED_ERROR;
     extern const std::string NOT_ENOUGH_MONEY;
+    extern const std::string ON_CARD_DETECTED;
+    extern const std::string CLEAR_CARD_DATA_REQUEST;
+
+    // Arkaim errors
+    extern const uint16_t ERROR_SERVER_PROCESSING;
 
     // Path to config file
     extern const std::string CONFIG;
@@ -167,5 +172,11 @@ namespace bridge {
     extern const std::string GET_BALANCE_TYPE;
     extern const std::string GET_PAYMENT_TYPE;
 
+    extern const std::string HIDDEN_CARD_BALANCE_OPTIMA_PC;
+
     extern const std::string ARKAIM_INITIALIZED;
+
+    extern const std::string ERROR_SERVER_PROCESSING_TYPE;
+
+    extern const int ERROR_STATUS_CODE;
 }

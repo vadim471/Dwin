@@ -1,26 +1,20 @@
-//
-// Created by vadim.tissen on 18.11.2025.
-//
-
 #pragma once
-#include "ITransport.hpp"
+#include "bridge/transport/ITransport.hpp"
 #include <boost/asio.hpp>
 #include <mutex>
 #include <queue>
+#include <atomic>
 
 #include "bridge/core/Settings.hpp"
 #include "bridge/core/types.hpp"
 
-//SerialTransport.hpp
 namespace bridge {
 
     class SerialTransport : public ITransport {
     public:
         SerialTransport(boost::asio::io_service& ios, const Settings &settings);
-
         ~SerialTransport() override;
 
-        // ITransport
         void start() override;
         void stop() override;
         void send(const RawData& raw_data) override;
@@ -31,10 +25,10 @@ namespace bridge {
         void handleRead(const boost::system::error_code& ec, std::size_t bytes_transferred);
 
         void doWrite();
+        void doWriteImpl(); // Вспомогательный метод для отправки
         void handleWrite(const boost::system::error_code& ec, std::size_t bytes_transferred);
 
         void closePort();
-
 
         boost::asio::io_service& ios;
         boost::asio::serial_port port;
@@ -49,7 +43,12 @@ namespace bridge {
 
         std::mutex write_serial_mutex;
         std::queue<RawData> write_serial_queue;
+        bool m_write_in_progress = false;
 
-        boost::asio::deadline_timer m_write_timer; // Таймер для последовательной отправки команд в ОЗУ процессора DWIN.
+        // --- Умный дроссель очереди ---
+        boost::asio::deadline_timer m_throttle_timer;
+        size_t m_burst_bytes = 0;
+
+        const size_t MAX_BURST_BYTES = 64; 
     };
 }

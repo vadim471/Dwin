@@ -54,6 +54,13 @@ private:
     // ---- Card flow (mirrors controller.cpp) ----
     void onCardDetected(itp::frame& event);
     void onCardResolve(itp::root& root, uint16_t error, itp::frame& response);
+    void resetCardState();
+    void handleCardError(const uint16_t error);
+
+    enum ErrorCardCode : uint16_t {
+        ERROR_SERVER_PROCESSING = 1537,
+        ERROR_OTHER = 1574,
+    };
 
     // ---- Payment flow ----
     void sendTransaction(const std::string& order_id, const PaymentRequestData& payment);
@@ -88,12 +95,13 @@ private:
     void onGetBalanceResponse(uint16_t error, itp::frame& response);
     void sendGetBalanceResponse(const std::string &message , bool success);
 
+
     MessageLayer* m_core = nullptr;
-    boost::asio::io_service& m_ios;
-    ArkaimTransportPtr m_transport;
-    std::thread m_poll_thread;
-    std::atomic<bool> m_started{false};
-    std::mutex m_mutex;
+    boost::asio::io_service& ios;
+    ArkaimTransportPtr transport;
+    std::thread poll_thread;
+    std::atomic<bool> started{false};
+    std::mutex mutex;
 
     // ---- Device addresses discovered from API list ----
     struct DeviceInfo {
@@ -102,34 +110,35 @@ private:
         uint8_t type = 0;
         std::string id;
     };
-    std::vector<DeviceInfo> m_devices;
+    std::vector<DeviceInfo> devices;
 
-    uint8_t m_controller_address = 0;
-    bool m_has_controller = false;
-    uint8_t m_pinpad_address = 0;
-    bool m_has_pinpad = false;
-    uint8_t m_printer_address = 0;
-    bool m_has_printer = false;
-    std::unique_ptr<Printer> m_printer;
+    uint8_t controller_address = 0;
+    bool has_controller = false;
+    uint8_t pinpad_address = 0;
+    bool has_pinpad = false;
+    uint8_t printer_address = 0;
+    bool has_printer = false;
+    std::unique_ptr<Printer> printer;
 
     // ---- Card state (from on_card_resolve) ----
-    bool m_card_resolved = false;
-    uint8_t m_reader_address = 0;
-    uint32_t m_reader_api = 0;
-    uint8_t m_pay_address = 0;
-    uint16_t m_pay_service = 0;
-    std::string m_card_number;
-    std::vector<uint8_t> m_card_data;
-    int32_t m_card_issuer = 0;
+    bool card_resolved = false;
+    bool card_resolve_in_progress = false;
+    uint8_t reader_address = 0;
+    uint32_t reader_api = 0;
+    uint8_t pay_address = 0;
+    uint16_t pay_service = 0;
+    std::string card_number;
+    std::vector<uint8_t> card_data;
+    int32_t card_issuer = 0;
 
     // ---- Additional card state (from get_balance) ----
     //ParsedReceipt m_parsed_additional_card_info;
 
     // ---- PIN state ----
-    std::vector<uint8_t> m_pin_data;
-    uint8_t m_pin_type = 0;
-    bool m_waiting_pin = false;
-    bool m_waiting_pin_for_balance = false;
+    std::vector<uint8_t> pin_data;
+    uint8_t pin_type = 0;
+    bool waiting_pin = false;
+    bool waiting_pin_for_balance = false;
 
     // ---- Pending payment (waiting for card) ----
     struct PendingPayment {
@@ -138,10 +147,10 @@ private:
         PaymentRequestData payment;
         uint64_t transaction_time = 0;
     };
-    PendingPayment m_pending;
+    PendingPayment pending_payment;
 
-    // ---- Order -> Transaction mapping ----
-    std::map<std::string, uint64_t> m_order_transactions;
+    // ---- Order id -> Transaction mapping (card data, transaction_id) ----
+    std::map<std::string, ActiveOrder>  order_transactions;
 };
 
 using ArkaimLogicPtr = std::shared_ptr<ArkaimLogic>;

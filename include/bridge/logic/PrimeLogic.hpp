@@ -97,7 +97,7 @@ namespace bridge {
         // Печать чека Дебета
         void printDebetReceipt(MessageLayer& core);
 
-        // Хендлер обработки статуса выбранной ТРК.
+        // Хендлер обработки статуса выбранной ТРК. Здесь есть переходы на страницы, поэтому для невыбранной ТРК нужен отдельный метод.
         void handleDispenserStatus(const json& jArray, MessageLayer& core);
 
         // Хендлер обработки статуса дисплея ТРК. Используется при проливе заказа
@@ -108,13 +108,14 @@ namespace bridge {
         void handleDispenserOrderCreated(const json& jArray, MessageLayer& core);
 
         // Хендлер обработки изменения заказа на ТРК. ТРК выбрана.
-        void handleDispenserOrderStatus(const json& jArray, MessageLayer& core, std::set<std::string>& completed_dispensers) ;
 
         // Хендлер обработки статуса невыбранной ТРК. Для страницы выбора ТРК.
+        void handleDispenserOrderStatus(const json& jArray, MessageLayer& core);
+
         void handleRandomDispenserStatus(const json& event, MessageLayer& core);
 
         // Хендлер обработки статуса заказа невыбранной ТРК. Изменить состояние заказа в Map.
-        void handleRandomDispenserOrderStatus(const json& event);
+        // void handleRandomDispenserOrderStatus(const json& event);
 
         // Хендлер обработки выбора количества ТРК.
         void handleAmountTRK(int amount);
@@ -171,7 +172,7 @@ namespace bridge {
         void handleIncorrectPinCode(MessageLayer& core, const std::string& order_id, const std::string& dispenser_id);
 
         // Хендлер обработки отмены транзакции сразу после оплаты
-        void handleImmediatlyCancelTransaction(MessageLayer& core);
+        void handleImmediatelyCancelTransaction(MessageLayer& core);
 
         // Хендлер обработки нажатия кнопки ENTER ввода ПИН кода.
         void handleEnterPinCodeButton(MessageLayer& core, const Message& message);
@@ -184,6 +185,11 @@ namespace bridge {
 
         // Хендлер обработки отмены ввода пин-кода после создания заказа.
         void handleCancelEnterPin(MessageLayer& core);
+
+        // Хендлер опознания карты.
+        void handleCardDetected(MessageLayer& core);
+
+        void handleLogicLayerError(MessageLayer& core, const std::string error);
 
         // Хендлер обработки начала заполнения танкера
         void processReceptionTanker(MessageLayer& core);
@@ -206,11 +212,17 @@ namespace bridge {
         // Вывод текущей цены топлива выбранного вида топлива на всех страницах.
         void setFuelTypePriceOnDisplay(MessageLayer& core, const std::string &value) const;
 
+        // Вывод текущего объема и суммы заказа ПОСЛЕ или ВО ВРЕМЯ пролива.
+        void setCurrentOrderAfterChooseDispenser(MessageLayer& core, double &volume, double &amount);
+
         // Заполнение значений параметров уровнемера.
         void setLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge, const std::string &type);
         void setReceptionLevelGaugeParametersOnDisplay(MessageLayer& core, const LevelGauge& level_gauge);
 
         static void sendTaskToHttp(MessageLayer& core, std::string id);
+
+        // Оповестить ArkaimLogic, чтобы удалить данные предыдущей карты.
+        void createMessageClearCardData(MessageLayer& core);
 
         // Обработка нажатия на кнопку пагинации страницы уровнемеров.
         void changeLevelGauge(int direction, MessageLayer& core, const std::string &type);

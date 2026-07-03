@@ -50,6 +50,7 @@
           "vp_trk_id_thirtyseventh_page": "0x6600",
           "vp_trk_id_thirtyeighth_page": "0x5212",
           "vp_trk_id_thirtyninth_page": "0x5274",
+          "vp_trk_id_fortyfirst_page": "0x6571",
 
           "vp_text_standalone_id_first_page": "0x8030",
           "vp_text_standalone_id_second_page": "0x8090",
@@ -91,6 +92,7 @@
           "vp_text_standalone_id_thirtyeighth_page": "0x5244",
           "vp_text_standalone_id_thirtyninth_page": "0x5380",
           "vp_text_standalone_id_fortyth_page": "0x5664",
+          "vp_text_standalone_id_fortyfirst_page": "0x6470",
 
           "vp_text_standalone_version_first_page": "0x8000",
           "vp_text_standalone_version_second_page": "0x8060",
@@ -132,6 +134,7 @@
           "vp_text_standalone_version_thirtyeighth_page": "0x5214",
           "vp_text_standalone_version_thirtyninth_page": "0x5350",
           "vp_text_standalone_version_fortyth_page": "0x5570",
+          "vp_text_standalone_version_fortyfirst_page": "0x6440",
 
           "vp_chosen_fuel_type_third_page": "0x5210",
           "vp_chosen_fuel_type_forth_page": "0x5310",
@@ -271,6 +274,7 @@
           "vp_current_date_time_footer_thirtyeighth_page": "0x5253",
           "vp_current_date_time_footer_thirtyninth_page": "0x5550",
           "vp_current_date_time_footer_fortyth_page": "0x5674",
+          "vp_current_date_time_footer_fortyfirst_page": "0x6480",
 
           "vp_current_fuel_type_eleventh_page": "0x6050",
           "vp_current_fuel_type_twelvth_page": "0x6150",
@@ -319,6 +323,8 @@
 
           "vp_set_service_pincode_pinpad": "0x5346",
 
+          "vp_card_balance_hidden_number_first_part": "0x6562",
+          "vp_card_balance_hidden_number_second_part": "0x6565",
           "vp_card_balance_number_first_part": "0x6402",
           "vp_card_balance_number_second_part": "0x6405",
           "vp_card_balance_thousands": "0x6413",
@@ -486,7 +492,8 @@
           "page_waiting_card_operation": 37,
           "page_error_failed_read_card_data": 38,
           "page_error_card_not_enough_money": 39,
-          "page_error_no_prime_connection": 40,
+          "page_error_no_connection": 40,
+          "page_balance_card_hidden": 41,
 
           "icon_dispenser_order_end": 1,
           "icon_dispenser_idle": 2,

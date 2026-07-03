@@ -178,7 +178,9 @@ struct Settings {
         std::vector<uint16_t> vp_trk_id_pages;
         uint16_t vp_trk_id_second_page;
 
-    // --- Page Balance Card ---
+    // --- Page Balance Card (18 and 41 (hidden balance) ---
+        uint16_t vp_card_balance_hidden_number_first_part;
+        uint16_t vp_card_balance_hidden_number_second_part;
         uint16_t vp_card_balance_number_first_part;
         uint16_t vp_card_balance_number_second_part;
         uint16_t vp_card_balance_thousands;
@@ -279,7 +281,8 @@ struct Settings {
         int page_choose_receiption_level_gauge;
         int page_error_failed_read_card_data;
         int page_error_card_not_enough_money;
-        int page_error_no_prime_connection;
+        int page_error_no_connection;
+        int page_balance_card_hidden;
 
     // --- Icons ---
         int icon_dispenser_nozzle_up;
@@ -405,6 +408,7 @@ struct Settings {
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyseventh_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyeighth_page"));
             s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_thirtyninth_page"));
+            s.dwin.vp_trk_id_pages.push_back(getHex("vp_trk_id_fortyfirst_page"));
 
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_third_page"));
             s.dwin.vp_product_id_pages.push_back(getHex("vp_chosen_fuel_type_forth_page"));
@@ -429,8 +433,6 @@ struct Settings {
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_fourteenth_page"));
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentysixth_page"));
             s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_order_volume_integer_twentyseventh_page"));
-            s.dwin.vp_current_order_volume_integer_pages.push_back(getHex("vp_current_fuel_volume_integer_twentyseventh_page"));
-
 
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_sixth_page"));
             s.dwin.vp_current_order_volume_decimal_pages.push_back(getHex("vp_current_order_volume_decimal_seventh_page"));
@@ -548,6 +550,7 @@ struct Settings {
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyeighth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_thirtyninth_page"));
             s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_fortyth_page"));
+            s.dwin.vp_current_date_time_pages.push_back(getHex("vp_current_date_time_footer_fortyfirst_page"));
 
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_first_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_second_page"));
@@ -589,6 +592,7 @@ struct Settings {
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyeighth_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_thirtyninth_page"));
             s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fortyth_page"));
+            s.dwin.vp_text_standalone_id_pages.push_back(getHex("vp_text_standalone_id_fortyfirst_page"));
 
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_first_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_second_page"));
@@ -630,6 +634,7 @@ struct Settings {
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyeighth_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_thirtyninth_page"));
             s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fortyth_page"));
+            s.dwin.vp_text_standalone_version_pages.push_back(getHex("vp_text_standalone_version_fortyfirst_page"));
 
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_eleventh_page"));
             s.dwin.vp_product_text_pages.push_back(getHex("vp_current_fuel_type_twelvth_page"));
@@ -794,6 +799,8 @@ struct Settings {
             LOAD_HEX(vp_trk_id_first_page);
             LOAD_HEX(vp_trk_id_second_page);
 
+            LOAD_HEX(vp_card_balance_hidden_number_first_part);
+            LOAD_HEX(vp_card_balance_hidden_number_second_part);
             LOAD_HEX(vp_card_balance_number_first_part);
             LOAD_HEX(vp_card_balance_number_second_part);
             LOAD_HEX(vp_card_balance_thousands);
@@ -842,10 +849,11 @@ struct Settings {
             s.dwin.page_error_transaction_failed       = j["dwin"]["page_error_transaction_failed"];
             s.dwin.page_error_incorrect_pincode        = j["dwin"]["page_error_incorrect_pincode"];
             s.dwin.page_waiting_card_operation         = j["dwin"]["page_waiting_card_operation"];
-            s.dwin.page_choose_receiption_level_gauge     = j["dwin"]["page_choose_receiption_level_gauge"];
+            s.dwin.page_choose_receiption_level_gauge  = j["dwin"]["page_choose_receiption_level_gauge"];
             s.dwin.page_error_failed_read_card_data    = j["dwin"]["page_error_failed_read_card_data"];
             s.dwin.page_error_card_not_enough_money    = j["dwin"]["page_error_card_not_enough_money"];
-            s.dwin.page_error_no_prime_connection      = j["dwin"]["page_error_no_prime_connection"];
+            s.dwin.page_error_no_connection      = j["dwin"]["page_error_no_connection"];
+            s.dwin.page_balance_card_hidden            = j["dwin"]["page_balance_card_hidden"];
 
             s.dwin.audio_id_welcome_nozzle_up          = j["dwin"]["audio_id_welcome_nozzle_up"];
             s.dwin.audio_id_fuelling_end               = j["dwin"]["audio_id_fuelling_end"];

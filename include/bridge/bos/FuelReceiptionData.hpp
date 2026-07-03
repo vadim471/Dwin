@@ -108,7 +108,7 @@ namespace bridge {
         return Bytes(body.begin(), body.end());
     }
 
-    FuelReceiptData createFuelReceiptData(const LevelGauge *init_gauge, const LevelGauge *current_gauge, std::string name_pmp,
+    inline FuelReceiptData createFuelReceiptData(const LevelGauge *init_gauge, const LevelGauge *current_gauge, std::string name_pmp,
         std::string doc_num, std::string fuel_name) {
         FuelReceiptData data;
 

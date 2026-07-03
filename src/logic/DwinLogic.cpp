@@ -129,29 +129,35 @@ namespace bridge {
             DwinCommands::sendRightAlignmentWithPadding(core, vp,
                                                         dec_part_target_volume, m_settings.dwin.text_len_order_decimal);
         }
-
-
-
     }
 
     void DwinLogic::handleGetBalanceResponse(const Message &message, MessageLayer& core) const {
         ParsedReceipt parsed_receipt;
         if (deserializeCardInfo(message.payload, parsed_receipt)) {
-            // Отправка баланса карты.
-            DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
-                m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
 
-            // Отправка типа карты.
-            std::string wallet_type_to_dwin = utility::getWalletSymbol(parsed_receipt.wallet_type);
-            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_type, wallet_type_to_dwin, 2); // m_settings.dwin.text_len_fuel_integer
-
-            //Отправка номера карты.
             std::string first_part_card_number, second_part_card_number;
             std::tie(first_part_card_number, second_part_card_number) = utility::splitByFirstSpace(parsed_receipt.card_number);
-            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
-            DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
+            // Случай, если баланс скрыт.
+            if (parsed_receipt.hidden_balance) {
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_balance_card_hidden);
 
-            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
+                DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_hidden_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
+                DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_hidden_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
+
+            } else {
+                //Отправка номера карты.
+                DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_first_part, first_part_card_number, m_settings.dwin.text_len_fuel_type);
+                DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_number_second_part, second_part_card_number, m_settings.dwin.text_len_standalone_id);
+
+                // Отправка баланса карты.
+                DwinCommands::sendTriPartFloatToDwin(m_settings.dwin.vp_card_balance_thousands, m_settings.dwin.vp_card_balance_hundreds,
+                    m_settings.dwin.vp_card_balance_tens, core, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_fuel_integer, m_settings.dwin.text_len_order_decimal, parsed_receipt.balance_before);
+
+                // Отправка типа карты.
+                std::string wallet_type_to_dwin = utility::getWalletSymbol(parsed_receipt.wallet_type);
+                DwinCommands::sendRightAlignmentWithPadding(core, m_settings.dwin.vp_card_balance_type, wallet_type_to_dwin, 2); // m_settings.dwin.text_len_fuel_integer
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_card_balance);
+            }
         }
     }
 
@@ -481,7 +487,6 @@ namespace bridge {
         msg.source = UART_LAYER;
         msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
 
-        core.sendToLogicLayer(PIPE_LAYER, msg);
         core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);
     }
 
@@ -545,6 +550,10 @@ namespace bridge {
         // Кнопка подтверждения начала приема топлива. Необходима печать чека текущего состояния резервуара.
         if (key_value == 11) {
             msg.type = USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON;
+        }
+
+        if (key_value == 12) {
+            msg.type = CLEAR_CARD_DATA_REQUEST;
         }
 
         core.sendToLogicLayer(PRIME_HTTP_LAYER, msg);

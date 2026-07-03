@@ -25,9 +25,7 @@
 
 // Для формирования запросов на дисплей. Тут я разбираю ответ от сервера и составляю Message для дисплея.
 namespace bridge {
-    PrimeLogic::PrimeLogic(const Settings &settings, boost::asio::io_service &ios) :
-
-        m_settings(settings),
+    PrimeLogic::PrimeLogic(const Settings &settings, boost::asio::io_service &ios) : m_settings(settings),
         m_timer(ios),
         m_ios(ios),
         m_ui_timer(ios),
@@ -155,11 +153,15 @@ namespace bridge {
 
     void PrimeLogic::handle(const Message &message, MessageLayer &core) {
         m_waitingResponse.store(false);
+
         if (message.type == ARKAIM_INITIALIZED) {
             std::cout << "[PrimeLogic] Arkaim is ready, starting HTTP loop..." << std::endl;
             startLoop(core);
             LOG_SYSTEM_INFO << "Starting Prime logic loop";
             return;
+        }
+        if (message.status_code == ERROR_STATUS_CODE) {
+            handleLogicLayerError(core, message.type);
         }
         if (message.type == USER_TOUCH_ACCEPT_RECEPTION_FUEL_BUTTON) {
             processReceptionTanker(core);
@@ -217,7 +219,8 @@ namespace bridge {
             handleEnterFuelVolumeOrderPinPad(core, pin_buffer);
             return;
         }
-        if (message.type == USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON || message.type == USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON) {
+        if (message.type == USER_TOUCH_SERVICE_MENU_RECEPTION_LEVEL_GAUGE_BUTTON || message.type ==
+            USER_TOUCH_SERVICE_MENU_LEVEL_GAUGE_BUTTON) {
             handleLevelGaugeButton(message, core);
             return;
         }
@@ -287,20 +290,16 @@ namespace bridge {
             return;
         }
         if (message.type == PAY_CANCEL_RESPONSE_SUCCESS) {
-            // Возврат успешен — через 5с на стартовую страницу
-            // TODO заполнить страницу возврата данными с заказа
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process_end);
             clearTimers();
             startPageTimer(m_settings.business_logic.waiting_cancel_success, getStartPage(), [this, &core]() {
                 m_current_dispenser_id.clear();
                 renderDispenser(core);
-                clearInputTextDwin( core);
             });
             return;
         }
         if (message.type == USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON) {
-            // fill returning money pages
-            handleImmediatlyCancelTransaction(core);
+            handleImmediatelyCancelTransaction(core);
             return;
         }
         if (message.type == USER_TOUCH_BASIC_TOUCH_ATTACH_CARD_BACK_BUTTON) {
@@ -347,12 +346,42 @@ namespace bridge {
             message_balance.payload = serializeCardInfo(m_parsed_card_balance);
 
             core.sendToLogicLayer(UART_LAYER, message_balance);
+
+            return;
         }
         if (message.type == ON_GET_BALANCE_RESPONSE) {
             handleGetBalanceCard(core, message);
+            return;
         }
         if (message.type == USER_TOUCH_CANCEL_TRANSACTION_AFTER_CANCEL_ENTER_PIN) {
             handleCancelEnterPin(core);
+            return;
+        }
+        if (message.type == ON_CARD_DETECTED) {
+            handleCardDetected(core);
+            return;
+        }
+        if (message.type == CLEAR_CARD_DATA_REQUEST) {
+            core.sendToLogicLayer(PIPE_LAYER, message);
+            return;
+        }
+    }
+
+    void PrimeLogic::handleLogicLayerError(MessageLayer &core, const std::string error) {
+        if (error == ERROR_SERVER_PROCESSING_TYPE) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_no_connection);
+        }
+        // case ERROR_SERVER_PROCESSING_TYPE: {
+        //     DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_no_connection);
+        // }
+    }
+
+    void PrimeLogic::handleCardDetected(MessageLayer &core) {
+        if (!m_current_dispenser_id.empty()) {
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
+        } else {
+            // Сообщение для Arkaim для очистки карты (если кто-то поднес БЕЗ выбранной ТРК - далее блокировка считываний).
+            createMessageClearCardData(core);
         }
     }
 
@@ -379,6 +408,9 @@ namespace bridge {
     void PrimeLogic::handleCancelEnterPin(MessageLayer &core) {
         std::string command = m_settings.APIDispenser.close;
         PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+
+        //Удалить информацию о предыдущей карте.
+        createMessageClearCardData(core);
     }
 
     void PrimeLogic::handleGetBalanceCard(MessageLayer &core, const Message &message) {
@@ -406,24 +438,36 @@ namespace bridge {
             } else if (json_message == NON_RECOGNIZED_ERROR) {
                 // Страницы неуспешного считывания карты (ошибка 4 от Аркаим).
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_failed_read_card_data);
-                startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_put_card_or_scan_code);
+                startPageTimer(m_settings.business_logic.show_incorrect_pin_page,
+                               m_settings.dwin.page_put_card_or_scan_code);
             }
         }
     }
 
     void PrimeLogic::handleCreateNewOrder(MessageLayer &core) {
+        createMessageClearCardData(core);
         renderDispenser(core);
         DwinCommands::sendPageToDwin(core, getStartPage());
         m_current_dispenser_id.clear();
     }
 
-    void PrimeLogic::handleImmediatlyCancelTransaction(MessageLayer &core) {
-        // Печать чека возврата при отмене транзакции
+    void PrimeLogic::handleImmediatelyCancelTransaction(MessageLayer &core) {
         if (!m_current_dispenser_id.empty() && m_orders.count(m_current_dispenser_id) > 0) {
             auto &order = m_orders[m_current_dispenser_id];
             Product *product = utility::getProductById(m_products, order.product_id);
 
             if (product) {
+                // Заполнение страницы возврата
+                Message revert_amount_message;
+                std::string amount_revert_fuel_liters = std::to_string(order.order_volume);
+                revert_amount_message.source = PRIME_HTTP_LAYER;
+                revert_amount_message.type = PAY_REVERT;
+                revert_amount_message.payload.
+                        assign(amount_revert_fuel_liters.begin(), amount_revert_fuel_liters.end());
+
+                core.sendToLogicLayer(UART_LAYER, revert_amount_message);
+                //
+
                 ReceiptData receipt;
                 receipt.address = m_settings.gas_station.standalone_address;
                 receipt.product_name = product->title;
@@ -433,28 +477,45 @@ namespace bridge {
                 receipt.is_refund = true;
 
                 // Печать чека возврата.
-                Message refund_msg;
-                refund_msg.source = PRIME_HTTP_LAYER;
-                refund_msg.type = PRINT_REFUND_RECEIPT;
-                refund_msg.resource_id = order.id;
-                refund_msg.payload = serializeReceiptData(receipt);
+                Message print_refund_msg;
+                print_refund_msg.source = PRIME_HTTP_LAYER;
+                print_refund_msg.type = PRINT_REFUND_RECEIPT;
+                print_refund_msg.resource_id = order.id;
+                print_refund_msg.payload = serializeReceiptData(receipt);
+                //
+
+                // Запрос на отмену транзации в Arkaim.
+                Message revert_order_message;
+                revert_order_message.source = PRIME_HTTP_LAYER;
+                revert_order_message.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
                 //
 
                 // Заполнение информации для отчета в BOS. Возможно нужно указать Fact значения объема
                 auto it = m_pending_info_sales.find(order.id);
                 if (it != m_pending_info_sales.end()) {
-                    it->second.type_sale = std::to_string(TypeSale::Revert);
+                    it->second.type_sale = std::to_string(Revert);
                     auto now = std::chrono::system_clock::now();
                     auto duration = now.time_since_epoch();
                     auto millis = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
                     it->second.date = utility::getTimeStringForBos(millis);
                     it->second.fact_amount = it->second.rqs_amount;
                     it->second.fact_quantity = it->second.rqs_quantity;
+
+
+                    // Для отправки отчестности в BOS
+                    std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, product->id);
+                    m_pending_level_gauge_orders[level_gauge_id].push({
+                        order.id, m_current_dispenser_id, GaugeTaskType::AFTER_FUELLING
+                    });
+                    getParameters(core, level_gauge_id);
                 }
 
-                core.sendToLogicLayer(PIPE_LAYER, refund_msg);
+                core.sendToLogicLayer(PIPE_LAYER, print_refund_msg);
+                core.sendToLogicLayer(PIPE_LAYER, revert_order_message);
                 std::string command = m_settings.APIDispenser.close;
                 PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
+
+                createMessageClearCardData(core);
             }
         }
     }
@@ -533,7 +594,9 @@ namespace bridge {
                 core.sendToLogicLayer(PIPE_LAYER, print_message);
 
                 // Отправка сообщения о пополнении в BOS сервер.
-                FuelReceiptData receipt_data = createFuelReceiptData(&initial_gauge, level_gauge, m_reception_level_gauge_id, m_reception_document_number, product_name);
+                FuelReceiptData receipt_data = createFuelReceiptData(&initial_gauge, level_gauge,
+                                                                     m_reception_level_gauge_id,
+                                                                     m_reception_document_number, product_name);
 
                 Message bos_receiption_message;
                 bos_receiption_message.type = BOS_MESSAGE_SET_RECEIPTION;
@@ -614,9 +677,9 @@ namespace bridge {
             startPageTimer(m_settings.business_logic.show_return_money_process_end, getStartPage(), [this, &core]() {
                 m_current_dispenser_id.clear();
                 renderDispenser(core);
-                clearInputTextDwin( core);
+                //clearInputTextDwin( core);
             });
-        } else {
+        } else if (!m_current_dispenser_id.empty() && m_current_dispenser_id != "") {
             // Полный пролив — "Счастливого пути".
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
             DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_fuelling_end);
@@ -632,8 +695,7 @@ namespace bridge {
 
         core.sendToLogicLayer(PIPE_LAYER, msg);
 
-        DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
-        //
+        //DwinCommands::sendPageToDwin(core, m_settings.dwin.page_waiting_card_operation);
     }
 
     void PrimeLogic::handleBasicTouch(MessageLayer &core) {
@@ -731,6 +793,7 @@ namespace bridge {
     void PrimeLogic::handleChooseTRK(MessageLayer &core, int index) {
         bool fuel_price_set = utility::checkAllFuelPrice(m_products);
         if (fuel_price_set) {
+            clearInputTextDwin(core);
             m_current_dispenser_id = m_selected_dispensers[index];
             Dispenser *dispenser = utility::getDispenserById(m_dispensers, m_current_dispenser_id);
             setTRKIdOnDisplay(core, utility::extractFirstInt(m_current_dispenser_id));
@@ -744,17 +807,22 @@ namespace bridge {
             // TODO реализовать создание еще одного заказа.
             else if (dispenser->status == DISPENSER_FUELLING) {
                 // Выставить текущий продукт.
+                auto &order = m_orders[dispenser->id];
                 Product *product = utility::getProductById(m_products, dispenser->product_id);
                 int icon_fuel = utility::getIconForProduct(product->rating, m_settings);
                 setProductIdOnDisplay(core, icon_fuel);
                 setFuelTypePriceOnDisplay(core, product->price);
                 setProductTextOnDisplay(core, utility::extractFirstInt(product->id));
+
+                // Выставить текущий заказ на страницу.
+                setCurrentOrderAfterChooseDispenser(core, order.order_volume, order.order_amount);
+
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_in_progress);
 
                 //TODO ОТКРЫТЬ ЭКРАН НАЛИВА (11) page_fuel_in_progress
             } else if (dispenser->status == DISPENSER_COMPLETE) {
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
-                //TODO ОТКРЫТЬ ЗАПРАВКА ЗАВЕРШЕНА (12) page_fuel_ended
+                //TODO ОТКРЫТЬ ЗАПРАВКА ЗАВЕРШЕНА (12) page_fuel_ended + заполнить данными заказа.
+                auto &order = m_orders[dispenser->id];
                 Product *product = utility::getProductById(m_products, dispenser->product_id);
                 int icon_fuel = utility::getIconForProduct(product->rating, m_settings);
                 setProductIdOnDisplay(core, icon_fuel);
@@ -764,9 +832,16 @@ namespace bridge {
                 DwinCommands::sendRightAlignmentWithPadding(
                     core, m_settings.dwin.vp_progress_bar_percent_text_twelvth_page, "100",
                     m_settings.dwin.text_len_percent_progress_bar);
+
+                // Выставить текущий заказ на страницу.
+                setCurrentOrderAfterChooseDispenser(core, order.order_volume, order.order_amount);
+                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_fuel_ended);
+                startPageTimer(m_settings.business_logic.waiting_cancel_success, getStartPage(), [this, &core]() {
+                m_current_dispenser_id.clear();
+                renderDispenser(core);
+            });
+
             }
-
-
         } else {
             fillPageEditingFuelTypeSecondVariable(m_products, core);
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_set_fuel_price_another_variable);
@@ -828,7 +903,7 @@ namespace bridge {
         if (message.status_code == POCO_ERROR) {
             err.source = ErrorSource::NETWORK;
             err.severity = ErrorSeverity::FATAL;
-            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_no_prime_connection);
+            DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_no_connection);
         } else if (message.status_code >= 500) {
             err.source = ErrorSource::HTTP;
             err.severity = ErrorSeverity::CRITICAL;
@@ -870,15 +945,12 @@ namespace bridge {
         if (error.code == 400 && error.description.find(LOW_VOLUME) != std::string::npos) {
             DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_low_fuel_level);
 
-            // Закрытие заказа на Prime
-            std::string command = m_settings.APIDispenser.close;
-            PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-
             // Отправка PAY_CANCEL в ArkaimLogic (пустой payload — возьмёт из m_pending)
-            Message cancel_msg;
-            cancel_msg.source = PRIME_HTTP_LAYER;
-            cancel_msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
-            core.sendToLogicLayer(PIPE_LAYER, cancel_msg);
+            handleImmediatelyCancelTransaction(core);
+            // Message cancel_msg;
+            // cancel_msg.source = PRIME_HTTP_LAYER;
+            // cancel_msg.type = USER_TOUCH_BASIC_TOUCH_CANCEL_TRANSACTION_BUTTON;
+            // core.sendToLogicLayer(PIPE_LAYER, cancel_msg);
         }
 
         if (error.context.find("/order") != std::string::npos) {
@@ -1088,9 +1160,6 @@ namespace bridge {
     }
 
     void PrimeLogic::processEvent(const json &jArray, MessageLayer &core) {
-        // Создано для ловли последнего пакета с данными о заказе, т.к. сначала заказ закрывается, а потом уже последняя информация.
-        std::set<std::string> completed_dispensers;
-
         for (const auto &event: jArray["events"]) {
             if (event.contains("id")) {
                 long long currentId = event["id"];
@@ -1103,7 +1172,13 @@ namespace bridge {
             if (event.contains("device_id")) {
                 trk_id = utility::parseStringFromJson(event["device_id"]);
             }
+            if (event.contains("on_dsp_order_changed")) {
+                handleDispenserOrderStatus(event, core);
+            }
 
+            if (event.contains("on_dsp_status_changed")) {
+                handleRandomDispenserStatus(event, core);
+            }
             // Методы, если ТРК выбрана (не 1 страница).
             if (trk_id == m_current_dispenser_id) {
                 if (event.contains("on_dsp_status_changed")) {
@@ -1114,20 +1189,8 @@ namespace bridge {
                     // Запрос возможность начала пролива. Пока нет проверки оплаты обычный флаг, пока он false отображать одно состояние
                     // изменился - другое. Начало пролива после нажатия на дисплей.
                     handleDispenserOrderCreated(event, core);
-                } else if (event.contains("on_dsp_order_changed")) {
-                    handleDispenserOrderStatus(event, core, completed_dispensers);
-                }
-            } else {
-                if (event.contains("on_dsp_status_changed")) {
-                    handleRandomDispenserStatus(event, core);
-                } else if (event.contains("on_dsp_order_changed")) {
-                    // TODO handle random dispenser order changed
-                    handleRandomDispenserOrderStatus(event);
                 }
             }
-        }
-        for (const auto &device_id: completed_dispensers) {
-            processOrderFinalization(device_id, core);
         }
     }
 
@@ -1153,6 +1216,21 @@ namespace bridge {
 
             if (status == DISPENSER_NOZZLE_UP && m_current_dispenser_id.empty()) {
                 DwinCommands::sendPlaySoundToDwin(core, m_settings.dwin.audio_id_welcome_nozzle_up);
+            }
+
+            // Для отправки завершения заказа на невыбранной ТРК.
+            if ((status == DISPENSER_IDLE) && (dispenser->prev_status == DISPENSER_COMPLETE || dispenser->prev_status == DISPENSER_FUELLING)) {
+                std::string command = m_settings.APIDispenser.close;
+                PrimeCommands::handleCommand(core, command, dispenser_id);
+                auto &order = m_orders[dispenser_id];
+                std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, dispenser->product_id);
+                if (order.order_finalized) {
+                    m_pending_level_gauge_orders[level_gauge_id].push({
+                       dispenser->order.order_id, dispenser_id, GaugeTaskType::AFTER_FUELLING
+                   });
+                    getParameters(core, level_gauge_id);
+                }
+                order.closed = true;
             }
         } catch (const std::exception &e) {
             std::cerr << "[Logic] Error parsing Random Dispenser Status: " << e.what() << std::endl;
@@ -1283,38 +1361,39 @@ namespace bridge {
         if (status == DISPENSER_NOZZLE_UP) {
             // Показываем страницу "Вставьте/приложите карту".
             Product *product = utility::getProductById(m_products, dispenser->product_id);
-
             processDispenserNozzleUpAfterUserTouch(core, product);
-            //DwinCommands::sendPageToDwin(core, m_settings.dwin.page_put_card_or_scan_code);
         } else if (status == DISPENSER_IDLE) {
             clearTimers();
-            if (dispenser->prev_status == DISPENSER_FUELLING || dispenser->prev_status == DISPENSER_COMPLETE) {
+            if (dispenser->prev_status == DISPENSER_COMPLETE || dispenser->prev_status == DISPENSER_FUELLING) {
                 std::string command = m_settings.APIDispenser.close;
-                PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-
-                // Подготовка данных для заполнения информации уровнемерами.
+                PrimeCommands::handleCommand(core, command, device_id);
+                auto &order = m_orders[device_id];
                 std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, dispenser->product_id);
-                m_pending_level_gauge_orders[level_gauge_id].push({
-                    dispenser->order.order_id, dispenser->id, GaugeTaskType::AFTER_FUELLING
-                });
-                getParameters(core, level_gauge_id);
+                if (order.order_finalized) {
+                    m_pending_level_gauge_orders[level_gauge_id].push({
+                       dispenser->order.order_id, device_id, GaugeTaskType::AFTER_FUELLING
+                   });
+                    getParameters(core, level_gauge_id);
+                }
+                order.closed = true;
+                createMessageClearCardData(core);
             }
             if (dispenser->prev_status == DISPENSER_COMPLETE ||
                 //dispenser->prev_status == DISPENSER_FUELLING ||
                 dispenser->prev_status == DISPENSER_HALTED) {
                 // После пролива — страницу покажет ORD_DELIVERED/ORD_INTERRUPTED
                 // Здесь только таймер на возврат к стартовой
+                getDispenserStatus(core, device_id);
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_good_trip);
                 m_current_dispenser_id.clear();
-                startPageTimer(5, getStartPage(), [&core, this] {
-                    clearInputTextDwin( core);
-                });
+                startPageTimer(5, getStartPage());
+                dispenser->prev_status.clear();
             } else if (dispenser->prev_status != DISPENSER_FUELLING) {
                 // Первичный IDLE (пистолет не вставлен) — "Вставьте пистолет"
                 processDispenserIdleAfterUserTouch(core);
             }
         } else if (status == DISPENSER_COMPLETE) {
-            getDispenserStatus(core, m_current_dispenser_id);
+            //getDispenserStatus(core, m_current_dispenser_id);
             if (device_id == m_current_dispenser_id) {
                 DwinCommands::sendInt16ToDwin(core, m_settings.dwin.vp_progress_order_bar_twelvth_page, 100);
                 DwinCommands::sendRightAlignmentWithPadding(
@@ -1330,8 +1409,7 @@ namespace bridge {
         }
     }
 
-    void PrimeLogic::handleDispenserOrderStatus(const json &jArray, MessageLayer &core,
-                                                std::set<std::string> &completed_dispensers) {
+    void PrimeLogic::handleDispenserOrderStatus(const json &jArray, MessageLayer &core) {
         try {
             std::string status = "";
             std::string device_id = jArray["device_id"];
@@ -1342,7 +1420,8 @@ namespace bridge {
             std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, product_id);
             std::string order_id = order.id;
 
-            //auto it = m_pending_info_sales.find(order_id);
+            auto pending_sale = m_pending_info_sales.find(order_id);
+
             if (data.contains("status")) {
                 status = utility::parseStringFromJson(data["status"]);
                 order.status = status;
@@ -1355,6 +1434,38 @@ namespace bridge {
                 order.fact_amount_exp = static_cast<uint8_t>(utility::parseIntFromJson(amount["exponent"]));
             }
 
+            if (data.contains("counter_end")) {
+                auto counter = data["counter_end"];
+                std::string counter_string = utility::getFormattedStringFromJson(counter["value"], counter["exponent"]);
+                order.counter_end = std::stod(counter_string);
+            }
+
+            if (data.contains("tanker_end")) {
+                auto tanker = data["tanker_end"];
+                std::string tanker_string = utility::getFormattedStringFromJson(tanker["value"], tanker["exponent"]);
+                order.tanker_end = std::stod(tanker_string);
+                pending_sale->second.dispenser_volume_end = tanker_string;
+            }
+
+            if (data.contains("counter_begin")) {
+                auto counter = data["counter_begin"];
+                std::string counter_string = utility::getFormattedStringFromJson(counter["value"], counter["exponent"]);
+                order.counter_begin = std::stod(counter_string);
+            }
+
+            if (data.contains("tanker_begin")) {
+                auto tanker = data["tanker_begin"];
+                std::string tanker_string = utility::getFormattedStringFromJson(tanker["value"], tanker["exponent"]);
+                order.tanker_begin = std::stod(tanker_string);
+                pending_sale->second.dispenser_volume_begin = tanker_string;
+            }
+
+            // Не привязывать к complete завершение заказа! Оно там появляется ПОСЛЕ того, как я сказал PAY_CONFIRM с последними данными.
+            if (data.contains("complete")) {
+                bool complete = data["complete"];
+                order.complete = complete;
+            }
+
             if (data.contains("volume")) {
                 auto volume = data["volume"];
                 order.fact_volume_raw = static_cast<uint32_t>(
@@ -1362,20 +1473,24 @@ namespace bridge {
                 order.fact_volume_exp = static_cast<uint8_t>(utility::parseIntFromJson(volume["exponent"]));
             }
 
+            if (data.contains("time_begin")) {
+                std::string time_begin = data["time_begin"];
+                order.time_begin = std::stoull(time_begin);
+            }
+
             if (status == ORDER_INTERRUPTED || status == ORDER_DELIVERED) {
-                completed_dispensers.insert(device_id);
+                // Для ловли последнего пакета с данными опрашиваю статус ТРК.
                 std::string time_end_string = data["time_end"];
                 order.time_end = std::stoull(time_end_string);
                 getDispenserStatus(core, device_id);
-
             } else if (status == ORDER_AUTHORIZED) {
                 std::string time_begin_string = data["time_begin"];
-                auto tanker_begin = data["tanker_begin"];
-                std::string tanker_begin_string = utility::getFormattedStringFromJson(
-                    utility::parseStringFromJson(tanker_begin["value"]),
-                    utility::parseIntFromJson(tanker_begin["exponent"]));
-                auto pending_sale = m_pending_info_sales.find(order_id);
-                pending_sale->second.dispenser_volume_begin = tanker_begin_string;
+                // auto tanker_begin = data["tanker_begin"];
+                // std::string tanker_begin_string = utility::getFormattedStringFromJson(
+                //     utility::parseStringFromJson(tanker_begin["value"]),
+                //     utility::parseIntFromJson(tanker_begin["exponent"]));
+
+
 
                 uint64_t timestamp_date = std::stoull(time_begin_string);
                 m_orders[device_id].time_begin = timestamp_date;
@@ -1392,125 +1507,129 @@ namespace bridge {
 
     void PrimeLogic::processOrderFinalization(const std::string &device_id, MessageLayer &core) {
         auto &order = m_orders[device_id];
-        std::string status = order.status;
-        std::string order_id = order.id;
-        std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, order.product_id);
-        auto it = m_pending_info_sales.find(order_id);
+        if (!order.order_finalized) {
+            order.order_finalized = true;
+            std::string status = order.status;
+            std::string order_id = order.id;
+            std::string level_gauge_id = utility::getLevelGaugeIdByProductId(m_tankers, order.product_id);
+            auto it = m_pending_info_sales.find(order_id);
 
-        uint32_t fact_amount_value = order.fact_amount_raw;
-        uint8_t fact_amount_decimal = order.fact_amount_exp;
-        uint32_t fact_volume_value = order.fact_volume_raw;
-        uint8_t fact_volume_decimal = order.fact_volume_exp;
+            uint32_t fact_amount_value = order.fact_amount_raw;
+            uint8_t fact_amount_decimal = order.fact_amount_exp;
+            uint32_t fact_volume_value = order.fact_volume_raw;
+            uint8_t fact_volume_decimal = order.fact_volume_exp;
 
-        int price_val = 0, price_exp = 0;
-        Product *product = utility::getProductById(m_products, order.product_id);
-        if (product) {
-            std::tie(price_val, price_exp) = utility::formatFloatStringToInt(product->price);
-        }
-        int order_volume_val = 0, order_volume_exp = 0;
-        int order_amount_val = 0, order_amount_exp = 0;
-        auto format_order_decimal = [](double value) {
-            std::ostringstream stream;
-            stream << std::fixed << std::setprecision(2) << value;
-            std::string formatted = stream.str();
-            std::replace(formatted.begin(), formatted.end(), '.', ',');
-            return formatted;
-        };
-        std::tie(order_volume_val, order_volume_exp) = utility::formatFloatStringToInt(
-            format_order_decimal(order.order_volume));
-        std::tie(order_amount_val, order_amount_exp) = utility::formatFloatStringToInt(
-            format_order_decimal(order.order_amount));
-
-        std::string product_id_processing = utility::primeIdToProcessingId(
-            order.product_id, m_settings.gas_station.prime_standalone,
-            m_settings.gas_station.processing_standalone);
-        PaymentRequestData payment;
-        payment.product_id = product_id_processing;
-        payment.price_value = static_cast<uint32_t>(price_val);
-        payment.price_decimal = static_cast<uint8_t>(price_exp);
-        payment.volume_value = static_cast<uint32_t>(order_volume_val);
-        payment.volume_decimal = static_cast<uint8_t>(order_volume_exp);
-        payment.amount_value = static_cast<uint32_t>(order_amount_val);
-        payment.amount_decimal = static_cast<uint8_t>(order_amount_exp);
-        payment.not_complete = (status == ORDER_INTERRUPTED) ? 1 : 0;
-        payment.fact_volume_value = fact_volume_value;
-        payment.fact_volume_decimal = fact_volume_decimal;
-        payment.fact_amount_value = fact_amount_value;
-        payment.fact_amount_decimal = fact_amount_decimal;
-        Message msg;
-        msg.source = PRIME_HTTP_LAYER;
-        msg.type = PAY_CONFIRM;
-        msg.resource_id = order.id;
-        msg.payload = serializePaymentRequest(payment);
-
-        if (it != m_pending_info_sales.end()) {
-            it->second.type_sale = std::to_string(TypeSale::Full);
-            it->second.fact_quantity = utility::getFormattedStringFromJson(
-                std::to_string(fact_volume_value), fact_volume_decimal);
-            it->second.fact_amount = utility::getFormattedStringFromJson(
-                std::to_string(fact_amount_value), fact_amount_decimal);
-        }
-
-        if (status == ORDER_INTERRUPTED) {
-            // ВАЖНО: Рисуем экраны возврата ТОЛЬКО если эта колонка сейчас открыта на экране
-            if (device_id == m_current_dispenser_id) {
-                Message revert_amount_message;
-                std::string amount_revert_fuel_liters = utility::calculateRevertFuelString(payment.volume_value, payment.volume_decimal, fact_volume_value, fact_volume_decimal);
-                revert_amount_message.source = PRIME_HTTP_LAYER;
-                revert_amount_message.type = PAY_REVERT;
-                revert_amount_message.payload.assign(amount_revert_fuel_liters.begin(), amount_revert_fuel_liters.end());
-
-                core.sendToLogicLayer(UART_LAYER, revert_amount_message);
-
-                DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
-            }
-
-            // Печать чека возврата при прерывании заказа
+            int price_val = 0, price_exp = 0;
             Product *product = utility::getProductById(m_products, order.product_id);
             if (product) {
-                double actual_volume = utility::formatDecimalValue(fact_volume_value, fact_volume_decimal) !=
-                                       "0"
-                                           ? std::stod(
-                                               utility::formatDecimalValue(
-                                                   fact_volume_value, fact_volume_decimal))
-                                           : order.volume;
-
-                ReceiptData receipt;
-                receipt.address = m_settings.gas_station.standalone_address;
-                receipt.product_name = product->title;
-                receipt.volume_liters = actual_volume;
-                receipt.ordered_volume_liters = order.order_volume;
-                receipt.price_per_liter = order.order_price;
-                receipt.is_refund = true;
-
-                Message refund_msg;
-                refund_msg.source = PRIME_HTTP_LAYER;
-                refund_msg.type = PRINT_REFUND_RECEIPT;
-                refund_msg.resource_id = order.id;
-                refund_msg.payload = serializeReceiptData(receipt);
-
-                if (it != m_pending_info_sales.end()) {
-                    it->second.type_sale = std::to_string(TypeSale::Partial);
-                    it->second.fact_quantity = utility::getFormattedStringFromJson(
-                        std::to_string(fact_volume_value), fact_volume_decimal);
-                    it->second.fact_amount = utility::getFormattedStringFromJson(
-                        std::to_string(fact_amount_value), fact_amount_decimal);
-                }
-                core.sendToLogicLayer(PIPE_LAYER, refund_msg);
+                std::tie(price_val, price_exp) = utility::formatFloatStringToInt(product->price);
             }
-        }
-        core.sendToLogicLayer(PIPE_LAYER, msg);
-    }
+            int order_volume_val = 0, order_volume_exp = 0;
+            int order_amount_val = 0, order_amount_exp = 0;
+            auto format_order_decimal = [](double value) {
+                std::ostringstream stream;
+                stream << std::fixed << std::setprecision(2) << value;
+                std::string formatted = stream.str();
+                std::replace(formatted.begin(), formatted.end(), '.', ',');
+                return formatted;
+            };
+            std::tie(order_volume_val, order_volume_exp) = utility::formatFloatStringToInt(
+                format_order_decimal(order.order_volume));
+            std::tie(order_amount_val, order_amount_exp) = utility::formatFloatStringToInt(
+                format_order_decimal(order.order_amount));
 
-    void PrimeLogic::handleRandomDispenserOrderStatus(const json &jArray) {
-        try {
-            std::string device_id = jArray["device_id"];
-            auto data = jArray["on_dsp_order_changed"];
-            auto status = utility::parseStringFromJson(data["status"]);
+            std::string product_id_processing = utility::primeIdToProcessingId(
+                order.product_id, m_settings.gas_station.prime_standalone,
+                m_settings.gas_station.processing_standalone);
+            PaymentRequestData payment;
+            payment.product_id = product_id_processing;
+            payment.price_value = static_cast<uint32_t>(price_val);
+            payment.price_decimal = static_cast<uint8_t>(price_exp);
+            payment.volume_value = static_cast<uint32_t>(order_volume_val);
+            payment.volume_decimal = static_cast<uint8_t>(order_volume_exp);
+            payment.amount_value = static_cast<uint32_t>(order_amount_val);
+            payment.amount_decimal = static_cast<uint8_t>(order_amount_exp);
+            payment.not_complete = (status == ORDER_INTERRUPTED) ? 1 : 0;
+            payment.fact_volume_value = fact_volume_value;
+            payment.fact_volume_decimal = fact_volume_decimal;
+            payment.fact_amount_value = fact_amount_value;
+            payment.fact_amount_decimal = fact_amount_decimal;
 
-            m_orders[device_id].status = status;
-        } catch (const std::exception &e) {
-            std::cerr << "[Logic] Error Dispenser Random Order Status: " << e.what() << std::endl;
+            Message msg;
+            msg.source = PRIME_HTTP_LAYER;
+            msg.type = PAY_CONFIRM;
+            msg.resource_id = order.id;
+            msg.payload = serializePaymentRequest(payment);
+
+            if (it != m_pending_info_sales.end()) {
+                it->second.type_sale = std::to_string(TypeSale::Full);
+                it->second.fact_quantity = utility::getFormattedStringFromJson(
+                    std::to_string(fact_volume_value), fact_volume_decimal);
+                it->second.fact_amount = utility::getFormattedStringFromJson(
+                    std::to_string(fact_amount_value), fact_amount_decimal);
+            }
+
+            if (status == ORDER_INTERRUPTED) {
+                // Рисуем экраны возврата ТОЛЬКО если эта колонка сейчас открыта на экране.
+                if (device_id == m_current_dispenser_id) {
+                    Message revert_amount_message;
+                    std::string amount_revert_fuel_liters = utility::calculateRevertFuelString(
+                        payment.volume_value, payment.volume_decimal, fact_volume_value, fact_volume_decimal);
+                    revert_amount_message.source = PRIME_HTTP_LAYER;
+                    revert_amount_message.type = PAY_REVERT;
+                    revert_amount_message.payload.assign(amount_revert_fuel_liters.begin(),
+                                                         amount_revert_fuel_liters.end());
+
+                    core.sendToLogicLayer(UART_LAYER, revert_amount_message);
+
+                    DwinCommands::sendPageToDwin(core, m_settings.dwin.page_return_money_process);
+                }
+
+                // Печать чека возврата при прерывании заказа
+                Product *product = utility::getProductById(m_products, order.product_id);
+                if (product) {
+                    double actual_volume = utility::formatDecimalValue(fact_volume_value, fact_volume_decimal) !=
+                                           "0"
+                                               ? std::stod(
+                                                   utility::formatDecimalValue(
+                                                       fact_volume_value, fact_volume_decimal))
+                                               : order.volume;
+
+                    ReceiptData receipt;
+                    receipt.address = m_settings.gas_station.standalone_address;
+                    receipt.product_name = product->title;
+                    receipt.volume_liters = actual_volume;
+                    receipt.ordered_volume_liters = order.order_volume;
+                    receipt.price_per_liter = order.order_price;
+                    receipt.is_refund = true;
+
+                    Message refund_msg;
+                    refund_msg.source = PRIME_HTTP_LAYER;
+                    refund_msg.type = PRINT_REFUND_RECEIPT;
+                    refund_msg.resource_id = order.id;
+                    refund_msg.payload = serializeReceiptData(receipt);
+
+                    if (it != m_pending_info_sales.end()) {
+                        it->second.type_sale = std::to_string(TypeSale::Partial);
+                        it->second.fact_quantity = utility::getFormattedStringFromJson(
+                            std::to_string(fact_volume_value), fact_volume_decimal);
+                        it->second.fact_amount = utility::getFormattedStringFromJson(
+                            std::to_string(fact_amount_value), fact_amount_decimal);
+                    }
+
+
+                    core.sendToLogicLayer(PIPE_LAYER, refund_msg);
+                }
+            }
+            if (order.closed) {
+                m_pending_level_gauge_orders[level_gauge_id].push({
+               order_id, device_id, GaugeTaskType::AFTER_FUELLING
+           });
+                getParameters(core, level_gauge_id);
+            }
+
+            // Опрашивать счетчики только после закрытия заказ, когда вернули пистолет.
+            core.sendToLogicLayer(PIPE_LAYER, msg);
         }
     }
 
@@ -1696,6 +1815,9 @@ namespace bridge {
                             utility::parseStringFromJson(price["value"]),
                             utility::parseIntFromJson(price["exponent"]));
                         int price_exponent = price["exponent"];
+                        std::string price_value_string = price["value"];
+
+                        auto order_status = utility::parseStringFromJson(order["status"]);
 
                         m_dispensers[i].order.volume = target_volume_string;
                         m_dispensers[i].order.amount = target_amount_string;
@@ -1711,7 +1833,7 @@ namespace bridge {
                             target_volume["value"], target_volume["exponent"]);
                         m_orders[trk_id].order_price = utility::parseDoubleFromJson(price["value"], price["exponent"]);
                         m_orders[trk_id].complete = utility::parseBoolFromJson(order["complete"]);
-                        m_orders[trk_id].status = utility::parseStringFromJson(order["status"]);
+                        m_orders[trk_id].status = order_status;
                         m_orders[trk_id].id = order_id;
 
                         Message msg_order_amount;
@@ -1725,6 +1847,11 @@ namespace bridge {
                         msg_order_volume.payload.assign(target_volume_string.begin(), target_volume_string.end());
 
                         core.sendToLogicLayer(UART_LAYER, msg_order_volume);
+
+                        // Завершение заказа. После получение пакета DSP_DELIVERED | ORDER_INTERRUPED отправляем getDspStat -> проверям статус заказа.
+                        if (order_status == ORDER_INTERRUPTED || order_status == ORDER_DELIVERED) {
+                            processOrderFinalization(trk_id, core);
+                        }
 
                         std::string product_id_processing = utility::primeIdToProcessingId(
                             product_id, m_settings.gas_station.prime_standalone,
@@ -1751,7 +1878,7 @@ namespace bridge {
                         }
 
                         createPayment(core, order_id, product_id_processing,
-                                      std::stoi(price_value),
+                                      std::stoi(price_value_string),
                                       price_exponent,
                                       std::stoi(target_volume_value),
                                       target_volume_exponent,
@@ -1923,9 +2050,9 @@ namespace bridge {
 
             if (!done) {
                 auto task_timer = std::make_shared<boost::asio::deadline_timer>(
-                m_ios,
-                boost::posix_time::milliseconds(200)
-            );
+                    m_ios,
+                    boost::posix_time::milliseconds(200)
+                );
 
                 auto self = shared_from_this();
 
@@ -1935,12 +2062,6 @@ namespace bridge {
                     }
                 });
                 sendTaskToHttp(core, std::to_string(task_id));
-            } else {
-                // if (task_id == m_current_order_task) {
-                //      Перелистываем на страницу "операция по карте выполняется".
-                //      DwinCommands::sendPageToDwin(core, m_settings.dwin.page_processing_fuel_card);
-                // }
-                //getDispenserStatus(core, m_current_dispenser_id);
             }
         } catch (const std::exception &e) {
             std::cerr << "[Logic] Error parsing Task: " << e.what() << std::endl;
@@ -2224,18 +2345,20 @@ namespace bridge {
                 return;
             } else if (error_msg == NOT_ENOUGH_MONEY) {
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_card_not_enough_money);
-                startPageTimer(m_settings.business_logic.show_incorrect_pin_page, m_settings.dwin.page_put_card_or_scan_code, [&core, this]() {
-                    clearInputTextDwin( core);
-                });
+                startPageTimer(m_settings.business_logic.show_incorrect_pin_page,
+                               m_settings.dwin.page_put_card_or_scan_code, [&core, this]() {
+                                   clearInputTextDwin(core);
+                               });
             } else {
                 DwinCommands::sendPageToDwin(core, m_settings.dwin.page_error_transaction_failed);
-                startPageTimer(m_settings.business_logic.show_return_money_process_end, getStartPage(), [&core, this]() {
-                    clearInputTextDwin( core);
-                });
+                startPageTimer(m_settings.business_logic.show_return_money_process_end, getStartPage(),
+                               [&core, this]() {
+                                   clearInputTextDwin(core);
+                               });
             }
             std::string command = m_settings.APIDispenser.close;
             PrimeCommands::handleCommand(core, command, m_current_dispenser_id);
-
+            createMessageClearCardData(core);
             m_pending_info_sales.erase(order_id);
         }
     }
@@ -2273,5 +2396,30 @@ namespace bridge {
         clear_input_blocks_display.source = PRIME_HTTP_LAYER;
 
         core.sendToLogicLayer(UART_LAYER, clear_input_blocks_display);
+    }
+
+    void PrimeLogic::createMessageClearCardData(MessageLayer &core) {
+        Message clear_card_data;
+        clear_card_data.source = PRIME_HTTP_LAYER;
+        clear_card_data.type = CLEAR_CARD_DATA_REQUEST;
+
+        core.sendToLogicLayer(PIPE_LAYER, clear_card_data);
+    }
+
+    void PrimeLogic::setCurrentOrderAfterChooseDispenser(MessageLayer& core, double &volume, double &amount) {
+        std::string volume_string = utility::formatDoubleWithComma(volume, 2);
+        std::string amount_string = utility::formatDoubleWithComma(amount, 2);
+
+        Message msg_order_fuelling_volume;
+        msg_order_fuelling_volume.type = UPDATE_CURRENT_ORDER_VOLUME;
+        msg_order_fuelling_volume.payload.assign(volume_string.begin(), volume_string.end());
+
+        core.sendToLogicLayer(UART_LAYER, msg_order_fuelling_volume);
+
+        Message msg_order_fuelling_amount;
+        msg_order_fuelling_amount.type = UPDATE_CURRENT_ORDER_AMOUNT;
+        msg_order_fuelling_amount.payload.assign(amount_string.begin(), amount_string.end());
+
+        core.sendToLogicLayer(UART_LAYER, msg_order_fuelling_amount);
     }
 }

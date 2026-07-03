@@ -50,6 +50,14 @@ namespace bridge {
         std::chrono::system_clock::time_point timestamp;
     };
 
+    struct ActiveOrder {
+        uint64_t transaction_id;
+        std::string card_number;
+        std::vector<uint8_t> card_data;
+        std::vector<uint8_t> pin_data;
+        uint64_t transaction_time;
+    };
+
     struct HttpResponseData {
         std::string url;
         int status_code;
@@ -71,7 +79,7 @@ namespace bridge {
         uint64_t time_end = 0;
         std::string status = "";
         bool complete = false;
-        bool closed = false;
+        bool closed = false; // Закрыт ли заказ на ТРК.
         std::string dispenser_id = "";
         std::string product_id = "";
         std::string product_rating = "";
@@ -86,7 +94,13 @@ namespace bridge {
         uint8_t fact_amount_exp = 0;
         uint32_t fact_volume_raw = 0;
         uint8_t fact_volume_exp = 0;
+        double counter_begin;
+        double counter_end;
+        double tanker_begin;
+        double tanker_end;
         bool round_to_order = false; // Округлить до суммы заказа
+
+        bool order_finalized = false; // При полном проливе при парсе статуса ТРК заказ еще может не быть закрыт. Чтобы 2 раза один и тот же заказ не фиксировать.
 
         DatabaseOrder() = default;
 
@@ -113,7 +127,7 @@ namespace bridge {
         std::string id;
         std::string status;
         std::string prev_status;
-        Order order; // Фактический заказ. Текущий налитый в m_orders HttpLogic.
+        Order order; // Фактический заказ. А текущий налитый в m_orders HttpLogic.
         std::string product_id;
         std::chrono::steady_clock::time_point m_last_volume_change_time; // Время последней информации о проливе.
         bool is_fuelling_paused; // Отжат ли курок.

@@ -133,6 +133,9 @@ namespace bridge {
             const std::string& time
         );
 
+        // Возвращает из Double строку с заданной точностью.
+        static std::string formatDoubleWithComma(double value, int precision);
+
         static std::string createSecondReceiptFromLevelGauge(
             const std::string& product_name,
             const Tanker& tanker,

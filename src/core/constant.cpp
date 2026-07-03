@@ -156,9 +156,17 @@ namespace bridge {
     const std::string GET_BALANCE_TYPE = "GET_BALANCE";
     const std::string GET_PAYMENT_TYPE = "GET_PAYMENT";
 
+    const std::string HIDDEN_CARD_BALANCE_OPTIMA_PC = "Баланс по кошелькам скрыт!";
+
     const std::string ARKAIM_INITIALIZED = "174";
 
     const std::string PAY_REVERT = "PAY_REVERT";
     const std::string NON_RECOGNIZED_ERROR = "NON_RECOGNIZED_ERROR";
     const std::string NOT_ENOUGH_MONEY = "Недостаточно средств";
+    const std::string ON_CARD_DETECTED = "CARD_DETECTED";
+    const std::string CLEAR_CARD_DATA_REQUEST = "CLEAR_CARD_DATA_REQUEST";
+
+    const std::string ERROR_SERVER_PROCESSING_TYPE = "PROCESSING_ERROR";
+
+    const int ERROR_STATUS_CODE = 400;
 }

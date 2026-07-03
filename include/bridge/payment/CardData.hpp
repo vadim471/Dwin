@@ -15,6 +15,7 @@ namespace bridge {
         std::string wallet_type; // "Денежный", "Литровый" и т.д.
         std::string balance_before; // Очищенный баланс: "940934.423"
         std::string balance_after;
+        bool hidden_balance;
         std::string limit_info;  // Отформатированный лимит: "Ост. сут. лимита: 10.00л"
     };
 
@@ -24,7 +25,8 @@ namespace bridge {
             {"wallet_type", request.wallet_type},
             {"balance_before", request.balance_before},
             {"balance_after", request.balance_after},
-            {"limit_info", request.limit_info}
+            {"limit_info", request.limit_info},
+            {"balance_hidden", request.hidden_balance},
         };
 
         const auto body = json.dump();
@@ -36,6 +38,7 @@ namespace bridge {
             const std::string body(payload.begin(), payload.end());
             const auto json = nlohmann::json::parse(body);
 
+            request.hidden_balance = json.value("balance_hidden", false);
             request.card_number = json.value("card_number", std::string());
             request.wallet_type = json.value("wallet_type", std::string());
             request.balance_before = json.value("balance_before", std::string());

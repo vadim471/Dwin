@@ -327,6 +327,15 @@ namespace bridge {
         return std::string(buffer);
     }
 
+    std::string utility::formatDoubleWithComma(double value, int precision) {
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(precision) << value;
+        std::string formatted = stream.str();
+        std::replace(formatted.begin(), formatted.end(), '.', ',');
+
+        return formatted;
+    }
+
     std::string utility::formatLimitType(const std::string& type) {
         if (type == "суточного") return "сут.";
         if (type == "месячного") return "мес.";
@@ -355,49 +364,55 @@ namespace bridge {
             data.wallet_type = match[1].str();
         }
 
-        std::regex balanceRegex("баланс:\\s*([\\d\\s\\xC2\\xA0,]+)");
-        if (std::regex_search(receipt_text, match, balanceRegex)) {
-            std::string rawBalance = match[1].str();
+        // Если баланс скрыт - парсить нечего.
+        if (receipt_text.find(HIDDEN_CARD_BALANCE_OPTIMA_PC) != std::string::npos) {
+            data.hidden_balance = true;
+        } else {
+            data.hidden_balance = false;
+            std::regex balanceRegex("баланс:\\s*([\\d\\s\\xC2\\xA0,]+)");
+            if (std::regex_search(receipt_text, match, balanceRegex)) {
+                std::string rawBalance = match[1].str();
 
-            rawBalance.erase(std::remove(rawBalance.begin(), rawBalance.end(), ' '), rawBalance.end());
+                rawBalance.erase(std::remove(rawBalance.begin(), rawBalance.end(), ' '), rawBalance.end());
 
-            size_t pos;
-            while ((pos = rawBalance.find("\xC2\xA0")) != std::string::npos) {
-                rawBalance.erase(pos, 2);
+                size_t pos;
+                while ((pos = rawBalance.find("\xC2\xA0")) != std::string::npos) {
+                    rawBalance.erase(pos, 2);
+                }
+
+                std::replace(rawBalance.begin(), rawBalance.end(), ',', '.');
+                data.balance_before = rawBalance;
             }
 
-            std::replace(rawBalance.begin(), rawBalance.end(), ',', '.');
-            data.balance_before = rawBalance;
-        }
+            std::regex limitRegex("Остаток\\s+(суточного|месячного|недельного|годового)\\s+лимита\\s*\\.+\\s*([\\d,]+)\\s*([^\\s\\.]+)");
 
-        std::regex limitRegex("Остаток\\s+(суточного|месячного|недельного|годового)\\s+лимита\\s*\\.+\\s*([\\d,]+)\\s*([^\\s\\.]+)");
+            auto words_begin = std::sregex_iterator(receipt_text.begin(), receipt_text.end(), limitRegex);
+            auto words_end = std::sregex_iterator();
 
-        auto words_begin = std::sregex_iterator(receipt_text.begin(), receipt_text.end(), limitRegex);
-        auto words_end = std::sregex_iterator();
+            std::stringstream ss;
+            bool found_any_limit = false;
 
-        std::stringstream ss;
-        bool found_any_limit = false;
+            for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+                std::smatch match = *i;
+                std::string limitType = match[1].str();
+                std::string valueStr = match[2].str();
+                std::string unitStr = match[3].str();
 
-        for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
-            std::smatch match = *i;
-            std::string limitType = match[1].str();
-            std::string valueStr = match[2].str();
-            std::string unitStr = match[3].str();
+                std::replace(valueStr.begin(), valueStr.end(), ',', '.');
+                double val = 0.0;
+                try { val = std::stod(valueStr); } catch (...) {}
 
-            std::replace(valueStr.begin(), valueStr.end(), ',', '.');
-            double val = 0.0;
-            try { val = std::stod(valueStr); } catch (...) {}
+                if (found_any_limit) ss << "\n";
 
-            if (found_any_limit) ss << "\n";
+                ss << "Ост. " << formatLimitType(limitType) << " лимита: "
+                   << std::fixed << std::setprecision(2) << val << unitStr;
 
-            ss << "Ост. " << formatLimitType(limitType) << " лимита: "
-               << std::fixed << std::setprecision(2) << val << unitStr;
+                found_any_limit = true;
+            }
 
-            found_any_limit = true;
-        }
-
-        if (found_any_limit) {
-            data.limit_info = ss.str();
+            if (found_any_limit) {
+                data.limit_info = ss.str();
+            }
         }
 
         return data;
@@ -407,7 +422,8 @@ namespace bridge {
     std::string utility::getWalletSymbol(const std::string& wallet_type) {
         if (wallet_type == "Литровый") {
             return "л.";
-        } else if (wallet_type == "Денежный") {
+        }
+        if (wallet_type == "Денежный") {
             return "р.";
         }
         return ""; // По умолчанию или если тип неизвестен

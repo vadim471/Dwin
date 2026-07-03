@@ -16,10 +16,11 @@
 
 namespace bridge {
     BosLogic::BosLogic(const Settings &settings, std::shared_ptr<TransactionRepository> transaction_repo,
-        std::shared_ptr<LevelGaugeRepository> level_gauge_repo) :
+        std::shared_ptr<LevelGaugeRepository> level_gauge_repo, std::shared_ptr<FuelReceptionRepository> fuel_reception_repository) :
     m_settings(settings),
     m_transaction_repo(transaction_repo),
-    m_level_gauge_repo(level_gauge_repo)
+    m_level_gauge_repo(level_gauge_repo),
+    m_fuel_reception_repo(fuel_reception_repository)
     {
     };
 
